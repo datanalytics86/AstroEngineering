@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# Node
+node_modules/
+.next/
+out/
+dist/
+*.tsbuildinfo
+
+# Efemérides Swiss Ephemeris (archivos grandes, descargar en runtime)
+*.se1
+*.se
+/usr/share/swisseph/
+
+# Misc
+.DS_Store
+*.log
+.env.local
+.env.production
