@@ -87,7 +87,8 @@ export default function ChartWheel({
         .endAngle(toRad(endAngle));
 
       g.append("path")
-        .attr("d", arc as unknown as string)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .attr("d", arc(null as any) as string)
         .attr("transform", `translate(${cx},${cy})`)
         .attr("fill", `${signColor(SIGN_FULL[i])}22`)
         .attr("stroke", "#1F2937")
