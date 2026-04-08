@@ -26,8 +26,8 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 - [x] Frontend: `package.json` con dependencias
 - [x] Frontend: `app/layout.tsx` — Layout principal
 - [x] Frontend: `app/page.tsx` — Landing / formulario
-- [x] Frontend: `app/carta/[id]/page.tsx` — Vista carta natal
-- [x] Frontend: `app/transitos/[id]/page.tsx` — Vista de tránsitos
+- [x] Frontend: `app/carta/[id]/page.tsx` — Vista carta natal (ID dinámico, localStorage)
+- [x] Frontend: `app/transitos/[id]/page.tsx` — Vista de tránsitos (ID dinámico, localStorage)
 - [x] Frontend: `app/api/chart/route.ts` — Proxy al backend
 - [x] Frontend: `app/api/transits/route.ts` — Proxy al backend
 - [x] Frontend: `lib/types.ts` — TypeScript interfaces
@@ -42,6 +42,12 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 - [x] Frontend: `components/ForecastDashboard.tsx`
 - [x] Frontend: `components/InterpretationCard.tsx`
 - [x] `docker-compose.yml`
+- [x] Frontend: `lib/storage.ts` — Persistencia con localStorage + UUID (cartas bookmarkeables)
+- [x] Frontend: `app/not-found.tsx` y `app/error.tsx`
+- [x] Frontend: Geocoding de ciudad con Nominatim (autocompletado + coordenadas automáticas)
+- [x] Frontend: Loading indicator durante cálculo de tránsitos
+- [x] Frontend: Favicon SVG
+- [x] Backend: Paso adaptativo por planeta (10x speedup en tránsitos)
 - [ ] Testing de precisión contra astro.com (3 cartas de prueba)
 
 ---

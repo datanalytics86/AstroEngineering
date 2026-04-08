@@ -1,18 +1,29 @@
 """
 Cálculo de tránsitos futuros de planetas lentos contra carta natal.
-Incluye escaneo diario y refinamiento binario para encontrar fecha exacta.
+Incluye escaneo adaptativo (paso variable por planeta) y refinamiento binario.
 """
 
 import swisseph as swe
 from datetime import datetime, timedelta
 from .chart import to_julian_day, calc_planet_position, PLANET_IDS
-from .houses import longitude_to_sign, degrees_to_dms
+from .houses import longitude_to_sign
 from .aspects import ASPECTS, TRANSIT_ORBS, score_transit, importance_label, angular_distance
 
-# Solo planetas con movimiento significativo en períodos de semanas a meses
+# Solo planetas lentos con impacto real en pronósticos
 TRANSIT_PLANETS = [
     "Júpiter", "Saturno", "Urano", "Neptuno", "Plutón", "Marte",
 ]
+
+# Paso de escaneo en días por planeta — los planetas lentos se mueven poco
+# y no necesitan resolución diaria
+SCAN_STEP: dict[str, int] = {
+    "Marte":   1,   # ~0.5°/día — necesita resolución diaria
+    "Júpiter": 3,   # ~0.08°/día
+    "Saturno": 5,   # ~0.03°/día
+    "Urano":   10,  # ~0.012°/día
+    "Neptuno": 20,  # ~0.006°/día
+    "Plutón":  28,  # ~0.004°/día
+}
 
 DOMINANT_THEMES = {
     ("Júpiter", "armonioso"):    "expansión y oportunidades",
@@ -22,7 +33,7 @@ DOMINANT_THEMES = {
     ("Urano", "armonioso"):      "cambios positivos e innovación",
     ("Urano", "tenso"):          "disrupciones e imprevistos",
     ("Neptuno", "armonioso"):    "espiritualidad y creatividad",
-    ("Neptuno", "tenso"):        "confusión o disolucion de límites",
+    ("Neptuno", "tenso"):        "confusión o disolución de límites",
     ("Plutón", "armonioso"):     "transformación y empoderamiento",
     ("Plutón", "tenso"):         "crisis y regeneración profunda",
     ("Marte", "armonioso"):      "energía y acción enfocada",
@@ -30,13 +41,14 @@ DOMINANT_THEMES = {
 }
 
 
-def find_exact_aspect_date(planet_id: int, natal_longitude: float, aspect_angle: float, approx_jd: float) -> str:
+def find_exact_aspect_date(
+    planet_id: int, natal_longitude: float, aspect_angle: float, approx_jd: float
+) -> str:
     """
-    Búsqueda binaria para encontrar el momento exacto en que el planeta
-    transitante forma el aspecto exacto con el punto natal.
+    Búsqueda binaria para encontrar el momento exacto del aspecto.
     Precisión: ~1 minuto de tiempo.
     """
-    step = 0.5  # medio día
+    step = 0.5
     best_jd = approx_jd
     best_orb = 999.0
 
@@ -63,18 +75,15 @@ def find_exact_aspect_date(planet_id: int, natal_longitude: float, aspect_angle:
 
 def consolidate_transits(raw_transits: list[dict]) -> list[dict]:
     """
-    Agrupa tránsitos continuos del mismo planeta-aspecto-natal en un solo evento,
-    determinando fechas de entrada, exactitud y salida de orbe.
+    Agrupa tránsitos continuos del mismo planeta-aspecto-natal en un solo evento.
     Maneja correctamente los triples tránsitos por retrogradación.
     """
     if not raw_transits:
         return []
 
-    # Clave de agrupación
     def key(t):
         return (t["transit_planet"], t["natal_planet"], t["aspect_name"])
 
-    # Ordenar por clave y fecha
     sorted_transits = sorted(raw_transits, key=lambda t: (key(t), t["date"]))
 
     consolidated = []
@@ -87,29 +96,30 @@ def consolidate_transits(raw_transits: list[dict]) -> list[dict]:
         if current_group is None or key(current_group) != k:
             if current_group:
                 consolidated.append(current_group)
-            current_group = {**t, "enters_orb": date, "leaves_orb": date, "_dates": [date]}
+            current_group = {**t, "enters_orb": date, "leaves_orb": date}
         else:
-            prev_date = datetime.fromisoformat(current_group["leaves_orb"])
-            curr_date = datetime.fromisoformat(date)
-            gap = (curr_date - prev_date).days
+            try:
+                prev_date = datetime.fromisoformat(current_group["leaves_orb"])
+                curr_date = datetime.fromisoformat(date)
+                gap = (curr_date - prev_date).days
+            except Exception:
+                gap = 0
 
-            if gap <= 5:  # Máximo 5 días de hueco (retrógrados pueden salir y re-entrar)
+            # Permite hasta 60 días de hueco entre pasadas (cubre retrogradación de Marte)
+            planet_step = SCAN_STEP.get(t["transit_planet"], 5)
+            max_gap = max(60, planet_step * 3)
+
+            if gap <= max_gap:
                 current_group["leaves_orb"] = date
-                current_group["_dates"].append(date)
-                # Mantener el orbe más cerrado como referencia
                 if t["orb"] < current_group["orb"]:
                     current_group["orb"] = t["orb"]
                     current_group["transit_longitude"] = t["transit_longitude"]
             else:
                 consolidated.append(current_group)
-                current_group = {**t, "enters_orb": date, "leaves_orb": date, "_dates": [date]}
+                current_group = {**t, "enters_orb": date, "leaves_orb": date}
 
     if current_group:
         consolidated.append(current_group)
-
-    # Limpiar clave interna
-    for event in consolidated:
-        event.pop("_dates", None)
 
     return consolidated
 
@@ -122,24 +132,23 @@ def calculate_transit_timeline(
     lon: float,
 ) -> dict:
     """
-    Escanea día a día las posiciones de planetas transitantes y detecta
+    Escanea con paso adaptativo las posiciones de planetas transitantes y detecta
     cuándo forman aspectos con planetas natales.
-
-    Returns:
-        dict con current_transits, timeline, exact_aspects_calendar
     """
     start_date = datetime.fromisoformat(start_date_str)
     end_date = datetime.fromisoformat(end_date_str)
 
     raw_transits = []
-    current = start_date
 
-    while current <= end_date:
-        jd = to_julian_day(current.year, current.month, current.day, 12.0)
+    for tp_name in TRANSIT_PLANETS:
+        if tp_name not in PLANET_IDS:
+            continue
 
-        for tp_name in TRANSIT_PLANETS:
-            if tp_name not in PLANET_IDS:
-                continue
+        step_days = timedelta(days=SCAN_STEP.get(tp_name, 5))
+        current = start_date
+
+        while current <= end_date:
+            jd = to_julian_day(current.year, current.month, current.day, 12.0)
             tp = calc_planet_position(jd, PLANET_IDS[tp_name])
             tp_sign = longitude_to_sign(tp["longitude"])
 
@@ -164,28 +173,37 @@ def calculate_transit_timeline(
                             "applying": tp["speed"] > 0,
                         })
 
-        current += timedelta(days=1)
+            current += step_days
 
-    # Consolidar y calcular scores
     consolidated = consolidate_transits(raw_transits)
 
     current_transits = []
     exact_aspects_calendar = []
 
+    # Precalcular dict de longitudes de aspectos para lookup rápido
+    aspect_angle_map = {a["name"]: a["angle"] for a in ASPECTS}
+
     for t in consolidated:
         sc = score_transit(t["transit_planet"], t["natal_planet"], t["aspect_name"], t["orb"])
 
-        # Encontrar fecha exacta del aspecto
-        enters_jd = to_julian_day(*map(int, t["enters_orb"].split("-")), 12.0)
-        leaves_jd = to_julian_day(*map(int, t["leaves_orb"].split("-")), 12.0)
-        mid_jd = (enters_jd + leaves_jd) / 2
-
-        exact_date = find_exact_aspect_date(
-            PLANET_IDS[t["transit_planet"]],
-            t["natal_longitude"],
-            next(a["angle"] for a in ASPECTS if a["name"] == t["aspect_name"]),
-            mid_jd,
-        )
+        # Solo calcular fecha exacta para tránsitos significativos (score > 1)
+        exact_date = None
+        if sc > 1.0:
+            try:
+                enters_parts = list(map(int, t["enters_orb"].split("-")))
+                leaves_parts = list(map(int, t["leaves_orb"].split("-")))
+                enters_jd = to_julian_day(*enters_parts, 12.0)
+                leaves_jd = to_julian_day(*leaves_parts, 12.0)
+                mid_jd = (enters_jd + leaves_jd) / 2
+                aspect_angle = aspect_angle_map.get(t["aspect_name"], 0)
+                exact_date = find_exact_aspect_date(
+                    PLANET_IDS[t["transit_planet"]],
+                    t["natal_longitude"],
+                    aspect_angle,
+                    mid_jd,
+                )
+            except Exception:
+                exact_date = t["enters_orb"] + "T12:00:00Z"
 
         event = {
             "transit_planet": t["transit_planet"],
@@ -205,7 +223,11 @@ def calculate_transit_timeline(
         }
         current_transits.append(event)
 
-        interp_key = f"{t['transit_planet'].lower()}_{t['aspect_name'].lower().replace(' ', '_')}_{t['natal_planet'].lower()}"
+        interp_key = (
+            f"{t['transit_planet'].lower()}_"
+            f"{t['aspect_name'].lower().replace(' ', '_')}_"
+            f"{t['natal_planet'].lower()}"
+        )
         exact_date_short = exact_date[:10] if exact_date else t["enters_orb"]
         exact_aspects_calendar.append({
             "date": exact_date_short,
@@ -215,11 +237,9 @@ def calculate_transit_timeline(
             "interpretation_key": interp_key,
         })
 
-    # Ordenar por score descendente
     current_transits.sort(key=lambda x: x["score"], reverse=True)
     exact_aspects_calendar.sort(key=lambda x: x["date"])
 
-    # Construir timeline mensual
     timeline = build_monthly_timeline(current_transits, start_date, end_date)
 
     return {
@@ -229,9 +249,11 @@ def calculate_transit_timeline(
     }
 
 
-def build_monthly_timeline(transits: list[dict], start_date: datetime, end_date: datetime) -> list[dict]:
+def build_monthly_timeline(
+    transits: list[dict], start_date: datetime, end_date: datetime
+) -> list[dict]:
     """Agrupa tránsitos activos por mes y calcula score de intensidad."""
-    months = {}
+    months: dict[str, list] = {}
     current = start_date.replace(day=1)
 
     while current <= end_date:
@@ -251,21 +273,21 @@ def build_monthly_timeline(transits: list[dict], start_date: datetime, end_date:
 
     timeline = []
     for month_key, month_transits in sorted(months.items()):
-        intensity = round(sum(t["score"] for t in month_transits) / max(len(month_transits), 1), 2)
-
-        # Determinar tema dominante
         if month_transits:
+            total_score = sum(t["score"] for t in month_transits)
+            intensity = round(total_score / len(month_transits), 2)
             top = max(month_transits, key=lambda t: t["score"])
             theme = DOMINANT_THEMES.get(
                 (top["transit_planet"], top["nature"]),
-                "período de transición"
+                "período de transición",
             )
         else:
+            intensity = 0.0
             theme = "período estable"
 
         timeline.append({
             "month": month_key,
-            "transits_active": month_transits[:5],  # Top 5 para no sobrecargar
+            "transits_active": month_transits[:5],
             "intensity_score": intensity,
             "dominant_theme": theme,
         })

@@ -22,3 +22,10 @@ body {
 /* Tipografía utilitaria */
 .font-mono { font-family: "JetBrains Mono", monospace; }
 .font-serif { font-family: "Playfair Display", serif; }
+
+/* Animación barra de loading */
+@keyframes loading {
+  0%   { transform: translateX(-100%); width: 40%; }
+  50%  { width: 60%; }
+  100% { transform: translateX(250%); width: 40%; }
+}

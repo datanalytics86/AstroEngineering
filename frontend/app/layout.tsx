@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "AstroEngine Pro",
   description: "Cartas natales y tránsitos planetarios con precisión astronómica real",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

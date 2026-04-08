@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import BirthDataForm from "@/components/BirthDataForm";
 import type { BirthData, ChartResponse } from "@/lib/types";
+import { saveChart } from "@/lib/storage";
 
 export default function HomePage() {
   const router = useRouter();
@@ -24,10 +25,8 @@ export default function HomePage() {
         throw new Error(err.detail ?? `HTTP ${res.status}`);
       }
       const chart: ChartResponse = await res.json();
-      // Guardar en sessionStorage para pasar entre páginas sin URL params gigantes
-      sessionStorage.setItem("astro_chart", JSON.stringify(chart));
-      sessionStorage.setItem("astro_birthdata", JSON.stringify(data));
-      router.push("/carta/resultado");
+      const id = saveChart(chart, data);
+      router.push(`/carta/${id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al calcular la carta");
     } finally {
@@ -40,11 +39,11 @@ export default function HomePage() {
       <div className="w-full max-w-lg">
         {/* Hero */}
         <div className="text-center mb-10">
-          <div className="text-6xl mb-4">✦</div>
+          <div className="text-gold text-5xl mb-4 font-serif">✦</div>
           <h1 className="font-serif text-4xl text-gold mb-3">AstroEngine Pro</h1>
-          <p className="text-gray-400 leading-relaxed">
+          <p className="text-gray-400 leading-relaxed text-sm">
             Carta natal con precisión astronómica real (Swiss Ephemeris).<br />
-            Tránsitos futuros calculados día a día.
+            Tránsitos futuros calculados día a día con refinamiento binario.
           </p>
         </div>
 
