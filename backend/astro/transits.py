@@ -56,6 +56,8 @@ def find_exact_aspect_date(
         for direction in [-1, 0, 1]:
             test_jd = best_jd + direction * step
             pos = calc_planet_position(test_jd, planet_id)
+            if pos is None:
+                continue
             angle = angular_distance(pos["longitude"], natal_longitude)
             orb = abs(angle - aspect_angle)
             if orb < best_orb:
@@ -150,6 +152,9 @@ def calculate_transit_timeline(
         while current <= end_date:
             jd = to_julian_day(current.year, current.month, current.day, 12.0)
             tp = calc_planet_position(jd, PLANET_IDS[tp_name])
+            if tp is None:
+                current += step_days
+                continue
             tp_sign = longitude_to_sign(tp["longitude"])
 
             for np in natal_planets:

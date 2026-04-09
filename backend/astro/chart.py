@@ -43,16 +43,23 @@ def to_julian_day(year: int, month: int, day: int, hour_ut: float) -> float:
     return swe.julday(year, month, day, hour_ut)
 
 
-def calc_planet_position(jd: float, planet_id: int) -> dict:
-    """Calcula la posición de un planeta en una fecha dada (Julian Day)."""
-    flags = swe.FLG_SWIEPH | swe.FLG_SPEED
-    result, _ = swe.calc_ut(jd, planet_id, flags)
-    return {
-        "longitude": result[0],
-        "latitude": result[1],
-        "speed": result[3],
-        "retrograde": result[3] < 0,
-    }
+def calc_planet_position(jd: float, planet_id: int) -> dict | None:
+    """Calcula la posición de un planeta en una fecha dada (Julian Day).
+    Intenta Swiss Ephemeris primero; si falta el archivo .se1, usa Moshier.
+    Retorna None si el planeta no está soportado sin efemérides (ej: Quirón).
+    """
+    for flags in (swe.FLG_SWIEPH | swe.FLG_SPEED, swe.FLG_MOSEPH | swe.FLG_SPEED):
+        try:
+            result, _ = swe.calc_ut(jd, planet_id, flags)
+            return {
+                "longitude": result[0],
+                "latitude": result[1],
+                "speed": result[3],
+                "retrograde": result[3] < 0,
+            }
+        except Exception:
+            continue
+    return None
 
 
 def calculate_natal_chart(birth_data: dict) -> dict:
@@ -92,6 +99,9 @@ def calculate_natal_chart(birth_data: dict) -> dict:
     planets = []
     for planet_name, planet_id in PLANET_IDS.items():
         pos = calc_planet_position(jd, planet_id)
+        if pos is None:
+            # Planeta no calculable sin archivo de efemérides (ej: Quirón sin seas_18.se1)
+            continue
         sign_info = longitude_to_sign(pos["longitude"])
         house_num = get_planet_house(pos["longitude"], house_cusps)
 
