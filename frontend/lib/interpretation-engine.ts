@@ -166,7 +166,7 @@ function generate(tp: string, aspect: string, np: string): TransitInterpretation
   if (!ta || !na || !asp) throw new Error(`Missing template for ${key}`);
 
   const override = OVERRIDES[key] ?? {};
-  const combinedAreas = [...new Set([...ta.areas.slice(0, 2), ...na.areas.slice(0, 2)])];
+  const combinedAreas = Array.from(new Set([...ta.areas.slice(0, 2), ...na.areas.slice(0, 2)]));
 
   const base: TransitInterpretation = {
     key,
