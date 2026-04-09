@@ -15,12 +15,6 @@ function intensityColor(score: number): string {
   return "#22C55E";
 }
 
-function intensityLabel(score: number): string {
-  if (score >= 7) return "Intenso";
-  if (score >= 4) return "Moderado";
-  return "Fluido";
-}
-
 function intensityEmoji(score: number): string {
   if (score >= 7) return "🔴";
   if (score >= 4) return "🟡";

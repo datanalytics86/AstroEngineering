@@ -9,6 +9,7 @@ interface Props {
   planets: PlanetPosition[];
   houses: HouseCusp[];
   ascendant: AnglePoint;
+  midheaven: AnglePoint;
   aspects: Aspect[];
   transitPlanets?: PlanetPosition[];
   highlightedPlanet?: string;
@@ -28,6 +29,7 @@ export default function ChartWheel({
   planets,
   houses,
   ascendant,
+  midheaven,
   aspects,
   transitPlanets,
   highlightedPlanet,
@@ -77,14 +79,16 @@ export default function ChartWheel({
     // ── Anillo zodiacal (12 sectores de 30°) ──────────────────────────────────
     for (let i = 0; i < 12; i++) {
       const startLon = i * 30;
-      const startAngle = toAngle(startLon);
-      const endAngle   = toAngle(startLon + 30);
+      const sA = toAngle(startLon);
+      let eA = toAngle(startLon + 30);
+      // Asegurar que endAngle > startAngle para que D3 dibuje el arco correcto (~30°)
+      if (eA <= sA) eA += 360;
 
       const arc = d3.arc<unknown>()
         .innerRadius(R_ZODIAC_IN)
         .outerRadius(R_ZODIAC_OUT)
-        .startAngle(toRad(startAngle))
-        .endAngle(toRad(endAngle));
+        .startAngle(toRad(sA))
+        .endAngle(toRad(eA));
 
       g.append("path")
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,7 +99,7 @@ export default function ChartWheel({
         .attr("stroke-width", 0.5);
 
       // Símbolo del signo en el centro del sector
-      const midAngle = toRad((startAngle + endAngle) / 2);
+      const midAngle = toRad((sA + eA) / 2);
       const midR = (R_ZODIAC_IN + R_ZODIAC_OUT) / 2;
       g.append("text")
         .attr("x", cx + midR * Math.cos(midAngle - Math.PI / 2))
@@ -130,10 +134,13 @@ export default function ChartWheel({
         .attr("stroke-width", isAngular ? 1 : 0.5)
         .attr("stroke-dasharray", isAngular ? "none" : "2,3");
 
-      // Número de casa
+      // Número de casa — midpoint entre esta cúspide y la siguiente
       const labelR = (R_HOUSES + R_CORE) / 2;
-      const nextAngle = toRad(toAngle(houses[(house.number % 12)].cusp_longitude));
-      const midAngle = (angle + nextAngle) / 2;
+      const nextCusp = houses[house.number % 12].cusp_longitude;
+      let nextAngleRaw = toAngle(nextCusp);
+      let thisAngleRaw = toAngle(house.cusp_longitude);
+      if (nextAngleRaw <= thisAngleRaw) nextAngleRaw += 360;
+      const midAngle = toRad((thisAngleRaw + nextAngleRaw) / 2);
 
       g.append("text")
         .attr("x", cx + labelR * Math.cos(midAngle - Math.PI / 2))
@@ -266,6 +273,8 @@ export default function ChartWheel({
 
     addAngleLabel(ascendant.longitude, "ASC", "#C9A84C");
     addAngleLabel((ascendant.longitude + 180) % 360, "DSC", "#9CA3AF");
+    addAngleLabel(midheaven.longitude, "MC", "#A78BFA");
+    addAngleLabel((midheaven.longitude + 180) % 360, "IC", "#6B7280");
   }
 
   return (

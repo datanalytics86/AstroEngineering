@@ -48,9 +48,9 @@ export default function TransitTimeline({ transits, startDate, endDate }: Props)
       <div className="p-4 overflow-x-auto">
         {/* Eje de tiempo */}
         <div className="relative mb-2" style={{ height: 20 }}>
-          {monthMarks.map((m) => (
+          {monthMarks.map((m, idx) => (
             <span
-              key={m.label}
+              key={`label-${idx}`}
               className="absolute text-xs text-gray-600 font-mono transform -translate-x-1/2"
               style={{ left: `${m.pct}%` }}
             >
@@ -61,9 +61,9 @@ export default function TransitTimeline({ transits, startDate, endDate }: Props)
 
         {/* Líneas verticales de meses */}
         <div className="relative">
-          {monthMarks.map((m) => (
+          {monthMarks.map((m, idx) => (
             <div
-              key={m.label}
+              key={`line-${idx}`}
               className="absolute top-0 bottom-0 border-l border-space-border border-dashed opacity-30"
               style={{ left: `${m.pct}%`, height: sortedTransits.length * 36 }}
             />

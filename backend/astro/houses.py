@@ -15,6 +15,7 @@ SIGN_SYMBOLS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "
 
 
 def longitude_to_sign(lon: float) -> dict:
+    lon = lon % 360  # normalize to [0, 360)
     idx = int(lon / 30) % 12
     degree_in_sign = lon % 30
     return {

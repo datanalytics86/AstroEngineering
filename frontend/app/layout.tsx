@@ -26,8 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <nav className="hidden md:flex gap-6 text-sm text-gray-400">
             <a href="/" className="hover:text-gold transition-colors">Carta Natal</a>
-            <a href="#" className="hover:text-gold transition-colors">Tránsitos</a>
-            <a href="#" className="hover:text-gold transition-colors">Documentación</a>
+            <a href="https://astro.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">Validar en astro.com</a>
           </nav>
         </header>
         <main>{children}</main>

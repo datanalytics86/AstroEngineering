@@ -66,6 +66,7 @@ def calculate_natal_chart(birth_data: dict) -> dict:
         dict con planets, houses, ascendant, midheaven, aspects
     """
     # Parsear fecha y hora
+    from datetime import datetime as _dt, timedelta as _td
     year, month, day = map(int, birth_data["birth_date"].split("-"))
     hh, mm = map(int, birth_data["birth_time"].split(":"))
     hour_local = hh + mm / 60.0
@@ -73,13 +74,13 @@ def calculate_natal_chart(birth_data: dict) -> dict:
     # Convertir a UT
     hour_ut = local_to_ut(hour_local, birth_data["timezone_offset"])
 
-    # Ajustar día si la hora UT cruza medianoche
-    if hour_ut < 0:
-        hour_ut += 24
-        day -= 1
-    elif hour_ut >= 24:
-        hour_ut -= 24
-        day += 1
+    # Ajustar día si la hora UT cruza medianoche (usa datetime para rollover correcto)
+    if hour_ut < 0 or hour_ut >= 24:
+        base = _dt(year, month, day)
+        delta_hours = hour_ut
+        adjusted = base + _td(hours=delta_hours)
+        year, month, day = adjusted.year, adjusted.month, adjusted.day
+        hour_ut = adjusted.hour + adjusted.minute / 60.0 + adjusted.second / 3600.0
 
     jd = to_julian_day(year, month, day, hour_ut)
 

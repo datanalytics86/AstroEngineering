@@ -202,10 +202,36 @@ for (const tp of TRANSIT_PLANETS) {
   }
 }
 
+// ── Mapa de aspectos menores a mayores para fallback ─────────────────────────
+
+const MINOR_ASPECT_FALLBACK: Record<string, string> = {
+  "Semi-sextil":      "Sextil",
+  "Semisextil":       "Sextil",
+  "Semisquare":       "Cuadratura",
+  "Semicuadratura":   "Cuadratura",
+  "Sesquicuadratura": "Cuadratura",
+  "Quincuncio":       "Oposición",
+  "Quincunx":         "Oposición",
+};
+
+function resolveAspect(aspect: string): string {
+  return MINOR_ASPECT_FALLBACK[aspect] ?? aspect;
+}
+
 // ── API pública ───────────────────────────────────────────────────────────────
 
 export function getInterpretation(key: string): TransitInterpretation | undefined {
-  return INTERPRETATIONS[key];
+  if (INTERPRETATIONS[key]) return INTERPRETATIONS[key];
+  // Attempt minor-aspect fallback: replace aspect segment in key
+  for (const [minor, major] of Object.entries(MINOR_ASPECT_FALLBACK)) {
+    const minorSlug = minor.toLowerCase().replace(/ /g, "_");
+    const majorSlug = major.toLowerCase().replace(/ /g, "_");
+    if (key.includes(minorSlug)) {
+      const fallbackKey = key.replace(minorSlug, majorSlug);
+      if (INTERPRETATIONS[fallbackKey]) return INTERPRETATIONS[fallbackKey];
+    }
+  }
+  return undefined;
 }
 
 export function getInterpretationByComponents(
@@ -213,6 +239,7 @@ export function getInterpretationByComponents(
   aspect: string,
   natalPlanet: string
 ): TransitInterpretation | undefined {
-  const key = buildKey(transitPlanet, aspect, natalPlanet);
+  const resolvedAspect = resolveAspect(aspect);
+  const key = buildKey(transitPlanet, resolvedAspect, natalPlanet);
   return INTERPRETATIONS[key];
 }

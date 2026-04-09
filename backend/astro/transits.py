@@ -160,6 +160,13 @@ def calculate_transit_timeline(
                     orb = abs(angle - asp["angle"])
 
                     if orb <= orb_limit:
+                        # Applying = orb is decreasing (transit moving toward exact)
+                        jd_next = jd + 1.0
+                        tp_next = calc_planet_position(jd_next, PLANET_IDS[tp_name])
+                        angle_next = angular_distance(tp_next["longitude"], np["longitude"])
+                        orb_next = abs(angle_next - asp["angle"])
+                        applying = orb_next < orb
+
                         raw_transits.append({
                             "date": current.date().isoformat(),
                             "transit_planet": tp_name,
@@ -170,7 +177,7 @@ def calculate_transit_timeline(
                             "aspect_name": asp["name"],
                             "orb": round(orb, 4),
                             "nature": asp["nature"],
-                            "applying": tp["speed"] > 0,
+                            "applying": applying,
                         })
 
             current += step_days

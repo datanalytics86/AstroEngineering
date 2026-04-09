@@ -137,6 +137,7 @@ export default function CartaPage() {
             planets={chart.planets}
             houses={chart.houses}
             ascendant={chart.ascendant}
+            midheaven={chart.midheaven}
             aspects={chart.aspects}
             highlightedPlanet={highlighted}
             onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}

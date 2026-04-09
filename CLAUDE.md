@@ -48,6 +48,7 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 - [x] Frontend: Loading indicator durante cálculo de tránsitos
 - [x] Frontend: Favicon SVG
 - [x] Backend: Paso adaptativo por planeta (10x speedup en tránsitos)
+- [x] Gap analysis: fixes C1-C5 (CORS, healthcheck, env var, midnight rollover), H1-H6 (arc, house#, MC/IC labels, applying field, minor aspect fallback, lon normalization), M2 (nav links), M4 (duplicate keys), H7/M1 (dead code removed), L2/L5 (deps limpiadas), M6 (package-lock.json generado)
 - [ ] Testing de precisión contra astro.com (3 cartas de prueba)
 
 ---
