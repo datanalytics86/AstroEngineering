@@ -130,3 +130,22 @@ export interface TransitInterpretation {
   advice: string;
   duration_note: string;
 }
+
+// ── Natal Interpretation Types ─────────────────────────────────────────────────
+
+export interface NatalInterpretation {
+  title: string;
+  subtitle?: string;
+  principal: string;
+  strengths: string[];
+  challenges: string[];
+  growth: string;
+  keywords: string[];
+  keyphrase: string;
+}
+
+export type ClickTarget =
+  | { type: "planet"; planet: PlanetPosition; aspects: Aspect[] }
+  | { type: "aspect"; aspect: Aspect }
+  | { type: "house"; house: HouseCusp }
+  | { type: "angle"; name: "ASC" | "DSC" | "MC" | "IC"; longitude: number; sign: string; degree_display: string }

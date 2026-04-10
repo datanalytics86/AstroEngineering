@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import type { ChartResponse, BirthData } from "@/lib/types";
+import type { ChartResponse, BirthData, ClickTarget } from "@/lib/types";
 import { loadChart, saveTransits } from "@/lib/storage";
 import ChartWheel from "@/components/ChartWheel";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
+import InterpretationModal from "@/components/InterpretationModal";
 
 export default function CartaPage() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function CartaPage() {
   const [highlighted, setHighlighted] = useState<string | undefined>(undefined);
   const [loadingTransits, setLoadingTransits] = useState(false);
   const [transitError, setTransitError] = useState<string | null>(null);
+  const [modalTarget, setModalTarget] = useState<ClickTarget | null>(null);
 
   useEffect(() => {
     if (!id) { router.push("/"); return; }
@@ -141,6 +143,7 @@ export default function CartaPage() {
             aspects={chart.aspects}
             highlightedPlanet={highlighted}
             onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}
+            onElementClick={(target) => setModalTarget(target)}
           />
           {highlighted && (
             <p className="text-xs text-center text-gold font-mono">
@@ -149,7 +152,7 @@ export default function CartaPage() {
           )}
           {!highlighted && (
             <p className="text-xs text-gray-600 text-center font-mono">
-              Haz click en un planeta para resaltar sus aspectos
+              Click en planeta, aspecto, casa o ángulo para ver interpretación
             </p>
           )}
         </div>
@@ -179,6 +182,12 @@ export default function CartaPage() {
           <AspectTable aspects={chart.aspects} highlightedPlanet={highlighted} />
         </div>
       </div>
+
+      <InterpretationModal
+        target={modalTarget}
+        allAspects={chart.aspects}
+        onClose={() => setModalTarget(null)}
+      />
     </div>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import * as d3 from "d3";
-import type { PlanetPosition, HouseCusp, AnglePoint, Aspect } from "@/lib/types";
+import type { PlanetPosition, HouseCusp, AnglePoint, Aspect, ClickTarget } from "@/lib/types";
 import { signColor, ASPECT_COLORS } from "@/lib/zodiac-utils";
 
 interface Props {
@@ -14,6 +14,7 @@ interface Props {
   transitPlanets?: PlanetPosition[];
   highlightedPlanet?: string;
   onPlanetClick?: (name: string) => void;
+  onElementClick?: (target: ClickTarget) => void;
   width?: number;
 }
 
@@ -34,17 +35,18 @@ export default function ChartWheel({
   transitPlanets,
   highlightedPlanet,
   onPlanetClick,
+  onElementClick,
   width = 600,
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  // Use refs to avoid stale closures inside D3 handlers
+  const onElementClickRef = useRef(onElementClick);
+  const onPlanetClickRef = useRef(onPlanetClick);
+  useEffect(() => { onElementClickRef.current = onElementClick; }, [onElementClick]);
+  useEffect(() => { onPlanetClickRef.current = onPlanetClick; }, [onPlanetClick]);
 
-  useEffect(() => {
+  const drawChart = useCallback(() => {
     if (!svgRef.current || !planets.length) return;
-    drawChart();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planets, houses, aspects, transitPlanets, highlightedPlanet, width]);
-
-  function drawChart() {
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
@@ -142,6 +144,7 @@ export default function ChartWheel({
       if (nextAngleRaw <= thisAngleRaw) nextAngleRaw += 360;
       const midAngle = toRad((thisAngleRaw + nextAngleRaw) / 2);
 
+      const capturedHouse = house;
       g.append("text")
         .attr("x", cx + labelR * Math.cos(midAngle - Math.PI / 2))
         .attr("y", cy + labelR * Math.sin(midAngle - Math.PI / 2))
@@ -150,7 +153,9 @@ export default function ChartWheel({
         .attr("font-size", width * 0.018)
         .attr("fill", "#4B5563")
         .attr("font-family", "JetBrains Mono, monospace")
-        .text(house.number);
+        .attr("cursor", "pointer")
+        .text(house.number)
+        .on("click", () => onElementClickRef.current?.({ type: "house", house: capturedHouse }));
     });
 
     // ── Líneas de aspectos (en el núcleo) ─────────────────────────────────────
@@ -169,14 +174,35 @@ export default function ChartWheel({
       const a2 = toRad(toAngle(p2.longitude));
       const r  = R_CORE * 0.9;
 
-      g.append("line")
+      const line = g.append("line")
         .attr("x1", cx + r * Math.cos(a1 - Math.PI / 2))
         .attr("y1", cy + r * Math.sin(a1 - Math.PI / 2))
         .attr("x2", cx + r * Math.cos(a2 - Math.PI / 2))
         .attr("y2", cy + r * Math.sin(a2 - Math.PI / 2))
         .attr("stroke", ASPECT_COLORS[asp.nature])
         .attr("stroke-width", 0.5)
-        .attr("opacity", 0.4);
+        .attr("opacity", 0.4)
+        .attr("cursor", "pointer");
+
+      // Hitbox más fácil de clickear
+      const midX = (cx + r * Math.cos(a1 - Math.PI / 2) + cx + r * Math.cos(a2 - Math.PI / 2)) / 2;
+      const midY = (cy + r * Math.sin(a1 - Math.PI / 2) + cy + r * Math.sin(a2 - Math.PI / 2)) / 2;
+      const capturedAsp = asp;
+      const hitLine = g.append("line")
+        .attr("x1", cx + r * Math.cos(a1 - Math.PI / 2))
+        .attr("y1", cy + r * Math.sin(a1 - Math.PI / 2))
+        .attr("x2", cx + r * Math.cos(a2 - Math.PI / 2))
+        .attr("y2", cy + r * Math.sin(a2 - Math.PI / 2))
+        .attr("stroke", "transparent")
+        .attr("stroke-width", 12)
+        .attr("cursor", "pointer");
+      hitLine.append("title").text(`${asp.planet1} ${asp.aspect_name} ${asp.planet2} (${asp.orb.toFixed(2)}°)`);
+      hitLine.on("click", () => {
+        onElementClickRef.current?.({ type: "aspect", aspect: capturedAsp });
+      });
+      line.on("click", () => {
+        onElementClickRef.current?.({ type: "aspect", aspect: capturedAsp });
+      });
     });
 
     // ── Planetas natales ──────────────────────────────────────────────────────
@@ -226,8 +252,15 @@ export default function ChartWheel({
         .attr("cursor", "pointer");
 
       hitbox.append("title").text(`${p.name} ${p.degree_display} ${p.sign} (Casa ${p.house})`);
-      hitbox.on("click", () => onPlanetClick?.(p.name));
-      pText.on("click", () => onPlanetClick?.(p.name));
+      const capturedPlanet = p;
+      hitbox.on("click", () => {
+        onPlanetClickRef.current?.(capturedPlanet.name);
+        onElementClickRef.current?.({ type: "planet", planet: capturedPlanet, aspects });
+      });
+      pText.on("click", () => {
+        onPlanetClickRef.current?.(capturedPlanet.name);
+        onElementClickRef.current?.({ type: "planet", planet: capturedPlanet, aspects });
+      });
     });
 
     // ── Planetas transitantes (anillo exterior al natal) ──────────────────────
@@ -257,7 +290,12 @@ export default function ChartWheel({
     // ── ASC / MC labels ───────────────────────────────────────────────────────
     const labelR = R_ZODIAC_IN - 12;
 
-    function addAngleLabel(lon: number, label: string, color: string) {
+    function addAngleLabel(
+      lon: number,
+      label: "ASC" | "DSC" | "MC" | "IC",
+      color: string,
+      anglePoint: AnglePoint,
+    ) {
       const angle = toRad(toAngle(lon));
       g.append("text")
         .attr("x", cx + labelR * Math.cos(angle - Math.PI / 2))
@@ -268,14 +306,35 @@ export default function ChartWheel({
         .attr("fill", color)
         .attr("font-family", "JetBrains Mono, monospace")
         .attr("font-weight", "bold")
-        .text(label);
+        .attr("cursor", "pointer")
+        .text(label)
+        .on("click", () =>
+          onElementClickRef.current?.({
+            type: "angle",
+            name: label,
+            longitude: lon,
+            sign: anglePoint.sign,
+            degree_display: anglePoint.degree_display,
+          }),
+        );
     }
 
-    addAngleLabel(ascendant.longitude, "ASC", "#C9A84C");
-    addAngleLabel((ascendant.longitude + 180) % 360, "DSC", "#9CA3AF");
-    addAngleLabel(midheaven.longitude, "MC", "#A78BFA");
-    addAngleLabel((midheaven.longitude + 180) % 360, "IC", "#6B7280");
-  }
+    addAngleLabel(ascendant.longitude, "ASC", "#C9A84C", ascendant);
+    addAngleLabel((ascendant.longitude + 180) % 360, "DSC", "#9CA3AF", {
+      longitude: (ascendant.longitude + 180) % 360,
+      sign: ascendant.sign,
+      degree_display: ascendant.degree_display,
+    });
+    addAngleLabel(midheaven.longitude, "MC", "#A78BFA", midheaven);
+    addAngleLabel((midheaven.longitude + 180) % 360, "IC", "#6B7280", {
+      longitude: (midheaven.longitude + 180) % 360,
+      sign: midheaven.sign,
+      degree_display: midheaven.degree_display,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planets, houses, aspects, transitPlanets, highlightedPlanet, width]);
+
+  useEffect(() => { drawChart(); }, [drawChart]);
 
   return (
     <div className="flex items-center justify-center">
