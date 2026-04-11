@@ -42,18 +42,38 @@ DOMINANT_THEMES = {
 
 
 def find_exact_aspect_date(
-    planet_id: int, natal_longitude: float, aspect_angle: float, approx_jd: float
+    planet_id: int,
+    natal_longitude: float,
+    aspect_angle: float,
+    approx_jd: float,
+    search_radius_days: int = 45,
 ) -> str:
     """
-    Búsqueda binaria para encontrar el momento exacto del aspecto.
-    Precisión: ~1 minuto de tiempo.
+    Encuentra el momento exacto de un aspecto en dos fases:
+      1) Barrido grueso ±search_radius_days (paso 1 día) para localizar la pasada
+         más cercana — tolera errores grandes en el approx_jd de inicio,
+         típicos cuando un tránsito tiene múltiples pasadas retrógradas.
+      2) Refinamiento binario ±1 día con 20 iteraciones (precisión ~1 minuto).
     """
-    step = 0.5
     best_jd = approx_jd
     best_orb = 999.0
 
+    # Fase 1: barrido grueso
+    for offset in range(-search_radius_days, search_radius_days + 1):
+        test_jd = approx_jd + offset
+        pos = calc_planet_position(test_jd, planet_id)
+        if pos is None:
+            continue
+        angle = angular_distance(pos["longitude"], natal_longitude)
+        orb = abs(angle - aspect_angle)
+        if orb < best_orb:
+            best_orb = orb
+            best_jd = test_jd
+
+    # Fase 2: refinamiento binario simétrico
+    step = 0.5
     for _ in range(20):
-        for direction in [-1, 0, 1]:
+        for direction in (-1, 1):
             test_jd = best_jd + direction * step
             pos = calc_planet_position(test_jd, planet_id)
             if pos is None:
@@ -168,9 +188,12 @@ def calculate_transit_timeline(
                         # Applying = orb is decreasing (transit moving toward exact)
                         jd_next = jd + 1.0
                         tp_next = calc_planet_position(jd_next, PLANET_IDS[tp_name])
-                        angle_next = angular_distance(tp_next["longitude"], np["longitude"])
-                        orb_next = abs(angle_next - asp["angle"])
-                        applying = orb_next < orb
+                        if tp_next is None:
+                            applying = False
+                        else:
+                            angle_next = angular_distance(tp_next["longitude"], np["longitude"])
+                            orb_next = abs(angle_next - asp["angle"])
+                            applying = orb_next < orb
 
                         raw_transits.append({
                             "date": current.date().isoformat(),

@@ -47,7 +47,12 @@ def angular_distance(lon1: float, lon2: float) -> float:
 
 
 def find_aspects(planets: list[dict]) -> list[dict]:
-    """Detecta aspectos entre todos los pares de planetas de la lista."""
+    """Detecta aspectos entre todos los pares de planetas de la lista.
+
+    Aplicativo/separativo se determina comparando el orbe actual contra
+    el orbe proyectado a +1 día con las velocidades natales. Si el orbe
+    decrece, el aspecto es aplicativo; si crece, es separativo.
+    """
     aspects = []
     for i, p1 in enumerate(planets):
         for p2 in planets[i + 1:]:
@@ -55,8 +60,14 @@ def find_aspects(planets: list[dict]) -> list[dict]:
             for asp in ASPECTS:
                 orb = abs(angle - asp["angle"])
                 if orb <= asp["orb"]:
-                    # Determinar si es aplicativo (simplificado por velocidad relativa)
-                    applying = (p1.get("speed", 0) - p2.get("speed", 0)) > 0
+                    # Proyectar 1 día hacia adelante con velocidades natales.
+                    # Si el orbe decrece → aplicativo; si crece → separativo.
+                    p1_next = (p1["longitude"] + p1.get("speed", 0)) % 360
+                    p2_next = (p2["longitude"] + p2.get("speed", 0)) % 360
+                    next_angle = angular_distance(p1_next, p2_next)
+                    next_orb = abs(next_angle - asp["angle"])
+                    applying = next_orb < orb
+
                     aspects.append({
                         "planet1": p1["name"],
                         "planet2": p2["name"],

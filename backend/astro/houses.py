@@ -27,12 +27,14 @@ def longitude_to_sign(lon: float) -> dict:
 
 
 def degrees_to_dms(degrees: float) -> str:
-    """Convierte grados decimales a formato °'\" (ej: 24°14'02\")"""
-    d = int(degrees)
-    m_float = (degrees - d) * 60
-    m = int(m_float)
-    s = int((m_float - m) * 60)
-    return f"{d:02d}°{m:02d}'{s:02d}\""
+    """Convierte grados decimales a formato °'\" (ej: 24°14'02\").
+    Usa redondeo al segundo más cercano para evitar errores de truncación flotante.
+    Maneja el acarreo 60"→1' y 60'→1° correctamente.
+    """
+    total_seconds = round(degrees * 3600)
+    d, rem = divmod(total_seconds, 3600)
+    m, s = divmod(rem, 60)
+    return f"{int(d):02d}°{int(m):02d}'{int(s):02d}\""
 
 
 def calc_houses(jd: float, lat: float, lon: float) -> dict:
