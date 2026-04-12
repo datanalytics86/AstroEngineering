@@ -97,6 +97,8 @@ class MonthlyForecast(BaseModel):
     transits_active: list[TransitEvent]
     intensity_score: float
     dominant_theme: str
+    theme_summary: str = ""
+    life_areas_affected: list[str] = []
 
 
 class ExactAspectEvent(BaseModel):

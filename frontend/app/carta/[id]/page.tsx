@@ -8,6 +8,8 @@ import ChartWheel from "@/components/ChartWheel";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
 import InterpretationModal from "@/components/InterpretationModal";
+import ChartSummaryModal from "@/components/ChartSummary";
+import { generateChartSummary } from "@/lib/chart-summary";
 
 export default function CartaPage() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function CartaPage() {
   const [loadingTransits, setLoadingTransits] = useState(false);
   const [transitError, setTransitError] = useState<string | null>(null);
   const [modalTarget, setModalTarget] = useState<ClickTarget | null>(null);
+  const [showSummary, setShowSummary] = useState(false);
 
   useEffect(() => {
     if (!id) { router.push("/"); return; }
@@ -95,6 +98,12 @@ export default function CartaPage() {
             className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
           >
             ← Nueva carta
+          </button>
+          <button
+            onClick={() => setShowSummary(true)}
+            className="border border-blue-200 text-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors font-mono flex items-center gap-1.5"
+          >
+            ✦ Resumen ejecutivo
           </button>
           <button
             onClick={handleCalcTransits}
@@ -189,6 +198,14 @@ export default function CartaPage() {
         allAspects={chart.aspects}
         onClose={() => setModalTarget(null)}
       />
+
+      {showSummary && (
+        <ChartSummaryModal
+          summary={generateChartSummary(chart)}
+          name={chart.name}
+          onClose={() => setShowSummary(false)}
+        />
+      )}
     </div>
   );
 }

@@ -99,6 +99,23 @@ export interface MonthlyForecast {
   transits_active: TransitEvent[];
   intensity_score: number;    // 0-10
   dominant_theme: string;
+  theme_summary: string;
+  life_areas_affected: string[];
+}
+
+export interface ChartSummary {
+  headline: string;
+  core_identity: string;
+  emotional_nature: string;
+  life_purpose: string;
+  key_strengths: string[];
+  key_challenges: string[];
+  dominant_element: string;
+  dominant_modality: string;
+  house_emphasis: { house: number; domain: string; planet_count: number };
+  stelliums: { sign: string; planets: string[] }[];
+  notable_aspects: string[];
+  advice: string;
 }
 
 export interface ExactAspectEvent {

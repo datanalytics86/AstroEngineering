@@ -27,7 +27,7 @@ SCAN_STEP: dict[str, int] = {
 
 DOMINANT_THEMES = {
     ("Júpiter", "armonioso"):    "expansión y oportunidades",
-    ("Júpiter", "tenso"):        "exceso o crecimiento con fricción",
+    ("Júpiter", "tenso"):        "crecimiento con fricciones",
     ("Saturno", "armonioso"):    "disciplina y logros estructurados",
     ("Saturno", "tenso"):        "restricciones y lecciones kármicas",
     ("Urano", "armonioso"):      "cambios positivos e innovación",
@@ -38,6 +38,32 @@ DOMINANT_THEMES = {
     ("Plutón", "tenso"):         "crisis y regeneración profunda",
     ("Marte", "armonioso"):      "energía y acción enfocada",
     ("Marte", "tenso"):          "conflictos y decisiones urgentes",
+}
+
+# Narrativa de 1-2 oraciones para cada combinación planeta/naturaleza
+MONTHLY_SUMMARIES = {
+    ("Júpiter", "armonioso"):    "Las energías favorecen el crecimiento y la expansión. Aprovecha para avanzar en proyectos de largo plazo y ampliar horizontes.",
+    ("Júpiter", "tenso"):        "Oportunidades que vienen con exceso o desafíos de juicio. Avanza, pero con discernimiento y moderación.",
+    ("Saturno", "armonioso"):    "El trabajo disciplinado consolida logros duraderos. Momento propicio para asentar estructuras y compromisos.",
+    ("Saturno", "tenso"):        "Período de pruebas y responsabilidades inevitables. Las restricciones actuales forjan madurez y carácter.",
+    ("Urano", "armonioso"):      "Cambios inesperados que liberan y renuevan. Mantente abierto a lo novedoso: puede transformar positivamente tu rumbo.",
+    ("Urano", "tenso"):          "Disrupciones e imprevistos rompen lo establecido. Flexibilidad y adaptabilidad serán tus mejores aliados.",
+    ("Neptuno", "armonioso"):    "Intuición y creatividad en su punto más alto. Período ideal para proyectos artísticos, espirituales o de sanación.",
+    ("Neptuno", "tenso"):        "Riesgo de confusión, evasión o ilusiones. Mantén los pies en la tierra y valida decisiones importantes con hechos concretos.",
+    ("Plutón", "armonioso"):     "Transformación profunda que empodera. Proceso de regeneración hacia una versión más auténtica y capaz.",
+    ("Plutón", "tenso"):         "Ciclo de crisis y regeneración intensa. Lo que cae ya no servía; los cambios abren paso a algo más verdadero.",
+    ("Marte", "armonioso"):      "Energía, impulso y acción decidida. Momento para iniciar, avanzar y demostrar coraje.",
+    ("Marte", "tenso"):          "Tensión, conflictos o decisiones urgentes. Canaliza la energía físicamente y evita reacciones impulsivas.",
+}
+
+# Áreas de vida por planeta transitante
+LIFE_AREAS_MAP: dict[str, list[str]] = {
+    "Júpiter": ["expansión personal", "carrera y proyectos", "viajes y educación"],
+    "Saturno": ["estructura y disciplina", "carrera y logros", "responsabilidades"],
+    "Urano":   ["cambios inesperados", "libertad e innovación", "tecnología"],
+    "Neptuno": ["espiritualidad y creatividad", "salud emocional", "intuición"],
+    "Plutón":  ["transformaciones profundas", "poder personal", "psicología"],
+    "Marte":   ["energía y acción", "relaciones y conflictos", "decisiones urgentes"],
 }
 
 
@@ -287,10 +313,17 @@ def calculate_transit_timeline(
 def build_monthly_timeline(
     transits: list[dict], start_date: datetime, end_date: datetime
 ) -> list[dict]:
-    """Agrupa tránsitos activos por mes y calcula score de intensidad."""
+    """
+    Agrupa tránsitos activos por mes con intensidad ponderada por fase y narrativa.
+
+    Mejoras respecto a la versión anterior:
+    - Intensidad ponderada: exactos (1.8×) > entrando (1.4×) > saliendo (0.8×) > continuos (0.4×)
+    - Tema dominante prioriza tránsitos exactos o entrantes este mes (no solo el de mayor score)
+    - Muestra tránsitos variados: exactos primero, luego entrantes, luego continuos por orbe
+    - Incluye narrativa (theme_summary) y áreas de vida (life_areas_affected)
+    """
     months: dict[str, list] = {}
     current = start_date.replace(day=1)
-
     while current <= end_date:
         month_key = current.strftime("%Y-%m")
         months[month_key] = []
@@ -308,23 +341,94 @@ def build_monthly_timeline(
 
     timeline = []
     for month_key, month_transits in sorted(months.items()):
-        if month_transits:
-            total_score = sum(t["score"] for t in month_transits)
-            intensity = round(total_score / len(month_transits), 2)
-            top = max(month_transits, key=lambda t: t["score"])
-            theme = DOMINANT_THEMES.get(
-                (top["transit_planet"], top["nature"]),
-                "período de transición",
-            )
+        if not month_transits:
+            timeline.append({
+                "month": month_key,
+                "transits_active": [],
+                "intensity_score": 0.0,
+                "dominant_theme": "período estable",
+                "theme_summary": "Mes de relativa calma astrológica. Buen momento para consolidar lo ganado.",
+                "life_areas_affected": [],
+            })
+            continue
+
+        # Clasificar por fase
+        exact_this = [t for t in month_transits
+                      if t.get("exact_date") and t["exact_date"][:7] == month_key]
+        entering_this = [t for t in month_transits
+                         if t["enters_orb"][:7] == month_key and t not in exact_this]
+        leaving_this = [t for t in month_transits
+                        if t["leaves_orb"][:7] == month_key
+                        and t not in exact_this and t not in entering_this]
+        ongoing = [t for t in month_transits
+                   if t not in exact_this and t not in entering_this and t not in leaving_this]
+
+        # Intensidad ponderada por fase + orbe
+        weighted_total = 0.0
+        for t in month_transits:
+            if t in exact_this:
+                phase_mult = 1.8
+            elif t in entering_this:
+                phase_mult = 1.4
+            elif t in leaving_this:
+                phase_mult = 0.8
+            else:
+                phase_mult = 0.4  # Continuos de larga duración: bajo impacto mensual
+            orb_factor = max(0.4, 1.2 - t["orb"] * 0.15)
+            weighted_total += t["score"] * phase_mult * orb_factor
+
+        intensity = min(10.0, round(weighted_total / max(len(month_transits), 1), 2))
+
+        # Tema: prioridad → exacto → entrante → orbe más cerrado
+        theme_source = None
+        if exact_this:
+            theme_source = max(exact_this, key=lambda t: t["score"])
+        elif entering_this:
+            theme_source = max(entering_this, key=lambda t: t["score"])
         else:
-            intensity = 0.0
-            theme = "período estable"
+            theme_source = min(month_transits, key=lambda t: t["orb"])
+
+        theme = DOMINANT_THEMES.get(
+            (theme_source["transit_planet"], theme_source["nature"]),
+            "período de transición",
+        )
+        theme_summary = MONTHLY_SUMMARIES.get(
+            (theme_source["transit_planet"], theme_source["nature"]),
+            "Período de transición y ajustes. Mantente abierto a las señales del entorno.",
+        )
+
+        # Áreas de vida (deduplicate, max 4)
+        life_areas: list[str] = []
+        seen_planets: set[str] = set()
+        for t in sorted(month_transits, key=lambda x: x["score"], reverse=True):
+            if t["transit_planet"] not in seen_planets:
+                for area in LIFE_AREAS_MAP.get(t["transit_planet"], [])[:2]:
+                    if area not in life_areas:
+                        life_areas.append(area)
+                seen_planets.add(t["transit_planet"])
+        life_areas = life_areas[:4]
+
+        # Orden de visualización: exactos → entrantes → continuos por orbe (dedup por (tp, np, asp))
+        display_order = (
+            sorted(exact_this, key=lambda t: -t["score"]) +
+            sorted(entering_this, key=lambda t: -t["score"]) +
+            sorted(leaving_this + ongoing, key=lambda t: t["orb"])
+        )
+        seen_keys: set[tuple] = set()
+        display_transits = []
+        for t in display_order:
+            k = (t["transit_planet"], t["natal_planet"], t["aspect_name"])
+            if k not in seen_keys:
+                seen_keys.add(k)
+                display_transits.append(t)
 
         timeline.append({
             "month": month_key,
-            "transits_active": month_transits[:5],
+            "transits_active": display_transits[:5],
             "intensity_score": intensity,
             "dominant_theme": theme,
+            "theme_summary": theme_summary,
+            "life_areas_affected": life_areas,
         })
 
     return timeline
