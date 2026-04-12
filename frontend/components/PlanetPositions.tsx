@@ -11,15 +11,15 @@ interface Props {
 
 export default function PlanetPositions({ planets, highlightedPlanet, onPlanetClick }: Props) {
   return (
-    <div className="bg-space-card border border-space-border rounded-xl overflow-hidden">
-      <div className="px-4 py-3 border-b border-space-border">
-        <h3 className="text-sm uppercase tracking-widest text-gray-500 font-mono">
+    <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
+      <div className="px-4 py-3 border-b border-border">
+        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-mono">
           Posiciones Planetarias
         </h3>
       </div>
       <table className="w-full text-sm font-mono">
         <thead>
-          <tr className="text-xs text-gray-600 uppercase">
+          <tr className="text-xs text-slate-400 uppercase">
             <th className="text-left px-4 py-2">Planeta</th>
             <th className="text-left px-4 py-2">Signo</th>
             <th className="text-left px-4 py-2">Posición</th>
@@ -32,28 +32,28 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
             <tr
               key={p.name}
               onClick={() => onPlanetClick?.(p.name)}
-              className={`border-t border-space-border cursor-pointer transition-colors ${
+              className={`border-t border-border cursor-pointer transition-colors ${
                 highlightedPlanet === p.name
-                  ? "bg-gold/10"
-                  : "hover:bg-space-muted/20"
+                  ? "bg-blue-50"
+                  : "hover:bg-slate-50"
               }`}
             >
               <td className="px-4 py-2.5 flex items-center gap-2">
                 <span className="text-lg">{p.symbol}</span>
-                <span className="text-gray-300">{p.name}</span>
+                <span className="text-slate-700">{p.name}</span>
               </td>
               <td className="px-4 py-2.5">
                 <span style={{ color: signColor(p.sign) }}>
                   {p.sign_symbol} {p.sign}
                 </span>
               </td>
-              <td className="px-4 py-2.5 text-gray-400">{p.degree_display}</td>
-              <td className="px-4 py-2.5 text-center text-gold">{p.house}</td>
+              <td className="px-4 py-2.5 text-slate-500">{p.degree_display}</td>
+              <td className="px-4 py-2.5 text-center text-blue-600 font-semibold">{p.house}</td>
               <td className="px-4 py-2.5 text-center">
                 {p.retrograde ? (
-                  <span className="text-red-400 text-xs">℞</span>
+                  <span className="text-red-500 text-xs">℞</span>
                 ) : (
-                  <span className="text-gray-700">—</span>
+                  <span className="text-slate-300">—</span>
                 )}
               </td>
             </tr>

@@ -70,8 +70,8 @@ export default function CartaPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="text-gold text-3xl mb-3 animate-pulse">✦</div>
-          <p className="text-gray-500 font-mono text-sm">Cargando carta natal…</p>
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-slate-400 font-mono text-sm">Cargando carta natal…</p>
         </div>
       </div>
     );
@@ -82,28 +82,28 @@ export default function CartaPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-serif text-3xl text-gold">{chart.name}</h1>
-          <p className="text-gray-500 font-mono text-sm mt-1">
+          <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{chart.name}</h1>
+          <p className="text-slate-400 font-mono text-sm mt-1">
             {chart.birth_date} · {chart.birth_time} ·{" "}
-            <span className="text-gold">{chart.ascendant.sign}</span> Ascendente ·{" "}
-            <span className="text-gray-400">MC {chart.midheaven.sign}</span>
+            <span className="text-blue-600 font-semibold">{chart.ascendant.sign}</span> Ascendente ·{" "}
+            <span className="text-sky-500">MC {chart.midheaven.sign}</span>
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => router.push("/")}
-            className="border border-space-border text-gray-400 px-4 py-2 rounded-lg text-sm hover:border-gold hover:text-gold transition-colors font-mono"
+            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
           >
             ← Nueva carta
           </button>
           <button
             onClick={handleCalcTransits}
             disabled={loadingTransits}
-            className="bg-gold text-space-bg px-6 py-2 rounded-lg text-sm font-semibold hover:bg-yellow-500 transition-colors disabled:opacity-50 font-mono flex items-center gap-2"
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 font-mono flex items-center gap-2"
           >
             {loadingTransits ? (
               <>
-                <span className="inline-block w-3 h-3 border-2 border-space-bg border-t-transparent rounded-full animate-spin" />
+                <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Calculando tránsitos…
               </>
             ) : (
@@ -114,18 +114,18 @@ export default function CartaPage() {
       </div>
 
       {transitError && (
-        <div className="mb-6 bg-red-900/20 border border-red-800 rounded-lg p-4 text-sm text-red-400 font-mono">
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600 font-mono">
           Error: {transitError}
         </div>
       )}
 
       {loadingTransits && (
-        <div className="mb-6 bg-space-card border border-space-border rounded-xl p-5 text-center">
-          <div className="text-gold text-2xl mb-2 animate-pulse">🪐</div>
-          <p className="text-gray-300 text-sm font-mono mb-1">Calculando tránsitos para los próximos 12 meses…</p>
-          <p className="text-gray-600 text-xs">Este proceso tarda 15-30 segundos. No cierres la ventana.</p>
-          <div className="mt-4 w-full bg-space-bg rounded-full h-1 overflow-hidden">
-            <div className="h-1 bg-gold rounded-full animate-[loading_2s_ease-in-out_infinite]" style={{ width: "60%" }} />
+        <div className="mb-6 bg-white border border-border rounded-xl p-5 text-center shadow-card">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-slate-700 text-sm font-mono mb-1">Calculando tránsitos para los próximos 12 meses…</p>
+          <p className="text-slate-400 text-xs">Este proceso tarda 15-30 segundos. No cierres la ventana.</p>
+          <div className="mt-4 w-full bg-slate-100 rounded-full h-1 overflow-hidden">
+            <div className="h-1 bg-blue-600 rounded-full animate-[loading_2s_ease-in-out_infinite]" style={{ width: "60%" }} />
           </div>
         </div>
       )}
@@ -134,24 +134,25 @@ export default function CartaPage() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Rueda zodiacal */}
         <div className="space-y-4">
-          <h2 className="font-serif text-xl text-gray-300">Rueda Natal</h2>
-          <ChartWheel
-            planets={chart.planets}
-            houses={chart.houses}
-            ascendant={chart.ascendant}
-            midheaven={chart.midheaven}
-            aspects={chart.aspects}
-            highlightedPlanet={highlighted}
-            onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}
-            onElementClick={(target) => setModalTarget(target)}
-          />
-          {highlighted && (
-            <p className="text-xs text-center text-gold font-mono">
+          <h2 className="font-semibold text-lg text-slate-700">Rueda Natal</h2>
+          <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
+            <ChartWheel
+              planets={chart.planets}
+              houses={chart.houses}
+              ascendant={chart.ascendant}
+              midheaven={chart.midheaven}
+              aspects={chart.aspects}
+              highlightedPlanet={highlighted}
+              onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}
+              onElementClick={(target) => setModalTarget(target)}
+            />
+          </div>
+          {highlighted ? (
+            <p className="text-xs text-center text-blue-600 font-mono">
               {highlighted} — click de nuevo para deseleccionar
             </p>
-          )}
-          {!highlighted && (
-            <p className="text-xs text-gray-600 text-center font-mono">
+          ) : (
+            <p className="text-xs text-slate-400 text-center font-mono">
               Click en planeta, aspecto, casa o ángulo para ver interpretación
             </p>
           )}
@@ -161,15 +162,15 @@ export default function CartaPage() {
         <div className="space-y-6">
           {/* Ángulos */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-space-card border border-space-border rounded-xl p-4">
-              <div className="text-xs text-gray-600 uppercase tracking-widest font-mono mb-1">Ascendente</div>
-              <div className="text-gold font-mono text-lg">{chart.ascendant.sign}</div>
-              <div className="text-gray-400 font-mono text-sm">{chart.ascendant.degree_display}</div>
+            <div className="bg-white border border-border rounded-xl p-4 shadow-card">
+              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Ascendente</div>
+              <div className="text-blue-600 font-mono text-lg font-semibold">{chart.ascendant.sign}</div>
+              <div className="text-slate-500 font-mono text-sm">{chart.ascendant.degree_display}</div>
             </div>
-            <div className="bg-space-card border border-space-border rounded-xl p-4">
-              <div className="text-xs text-gray-600 uppercase tracking-widest font-mono mb-1">Medio Cielo</div>
-              <div className="text-gold font-mono text-lg">{chart.midheaven.sign}</div>
-              <div className="text-gray-400 font-mono text-sm">{chart.midheaven.degree_display}</div>
+            <div className="bg-white border border-border rounded-xl p-4 shadow-card">
+              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Medio Cielo</div>
+              <div className="text-sky-500 font-mono text-lg font-semibold">{chart.midheaven.sign}</div>
+              <div className="text-slate-500 font-mono text-sm">{chart.midheaven.degree_display}</div>
             </div>
           </div>
 
