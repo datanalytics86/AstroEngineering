@@ -14,23 +14,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@400;600;700&family=Inter:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="bg-space-bg text-gray-100 font-sans antialiased min-h-screen">
-        <header className="border-b border-space-border px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-gold text-2xl">✦</span>
-            <span className="font-serif text-xl text-gold tracking-wide">AstroEngine Pro</span>
+      <body className="bg-base text-slate-900 font-sans antialiased min-h-screen">
+        <header className="border-b border-border bg-white/80 backdrop-blur-sm sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="font-semibold text-slate-900 tracking-tight text-lg">AstroEngine</span>
+            <span className="text-xs font-mono bg-blue-600 text-white px-1.5 py-0.5 rounded font-semibold">Pro</span>
           </div>
-          <nav className="hidden md:flex gap-6 text-sm text-gray-400">
-            <a href="/" className="hover:text-gold transition-colors">Carta Natal</a>
-            <a href="https://astro.com" target="_blank" rel="noopener noreferrer" className="hover:text-gold transition-colors">Validar en astro.com</a>
+          <nav className="hidden md:flex gap-6 text-sm text-slate-500">
+            <a href="/" className="hover:text-blue-600 transition-colors">Carta Natal</a>
+            <a href="https://astro.com" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 transition-colors">Validar en astro.com</a>
           </nav>
         </header>
         <main>{children}</main>
-        <footer className="border-t border-space-border mt-16 px-6 py-6 text-center text-xs text-gray-600">
+        <footer className="border-t border-border mt-16 px-6 py-6 text-center text-xs text-slate-400 font-mono">
           AstroEngine Pro — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com
         </footer>
       </body>

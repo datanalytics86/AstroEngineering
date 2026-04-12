@@ -18,24 +18,26 @@ export const SIGN_ELEMENT: Record<string, Element> = {
   "Cáncer": "agua",  Escorpio: "agua",    Piscis: "agua",
 };
 
+// Colores ajustados para fondo claro
 export const ELEMENT_COLORS: Record<Element, string> = {
-  fuego: "#DC2626",
-  tierra: "#16A34A",
-  aire: "#EAB308",
-  agua: "#2563EB",
+  fuego: "#EF4444",
+  tierra: "#10B981",
+  aire:   "#D97706",   // amber-600, más visible sobre blanco
+  agua:   "#3B82F6",
 };
 
 export function signColor(sign: string): string {
   const element = SIGN_ELEMENT[sign];
-  return element ? ELEMENT_COLORS[element] : "#6B7280";
+  return element ? ELEMENT_COLORS[element] : "#64748B";
 }
 
 /** Convierte grados decimales a formato °'\" */
 export function toDMS(degrees: number): string {
-  const d = Math.floor(degrees);
-  const mFloat = (degrees - d) * 60;
-  const m = Math.floor(mFloat);
-  const s = Math.floor((mFloat - m) * 60);
+  const total = Math.round(degrees * 3600);
+  const d = Math.floor(total / 3600);
+  const rem = total % 3600;
+  const m = Math.floor(rem / 60);
+  const s = rem % 60;
   return `${d.toString().padStart(2, "0")}°${m.toString().padStart(2, "0")}'${s.toString().padStart(2, "0")}"`;
 }
 
@@ -58,15 +60,15 @@ export function formatLongitude(lon: number): string {
 }
 
 export const ASPECT_COLORS: Record<string, string> = {
-  armonioso: "#22C55E",
-  tenso:     "#EF4444",
-  neutro:    "#60A5FA",
-  menor:     "#9CA3AF",
+  armonioso: "#10B981",   // emerald-500
+  tenso:     "#EF4444",   // red-500
+  neutro:    "#6366F1",   // indigo-500
+  menor:     "#A78BFA",   // violet-400
 };
 
 export const IMPORTANCE_COLORS: Record<string, string> = {
-  "crítica": "#DC2626",
+  "crítica": "#EF4444",
   alta:      "#F97316",
-  media:     "#EAB308",
-  baja:      "#22C55E",
+  media:     "#F59E0B",
+  baja:      "#10B981",
 };

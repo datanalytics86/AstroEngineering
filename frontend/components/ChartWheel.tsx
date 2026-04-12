@@ -76,7 +76,7 @@ export default function ChartWheel({
     // ── Fondo ─────────────────────────────────────────────────────────────────
     g.append("circle")
       .attr("cx", cx).attr("cy", cy).attr("r", R_ZODIAC_OUT)
-      .attr("fill", "#0A0E1A").attr("stroke", "#374151").attr("stroke-width", 1);
+      .attr("fill", "#FFFFFF").attr("stroke", "#E5E9F0").attr("stroke-width", 1);
 
     // ── Anillo zodiacal (12 sectores de 30°) ──────────────────────────────────
     for (let i = 0; i < 12; i++) {
@@ -96,8 +96,8 @@ export default function ChartWheel({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .attr("d", arc(null as any) as string)
         .attr("transform", `translate(${cx},${cy})`)
-        .attr("fill", `${signColor(SIGN_FULL[i])}22`)
-        .attr("stroke", "#1F2937")
+        .attr("fill", `${signColor(SIGN_FULL[i])}18`)
+        .attr("stroke", "#E5E9F0")
         .attr("stroke-width", 0.5);
 
       // Símbolo del signo en el centro del sector
@@ -118,7 +118,7 @@ export default function ChartWheel({
       g.append("circle")
         .attr("cx", cx).attr("cy", cy).attr("r", r)
         .attr("fill", "none")
-        .attr("stroke", "#1F2937")
+        .attr("stroke", "#CBD5E1")
         .attr("stroke-width", 0.5);
     });
 
@@ -132,7 +132,7 @@ export default function ChartWheel({
         .attr("y1", cy + R_ZODIAC_IN * Math.sin(angle - Math.PI / 2))
         .attr("x2", cx + R_CORE * Math.cos(angle - Math.PI / 2))
         .attr("y2", cy + R_CORE * Math.sin(angle - Math.PI / 2))
-        .attr("stroke", isAngular ? "#C9A84C" : "#374151")
+        .attr("stroke", isAngular ? "#2563EB" : "#CBD5E1")
         .attr("stroke-width", isAngular ? 1 : 0.5)
         .attr("stroke-dasharray", isAngular ? "none" : "2,3");
 
@@ -151,7 +151,7 @@ export default function ChartWheel({
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "central")
         .attr("font-size", width * 0.018)
-        .attr("fill", "#4B5563")
+        .attr("fill", "#94A3B8")
         .attr("font-family", "JetBrains Mono, monospace")
         .attr("cursor", "pointer")
         .text(house.number)
@@ -220,9 +220,9 @@ export default function ChartWheel({
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "central")
         .attr("font-size", width * 0.028)
-        .attr("fill", isHighlighted ? "#C9A84C" : "#E5E7EB")
+        .attr("fill", isHighlighted ? "#2563EB" : "#1E293B")
         .attr("cursor", "pointer")
-        .attr("filter", isHighlighted ? "drop-shadow(0 0 4px #C9A84C)" : "none")
+        .attr("filter", isHighlighted ? "drop-shadow(0 0 4px #2563EB)" : "none")
         .text(p.symbol);
 
       // Grado bajo el símbolo
@@ -232,7 +232,7 @@ export default function ChartWheel({
         .attr("text-anchor", "middle")
         .attr("dominant-baseline", "central")
         .attr("font-size", width * 0.014)
-        .attr("fill", "#6B7280")
+        .attr("fill", "#94A3B8")
         .attr("font-family", "JetBrains Mono, monospace")
         .text(`${Math.floor(p.degree_in_sign)}°`);
 
@@ -268,7 +268,7 @@ export default function ChartWheel({
       const tR = R_TRANSIT;
       g.append("circle")
         .attr("cx", cx).attr("cy", cy).attr("r", tR + 10)
-        .attr("fill", "none").attr("stroke", "#1F2937").attr("stroke-width", 0.5);
+        .attr("fill", "none").attr("stroke", "#E5E9F0").attr("stroke-width", 0.5);
 
       transitPlanets.forEach((p) => {
         const angle = toRad(toAngle(p.longitude));
@@ -280,7 +280,7 @@ export default function ChartWheel({
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "central")
           .attr("font-size", width * 0.024)
-          .attr("fill", "#60A5FA")
+          .attr("fill", "#3B82F6")
           .text(p.symbol)
           .append("title")
           .text(`${p.name} (tránsito) ${p.degree_display} ${p.sign}`);
@@ -319,14 +319,14 @@ export default function ChartWheel({
         );
     }
 
-    addAngleLabel(ascendant.longitude, "ASC", "#C9A84C", ascendant);
-    addAngleLabel((ascendant.longitude + 180) % 360, "DSC", "#9CA3AF", {
+    addAngleLabel(ascendant.longitude, "ASC", "#2563EB", ascendant);
+    addAngleLabel((ascendant.longitude + 180) % 360, "DSC", "#94A3B8", {
       longitude: (ascendant.longitude + 180) % 360,
       sign: ascendant.sign,
       degree_display: ascendant.degree_display,
     });
-    addAngleLabel(midheaven.longitude, "MC", "#A78BFA", midheaven);
-    addAngleLabel((midheaven.longitude + 180) % 360, "IC", "#6B7280", {
+    addAngleLabel(midheaven.longitude, "MC", "#0EA5E9", midheaven);
+    addAngleLabel((midheaven.longitude + 180) % 360, "IC", "#94A3B8", {
       longitude: (midheaven.longitude + 180) % 360,
       sign: midheaven.sign,
       degree_display: midheaven.degree_display,

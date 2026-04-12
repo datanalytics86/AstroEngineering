@@ -3,25 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0A0E1A;
-  --card: #111827;
-  --border: #1F2937;
-  --gold: #C9A84C;
+  --bg:     #FAFBFC;
+  --card:   #FFFFFF;
+  --border: #E5E9F0;
+  --accent: #2563EB;
 }
 
 body {
   background-color: var(--bg);
+  color: #0F172A;
 }
 
-/* Scrollbar oscuro */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #111827; }
-::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+/* Scrollbar sutil azul */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #F1F5F9; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
-/* Tipografía utilitaria */
-.font-mono { font-family: "JetBrains Mono", monospace; }
-.font-serif { font-family: "Playfair Display", serif; }
+/* Inter para todo texto */
+.font-mono  { font-family: "JetBrains Mono", monospace; }
+.font-serif { font-family: "Inter", sans-serif; }
 
 /* Animación barra de loading */
 @keyframes loading {

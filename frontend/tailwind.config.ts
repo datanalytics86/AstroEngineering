@@ -9,28 +9,47 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Tokens semánticos nuevos (light theme)
+        base:    "#FAFBFC",
+        card:    "#FFFFFF",
+        border:  "#E5E9F0",
+        muted:   "#F1F5F9",
+        accent:  "#2563EB",
+        "accent-sky": "#0EA5E9",
+        "accent-hover": "#EFF6FF",
+        // Texto
+        "text-primary":   "#0F172A",
+        "text-secondary": "#64748B",
+        "text-hint":      "#94A3B8",
+        // Legado (para compatibilidad con código D3 interno)
         space: {
-          bg:      "#0A0E1A",
-          card:    "#111827",
-          border:  "#1F2937",
-          muted:   "#374151",
+          bg:     "#FAFBFC",
+          card:   "#FFFFFF",
+          border: "#E5E9F0",
+          muted:  "#F1F5F9",
         },
-        gold:    "#C9A84C",
-        fire:    "#DC2626",
-        earth:   "#16A34A",
-        air:     "#EAB308",
-        water:   "#2563EB",
-        harmony: "#22C55E",
+        gold: "#2563EB",
+        // Elemento semántico
+        fire:    "#EF4444",
+        earth:   "#10B981",
+        air:     "#F59E0B",
+        water:   "#3B82F6",
+        harmony: "#10B981",
         tension: "#EF4444",
-        neutral: "#60A5FA",
+        neutral: "#6366F1",
+        minor:   "#A78BFA",
       },
       fontFamily: {
         mono:  ["JetBrains Mono", "monospace"],
-        serif: ["Playfair Display", "serif"],
+        serif: ["Inter", "sans-serif"],   // mantenemos la clase pero apunta a Inter
         sans:  ["Inter", "sans-serif"],
       },
       backgroundImage: {
-        "card-gradient": "linear-gradient(135deg, rgba(30,27,75,0.6), rgba(17,24,39,0.9))",
+        "card-gradient": "none",
+      },
+      boxShadow: {
+        card: "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)",
+        "card-md": "0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07)",
       },
     },
   },

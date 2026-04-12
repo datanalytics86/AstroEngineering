@@ -30,9 +30,9 @@ const ASPECT_SYMBOLS: Record<string, string> = {
 };
 
 const NATURE_COLORS: Record<string, string> = {
-  armonioso: "#22C55E",
+  armonioso: "#10B981",
   tenso: "#EF4444",
-  neutro: "#60A5FA",
+  neutro: "#6366F1",
   menor: "#A78BFA",
 };
 
@@ -59,7 +59,7 @@ function getInterpretation(target: ClickTarget): NatalInterpretation | null {
 function getTitle(target: ClickTarget): { main: string; sub: string; icon: string } {
   switch (target.type) {
     case "planet": {
-      const sym = PLANET_SYMBOLS[target.planet.name] ?? "✦";
+      const sym = PLANET_SYMBOLS[target.planet.name] ?? "★";
       return {
         icon: sym,
         main: `${target.planet.name} en ${target.planet.sign}`,
@@ -68,8 +68,6 @@ function getTitle(target: ClickTarget): { main: string; sub: string; icon: strin
     }
     case "aspect": {
       const sym = ASPECT_SYMBOLS[target.aspect.aspect_name] ?? "—";
-      const p1sym = PLANET_SYMBOLS[target.aspect.planet1] ?? "";
-      const p2sym = PLANET_SYMBOLS[target.aspect.planet2] ?? "";
       return {
         icon: sym,
         main: `${target.aspect.planet1} ${sym} ${target.aspect.planet2}`,
@@ -102,7 +100,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-xs font-mono px-3 py-1.5 rounded border border-space-border text-gray-500 hover:text-gold hover:border-gold transition-colors"
+      className="text-xs font-mono px-3 py-1.5 rounded border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 transition-colors"
     >
       {copied ? "✓ Copiado" : "Copiar"}
     </button>
@@ -116,13 +114,13 @@ function AspectPills({ aspects, planetName }: { aspects: Aspect[]; planetName: s
     .slice(0, 6);
   if (!related.length) return null;
   return (
-    <div className="mt-4 pt-4 border-t border-space-border">
-      <p className="text-xs uppercase tracking-widest text-gray-600 font-mono mb-2">Aspectos activos</p>
+    <div className="mt-4 pt-4 border-t border-slate-100">
+      <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">Aspectos activos</p>
       <div className="flex flex-wrap gap-2">
         {related.map((a, i) => {
           const other = a.planet1 === planetName ? a.planet2 : a.planet1;
           const sym = ASPECT_SYMBOLS[a.aspect_name] ?? "—";
-          const col = NATURE_COLORS[a.nature] ?? "#9CA3AF";
+          const col = NATURE_COLORS[a.nature] ?? "#94A3B8";
           return (
             <span
               key={i}
@@ -142,7 +140,6 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
   const panelRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
 
-  // Animate in on mount, animate out before close
   useEffect(() => {
     if (target) {
       requestAnimationFrame(() => setVisible(true));
@@ -151,7 +148,6 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
     }
   }, [target]);
 
-  // Close on backdrop click
   const handleBackdrop = useCallback(
     (e: React.MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -161,7 +157,6 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
     [onClose],
   );
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
@@ -179,12 +174,12 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
 
   const accentColor =
     target.type === "aspect"
-      ? NATURE_COLORS[target.aspect.nature] ?? "#C9A84C"
+      ? NATURE_COLORS[target.aspect.nature] ?? "#2563EB"
       : target.type === "angle"
         ? target.name === "ASC" || target.name === "DSC"
-          ? "#C9A84C"
-          : "#A78BFA"
-        : "#C9A84C";
+          ? "#2563EB"
+          : "#0EA5E9"
+        : "#2563EB";
 
   return (
     <div
@@ -193,14 +188,14 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
+        className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm transition-opacity duration-300"
         style={{ opacity: visible ? 1 : 0 }}
       />
 
       {/* Panel */}
       <div
         ref={panelRef}
-        className="relative z-10 w-full sm:w-[480px] h-[85vh] sm:h-screen flex flex-col bg-[#0D1120] border-t sm:border-t-0 sm:border-l border-space-border shadow-2xl transition-all duration-300 ease-out overflow-hidden"
+        className="relative z-10 w-full sm:w-[480px] h-[85vh] sm:h-screen flex flex-col bg-white border-t sm:border-t-0 sm:border-l border-slate-200 shadow-2xl transition-all duration-300 ease-out overflow-hidden"
         style={{
           transform: visible
             ? "translate(0, 0)"
@@ -212,27 +207,27 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
       >
         {/* Header */}
         <div
-          className="px-6 pt-6 pb-5 border-b border-space-border flex-shrink-0"
+          className="px-6 pt-6 pb-5 border-b border-slate-100 flex-shrink-0"
           style={{ borderLeftColor: accentColor, borderLeftWidth: 3 }}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold flex-shrink-0"
-                style={{ backgroundColor: `${accentColor}22`, color: accentColor }}
+                style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
               >
                 {icon}
               </div>
               <div>
-                <h2 className="font-serif text-lg text-gray-100 leading-tight">{main}</h2>
-                <p className="text-xs font-mono text-gray-500 mt-0.5">{sub}</p>
+                <h2 className="font-semibold text-lg text-slate-900 leading-tight">{main}</h2>
+                <p className="text-xs font-mono text-slate-400 mt-0.5">{sub}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               <CopyButton text={copyText} />
               <button
                 onClick={onClose}
-                className="w-8 h-8 flex items-center justify-center rounded text-gray-500 hover:text-gray-200 hover:bg-white/5 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 ✕
               </button>
@@ -245,7 +240,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
                 <span
                   key={k}
                   className="text-xs font-mono px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
+                  style={{ backgroundColor: `${accentColor}12`, color: accentColor }}
                 >
                   {k}
                 </span>
@@ -260,29 +255,29 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
             <>
               {/* Frase clave */}
               <blockquote
-                className="text-base font-serif italic leading-relaxed pl-4 border-l-2"
-                style={{ borderColor: accentColor, color: accentColor }}
+                className="text-base font-serif italic leading-relaxed pl-4 border-l-2 text-slate-600"
+                style={{ borderColor: accentColor }}
               >
                 "{interp.keyphrase}"
               </blockquote>
 
               {/* Interpretación principal */}
               <section>
-                <h3 className="text-xs uppercase tracking-widest text-gray-600 font-mono mb-2">
+                <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
                   Interpretación
                 </h3>
-                <p className="text-sm text-gray-300 leading-relaxed">{interp.principal}</p>
+                <p className="text-sm text-slate-700 leading-relaxed">{interp.principal}</p>
               </section>
 
               {/* Fortalezas */}
               <section>
-                <h3 className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "#22C55E" }}>
+                <h3 className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "#10B981" }}>
                   Fortalezas
                 </h3>
                 <ul className="space-y-2">
                   {interp.strengths.map((s, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
-                      <span className="mt-1 w-1.5 h-1.5 rounded-full bg-green-500 flex-shrink-0" />
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
+                      <span className="mt-1 w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
                       {s}
                     </li>
                   ))}
@@ -296,7 +291,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
                 </h3>
                 <ul className="space-y-2">
                   {interp.challenges.map((c, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-300">
+                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
                       <span className="mt-1 w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
                       {c}
                     </li>
@@ -305,20 +300,20 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               </section>
 
               {/* Crecimiento */}
-              <section className="bg-white/5 rounded-xl p-4 border border-white/5">
-                <h3 className="text-xs uppercase tracking-widest text-gray-500 font-mono mb-2">
+              <section className="bg-slate-50 rounded-xl p-4 border border-slate-100">
+                <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
                   Potencial de crecimiento
                 </h3>
-                <p className="text-sm text-gray-300 leading-relaxed">{interp.growth}</p>
+                <p className="text-sm text-slate-700 leading-relaxed">{interp.growth}</p>
               </section>
 
               {/* House interpretation if planet */}
               {target.type === "planet" && (
                 <section>
-                  <h3 className="text-xs uppercase tracking-widest text-gray-600 font-mono mb-2">
+                  <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
                     En casa {target.planet.house}
                   </h3>
-                  <p className="text-sm text-gray-400 leading-relaxed">
+                  <p className="text-sm text-slate-500 leading-relaxed">
                     {getPlanetInHouseInterpretation(target.planet.name, target.planet.house).principal}
                   </p>
                 </section>
@@ -330,13 +325,13 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               )}
             </>
           ) : (
-            <p className="text-sm text-gray-500 italic">Interpretación no disponible para este elemento.</p>
+            <p className="text-sm text-slate-400 italic">Interpretación no disponible para este elemento.</p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-space-border flex-shrink-0">
-          <p className="text-xs text-gray-700 font-mono text-center">
+        <div className="px-6 py-3 border-t border-slate-100 flex-shrink-0">
+          <p className="text-xs text-slate-400 font-mono text-center">
             Basado en Steven Forrest · Sue Tompkins · Howard Sasportas · Stephen Arroyo
           </p>
         </div>

@@ -35,40 +35,40 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-base">
       <div className="w-full max-w-lg">
         {/* Hero */}
-        <div className="text-center mb-10">
-          <div className="text-gold text-5xl mb-4 font-serif">✦</div>
-          <h1 className="font-serif text-4xl text-gold mb-3">AstroEngine Pro</h1>
-          <p className="text-gray-400 leading-relaxed text-sm">
-            Carta natal con precisión astronómica real (Swiss Ephemeris).<br />
-            Tránsitos futuros calculados día a día con refinamiento binario.
+        <div className="text-center mb-8">
+          <h1 className="font-semibold text-3xl text-slate-900 tracking-tight mb-2">
+            Carta Natal
+          </h1>
+          <p className="text-slate-500 leading-relaxed text-sm">
+            Precisión astronómica con Swiss Ephemeris.<br />
+            Tránsitos calculados día a día.
           </p>
         </div>
 
         {/* Formulario */}
-        <div className="bg-space-card border border-space-border rounded-2xl p-6 shadow-xl">
+        <div className="bg-white border border-border rounded-2xl p-6 shadow-card">
           <BirthDataForm onSubmit={handleSubmit} loading={loading} />
         </div>
 
         {error && (
-          <div className="mt-4 bg-red-900/20 border border-red-800 rounded-lg p-4 text-sm text-red-400 font-mono">
-            Error: {error}
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 font-mono">
+            {error}
           </div>
         )}
 
         {/* Info técnica */}
-        <div className="mt-8 grid grid-cols-3 gap-4 text-center">
+        <div className="mt-6 grid grid-cols-3 gap-3 text-center">
           {[
-            { icon: "⚡", label: "Swiss Ephemeris", sub: "±0.01° precisión" },
-            { icon: "🪐", label: "12 planetas", sub: "Sol → Quirón" },
-            { icon: "📅", label: "Tránsitos", sub: "1–12 meses" },
+            { label: "Swiss Ephemeris", sub: "±0.05° precisión" },
+            { label: "12 planetas", sub: "Sol → Quirón" },
+            { label: "Tránsitos", sub: "1–12 meses" },
           ].map((item) => (
-            <div key={item.label} className="bg-space-card border border-space-border rounded-xl p-4">
-              <div className="text-2xl mb-1">{item.icon}</div>
-              <div className="text-xs font-mono text-gray-300">{item.label}</div>
-              <div className="text-xs text-gray-600">{item.sub}</div>
+            <div key={item.label} className="bg-white border border-border rounded-xl p-3 shadow-card">
+              <div className="text-xs font-semibold text-slate-700">{item.label}</div>
+              <div className="text-xs text-slate-400 font-mono mt-0.5">{item.sub}</div>
             </div>
           ))}
         </div>
