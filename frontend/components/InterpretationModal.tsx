@@ -9,7 +9,7 @@ import {
   getHouseMeaning,
   getAngleMeaning,
 } from "@/lib/natal-interpretations";
-import { ASPECT_COLORS } from "@/lib/zodiac-utils";
+
 
 interface Props {
   target: ClickTarget | null;
