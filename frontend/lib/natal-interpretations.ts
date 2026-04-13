@@ -66,6 +66,18 @@ const PLANET_ARCHETYPE: Record<
     shadow: "control, obsesión, poder destructivo",
     keywords: ["transformación", "poder", "regeneración", "profundidad"],
   },
+  "Nodo Norte": {
+    function: "dirección evolutiva y propósito kármico",
+    gift: "crecimiento hacia lo desconocido, expansión del alma",
+    shadow: "resistencia al cambio, apego a patrones del pasado",
+    keywords: ["evolución", "propósito", "karma", "crecimiento"],
+  },
+  Quirón: {
+    function: "herida primaria y capacidad de sanación",
+    gift: "sabiduría surgida del dolor, guía y sanación de otros",
+    shadow: "victimismo, heridas no integradas, hipersensibilidad",
+    keywords: ["sanación", "herida", "sabiduría", "integración"],
+  },
 };
 
 // ── SIGN ARCHETYPES ───────────────────────────────────────────────────────────
@@ -236,10 +248,10 @@ type KeyphraseKey = keyof typeof KEYPHRASES;
 
 // ── GENERATOR FUNCTIONS ────────────────────────────────────────────────────────
 
-function generatePlanetInSign(planet: string, sign: string): NatalInterpretation {
+function generatePlanetInSign(planet: string, sign: string): NatalInterpretation | null {
   const p = PLANET_ARCHETYPE[planet];
   const s = SIGN_ARCHETYPE[sign];
-  if (!p || !s) throw new Error(`Missing archetype for ${planet} in ${sign}`);
+  if (!p || !s) return null;
 
   const keywords = [...p.keywords.slice(0, 2), ...s.keywords.slice(0, 2)];
   const keyphraseKey = `${planet}_${sign}` as KeyphraseKey;
@@ -357,7 +369,7 @@ function generateAspect(
 
 // ── LOOKUP FUNCTIONS ───────────────────────────────────────────────────────────
 
-export function getPlanetInSignInterpretation(planet: string, sign: string): NatalInterpretation {
+export function getPlanetInSignInterpretation(planet: string, sign: string): NatalInterpretation | null {
   return generatePlanetInSign(planet, sign);
 }
 
