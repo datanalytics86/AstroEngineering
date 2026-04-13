@@ -22,7 +22,7 @@ export default function ForecastDashboard({ timeline }: Props) {
           const date = new Date(`${month.month}-01`);
           const monthLabel = format(date, "MMM yyyy", { locale: es });
           const { label, color, bg, border } = intensityInfo(month.intensity_score);
-          const topTransits = month.transits_active.slice(0, 3);
+          const topTransits = (month.transits_active ?? []).slice(0, 3);
 
           return (
             <div
@@ -59,7 +59,7 @@ export default function ForecastDashboard({ timeline }: Props) {
                 <p className="text-xs font-semibold capitalize" style={{ color }}>
                   {month.dominant_theme}
                 </p>
-                {month.theme_summary && (
+                {(month.theme_summary ?? "") !== "" && (
                   <p className="text-xs text-slate-600 leading-relaxed mt-0.5">
                     {month.theme_summary}
                   </p>
@@ -67,9 +67,9 @@ export default function ForecastDashboard({ timeline }: Props) {
               </div>
 
               {/* Áreas de vida */}
-              {month.life_areas_affected.length > 0 && (
+              {(month.life_areas_affected ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {month.life_areas_affected.slice(0, 3).map((area) => (
+                  {(month.life_areas_affected ?? []).slice(0, 3).map((area) => (
                     <span
                       key={area}
                       className="text-xs px-1.5 py-0.5 rounded font-mono"
