@@ -8,9 +8,15 @@ interface Props {
   timeline: MonthlyForecast[];
 }
 
+// Umbrales calibrados sobre la distribución real de intensity_score (mean
+// ponderado por fase × orbe × score). Con los pesos del backend (Plutón=10,
+// Neptuno=9, etc.) una carta con planetas lentos muy aspectados producía
+// mean ~6-9 todos los meses → cortes antiguos 6.5/3.5 daban "intenso" siempre.
+// Los cortes 8.0 / 5.0 restauran discriminación real: sólo los meses con
+// múltiples exactos de outer planets suben a "intenso".
 function intensityInfo(score: number): { label: string; color: string; bg: string; border: string } {
-  if (score >= 6.5) return { label: "intenso",   color: "#EF4444", bg: "#FEF2F2", border: "#FECACA" };
-  if (score >= 3.5) return { label: "moderado",  color: "#F97316", bg: "#FFF7ED", border: "#FED7AA" };
+  if (score >= 8.0) return { label: "intenso",   color: "#EF4444", bg: "#FEF2F2", border: "#FECACA" };
+  if (score >= 5.0) return { label: "moderado",  color: "#F97316", bg: "#FFF7ED", border: "#FED7AA" };
   return               { label: "estable",   color: "#10B981", bg: "#F0FDF4", border: "#A7F3D0" };
 }
 

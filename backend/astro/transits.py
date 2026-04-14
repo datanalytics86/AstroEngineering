@@ -56,7 +56,7 @@ MONTHLY_SUMMARIES = {
     ("Marte", "tenso"):          "Tensión, conflictos o decisiones urgentes. Canaliza la energía físicamente y evita reacciones impulsivas.",
 }
 
-# Áreas de vida por planeta transitante
+# Áreas de vida por planeta transitante (uso secundario — matiz del "cómo")
 LIFE_AREAS_MAP: dict[str, list[str]] = {
     "Júpiter": ["expansión personal", "carrera y proyectos", "viajes y educación"],
     "Saturno": ["estructura y disciplina", "carrera y logros", "responsabilidades"],
@@ -64,6 +64,39 @@ LIFE_AREAS_MAP: dict[str, list[str]] = {
     "Neptuno": ["espiritualidad y creatividad", "salud emocional", "intuición"],
     "Plutón":  ["transformaciones profundas", "poder personal", "psicología"],
     "Marte":   ["energía y acción", "relaciones y conflictos", "decisiones urgentes"],
+}
+
+# Áreas de vida por planeta natal aspectado (Tompkins "Aspects in Astrology",
+# Sasportas "The Gods of Change"). El planeta NATAL define QUÉ área se activa;
+# el transitante define CÓMO.
+NATAL_LIFE_AREAS: dict[str, list[str]] = {
+    "Sol":        ["identidad y propósito", "vitalidad"],
+    "Luna":       ["hogar y familia", "mundo emocional"],
+    "Mercurio":   ["comunicación y estudios", "vínculos cercanos"],
+    "Venus":      ["amor y vínculos", "finanzas y valores"],
+    "Marte":      ["acción y deseo", "conflictos"],
+    "Júpiter":    ["oportunidades y expansión", "visión de futuro"],
+    "Saturno":    ["carrera y estructuras", "responsabilidades"],
+    "Urano":      ["libertad y cambios", "innovación"],
+    "Neptuno":    ["espiritualidad y creatividad", "mundo interior"],
+    "Plutón":     ["transformación profunda", "poder personal"],
+    "Nodo Norte": ["dirección evolutiva", "crecimiento del alma"],
+    "Quirón":     ["herida y sanación"],
+    "Ascendente": ["identidad personal", "imagen pública"],
+    "MC":         ["vocación y reputación", "impacto público"],
+}
+
+# Peso "temático" para decidir qué planeta transitante domina la narrativa del
+# mes. Los outer planets marcan los temas del año (Sasportas, Forrest, Arroyo);
+# Marte es un disparador, no un tema. Este peso es independiente del score
+# (que mide importancia puntual del evento).
+THEME_WEIGHT: dict[str, float] = {
+    "Plutón":  10.0,
+    "Neptuno": 9.0,
+    "Urano":   8.0,
+    "Saturno": 7.0,
+    "Júpiter": 5.0,
+    "Marte":   2.0,  # Solo domina si no hay nada más grande activo
 }
 
 
@@ -379,14 +412,20 @@ def build_monthly_timeline(
 
         intensity = min(10.0, round(weighted_total / max(len(month_transits), 1), 2))
 
-        # Tema: prioridad → exacto → entrante → orbe más cerrado
-        theme_source = None
-        if exact_this:
-            theme_source = max(exact_this, key=lambda t: t["score"])
-        elif entering_this:
-            theme_source = max(entering_this, key=lambda t: t["score"])
-        else:
-            theme_source = min(month_transits, key=lambda t: t["orb"])
+        # Tema dominante: ponderamos por THEME_WEIGHT (outer > Marte) + fase + score.
+        # Sasportas, Forrest y Arroyo coinciden: los temas de un período los marcan
+        # los planetas lentos. Marte sólo debe dominar si no hay nada más activo.
+        def theme_score(t: dict) -> float:
+            phase_mult = (
+                1.8 if t in exact_this else
+                1.4 if t in entering_this else
+                0.8 if t in leaving_this else
+                0.6  # ongoing sigue siendo relevante para el tema, aunque no exacto
+            )
+            tw = THEME_WEIGHT.get(t["transit_planet"], 1.0)
+            return tw * phase_mult * t["score"]
+
+        theme_source = max(month_transits, key=theme_score)
 
         theme = DOMINANT_THEMES.get(
             (theme_source["transit_planet"], theme_source["nature"]),
@@ -397,16 +436,34 @@ def build_monthly_timeline(
             "Período de transición y ajustes. Mantente abierto a las señales del entorno.",
         )
 
-        # Áreas de vida (deduplicate, max 4)
+        # Áreas de vida: PRIORIZAMOS el planeta NATAL aspectado (Tompkins).
+        # El planeta natal define qué área se activa; el transitante sólo matiza.
+        # Tomamos los tránsitos con mayor peso temático (outer planets primero)
+        # y extraemos el área del planeta natal que tocan.
         life_areas: list[str] = []
-        seen_planets: set[str] = set()
-        for t in sorted(month_transits, key=lambda x: x["score"], reverse=True):
-            if t["transit_planet"] not in seen_planets:
-                for area in LIFE_AREAS_MAP.get(t["transit_planet"], [])[:2]:
-                    if area not in life_areas:
-                        life_areas.append(area)
-                seen_planets.add(t["transit_planet"])
-        life_areas = life_areas[:4]
+        seen_natal: set[str] = set()
+
+        # Ordenar por theme_score (outer planets y exactos primero)
+        ranked = sorted(month_transits, key=theme_score, reverse=True)
+        for t in ranked:
+            np_name = t["natal_planet"]
+            if np_name in seen_natal:
+                continue
+            areas = NATAL_LIFE_AREAS.get(np_name, [])
+            for area in areas[:1]:  # 1 área por planeta natal para maximizar variedad
+                if area not in life_areas:
+                    life_areas.append(area)
+            seen_natal.add(np_name)
+            if len(life_areas) >= 4:
+                break
+
+        # Si quedamos cortos, completar con áreas del transitante dominante
+        if len(life_areas) < 3:
+            for area in LIFE_AREAS_MAP.get(theme_source["transit_planet"], []):
+                if area not in life_areas:
+                    life_areas.append(area)
+                if len(life_areas) >= 3:
+                    break
 
         # Orden de visualización: exactos → entrantes → continuos por orbe (dedup por (tp, np, asp))
         display_order = (
