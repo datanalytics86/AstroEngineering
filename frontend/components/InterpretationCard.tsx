@@ -1,21 +1,44 @@
 "use client";
 
-import type { TransitEvent } from "@/lib/types";
+import type { TransitEvent, PlanetPosition } from "@/lib/types";
 import { getInterpretation } from "@/lib/interpretation-engine";
 import { ASPECT_COLORS, IMPORTANCE_COLORS } from "@/lib/zodiac-utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+// Dominio de casa (Sasportas "The Inner Planets" + "The Gods of Change"):
+// el planeta natal aspectado activa el área de vida de su casa natal.
+const HOUSE_DOMAIN: Record<number, string> = {
+  1: "identidad y presencia personal",
+  2: "recursos, valores y autoestima",
+  3: "comunicación y entorno cercano",
+  4: "hogar, familia y raíces",
+  5: "creatividad, romance y expresión",
+  6: "trabajo, salud y rutinas diarias",
+  7: "relaciones significativas y asociaciones",
+  8: "transformación, sexualidad y recursos compartidos",
+  9: "filosofía, viajes y educación superior",
+  10: "vocación, reputación e impacto público",
+  11: "comunidad, ideales y visión futura",
+  12: "mundo interior, espiritualidad y lo inconsciente",
+};
+
 interface Props {
   transit: TransitEvent;
+  natalPlanets?: PlanetPosition[];
 }
 
-export default function InterpretationCard({ transit }: Props) {
+export default function InterpretationCard({ transit, natalPlanets }: Props) {
   const key = `${transit.transit_planet.toLowerCase()}_${transit.aspect_name.toLowerCase().replace(/ /g, "_")}_${transit.natal_planet.toLowerCase()}`;
   const interp = getInterpretation(key);
 
   const aspectColor = ASPECT_COLORS[transit.nature] ?? "#94A3B8";
   const importColor = IMPORTANCE_COLORS[transit.importance] ?? "#94A3B8";
+
+  // Casa natal del planeta aspectado (Sasportas: la casa contextualiza qué área de vida se activa)
+  const natalPlanetData = natalPlanets?.find((p) => p.name === transit.natal_planet);
+  const natalHouse = natalPlanetData?.house;
+  const natalHouseDomain = natalHouse ? HOUSE_DOMAIN[natalHouse] : null;
 
   function formatDate(str: string): string {
     try {
@@ -32,16 +55,45 @@ export default function InterpretationCard({ transit }: Props) {
         className="px-5 py-4 flex items-start justify-between gap-3 border-b border-border"
         style={{ borderLeftColor: aspectColor, borderLeftWidth: 3 }}
       >
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <span style={{ color: aspectColor }} className="text-base font-semibold font-mono">
               {transit.transit_planet}
             </span>
             <span className="text-slate-400 text-sm">{transit.aspect_name}</span>
             <span className="text-slate-700 text-sm">{transit.natal_planet} natal</span>
+            {natalHouse && (
+              <span className="text-xs font-mono text-blue-500">· Casa {natalHouse}</span>
+            )}
           </div>
+
+          {/* Applying / separating — Forrest: distingue preparación vs integración */}
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            <span
+              className={`text-xs font-mono px-2 py-0.5 rounded-full border ${
+                transit.applying
+                  ? "bg-amber-50 text-amber-600 border-amber-200"
+                  : "bg-slate-100 text-slate-500 border-slate-200"
+              }`}
+            >
+              {transit.applying ? "aplicante — energía en aumento" : "separante — fase de integración"}
+            </span>
+            {transit.orb < 0.5 && (
+              <span className="text-xs font-mono text-violet-600 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded-full">
+                casi exacto
+              </span>
+            )}
+          </div>
+
           {interp && (
             <p className="text-xs text-slate-500">{interp.summary}</p>
+          )}
+
+          {/* Casa contextual (Sasportas) */}
+          {natalHouse && natalHouseDomain && (
+            <p className="text-xs text-blue-500 mt-1 font-mono">
+              Área activada: {natalHouseDomain}
+            </p>
           )}
         </div>
         <span
@@ -90,6 +142,13 @@ export default function InterpretationCard({ transit }: Props) {
           {interp.duration_note && (
             <p className="text-xs text-slate-400 italic">{interp.duration_note}</p>
           )}
+
+          {/* Contexto applying/separating — Forrest "The Changing Sky" */}
+          <p className="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded px-3 py-2 mt-1">
+            {transit.applying
+              ? "La energía de este tránsito se está acumulando. El pico exacto está próximo — trabaja proactivamente con estos temas ahora."
+              : "El momento exacto ya pasó. Estás en la fase de integración — los cambios o revelaciones del pico comienzan a consolidarse."}
+          </p>
         </div>
       ) : (
         <div className="px-5 py-4">

@@ -15,6 +15,60 @@ interface GeoResult {
   address?: { country_code?: string };
 }
 
+// Lookup de estado/provincia → zona IANA para países con múltiples zonas horarias.
+// Evita que alguien de Los Ángeles reciba "America/New_York" y su Ascendente
+// quede desplazado ~45° por error de zona.
+const STATE_TZ: Record<string, string> = {
+  // EE.UU.
+  "Alabama": "America/Chicago",       "Alaska": "America/Anchorage",
+  "Arizona": "America/Phoenix",       "Arkansas": "America/Chicago",
+  "California": "America/Los_Angeles","Colorado": "America/Denver",
+  "Connecticut": "America/New_York",  "Delaware": "America/New_York",
+  "Florida": "America/New_York",      "Georgia": "America/New_York",
+  "Hawaii": "Pacific/Honolulu",       "Idaho": "America/Denver",
+  "Illinois": "America/Chicago",      "Indiana": "America/Indiana/Indianapolis",
+  "Iowa": "America/Chicago",          "Kansas": "America/Chicago",
+  "Kentucky": "America/New_York",     "Louisiana": "America/Chicago",
+  "Maine": "America/New_York",        "Maryland": "America/New_York",
+  "Massachusetts": "America/New_York","Michigan": "America/Detroit",
+  "Minnesota": "America/Chicago",     "Mississippi": "America/Chicago",
+  "Missouri": "America/Chicago",      "Montana": "America/Denver",
+  "Nebraska": "America/Chicago",      "Nevada": "America/Los_Angeles",
+  "New Hampshire": "America/New_York","New Jersey": "America/New_York",
+  "New Mexico": "America/Denver",     "New York": "America/New_York",
+  "North Carolina": "America/New_York","North Dakota": "America/Chicago",
+  "Ohio": "America/New_York",         "Oklahoma": "America/Chicago",
+  "Oregon": "America/Los_Angeles",    "Pennsylvania": "America/New_York",
+  "Rhode Island": "America/New_York", "South Carolina": "America/New_York",
+  "South Dakota": "America/Chicago",  "Tennessee": "America/Chicago",
+  "Texas": "America/Chicago",         "Utah": "America/Denver",
+  "Vermont": "America/New_York",      "Virginia": "America/New_York",
+  "Washington": "America/Los_Angeles","West Virginia": "America/New_York",
+  "Wisconsin": "America/Chicago",     "Wyoming": "America/Denver",
+  // Canadá
+  "British Columbia": "America/Vancouver", "Alberta": "America/Edmonton",
+  "Saskatchewan": "America/Regina",        "Manitoba": "America/Winnipeg",
+  "Ontario": "America/Toronto",            "Quebec": "America/Toronto",
+  "New Brunswick": "America/Halifax",      "Nova Scotia": "America/Halifax",
+  "Prince Edward Island": "America/Halifax","Newfoundland and Labrador": "America/St_Johns",
+  // Australia
+  "New South Wales": "Australia/Sydney",   "Victoria": "Australia/Melbourne",
+  "Queensland": "Australia/Brisbane",      "South Australia": "Australia/Adelaide",
+  "Western Australia": "Australia/Perth",  "Tasmania": "Australia/Hobart",
+  "Northern Territory": "Australia/Darwin","Australian Capital Territory": "Australia/Sydney",
+  // Brasil
+  "São Paulo": "America/Sao_Paulo",     "Rio de Janeiro": "America/Sao_Paulo",
+  "Minas Gerais": "America/Sao_Paulo",  "Bahia": "America/Bahia",
+  "Rio Grande do Sul": "America/Sao_Paulo","Paraná": "America/Sao_Paulo",
+  "Amazonas": "America/Manaus",         "Pará": "America/Belem",
+  "Acre": "America/Rio_Branco",         "Mato Grosso": "America/Cuiaba",
+  "Mato Grosso do Sul": "America/Campo_Grande",
+  // México
+  "Sonora": "America/Hermosillo",       "Chihuahua": "America/Chihuahua",
+  "Sinaloa": "America/Mazatlan",        "Baja California": "America/Tijuana",
+  "Baja California Sur": "America/Mazatlan",
+};
+
 // Lookup de zonas IANA por código de país (principales)
 const COUNTRY_TZ: Record<string, string> = {
   cl: "America/Santiago",     ar: "America/Argentina/Buenos_Aires",
@@ -286,6 +340,8 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
 }
 
 // ── TimePicker ────────────────────────────────────────────────────────────────
+// Usa input[type=time] nativo: interfaz del navegador, validación automática,
+// funciona en móvil con scroll wheel, devuelve siempre "HH:MM" en 24h.
 
 interface TimePickerProps {
   value: string;
@@ -294,39 +350,17 @@ interface TimePickerProps {
 }
 
 function TimePicker({ value, onChange, disabled }: TimePickerProps) {
-  const hh = value ? value.split(":")[0] : "";
-  const mm = value ? value.split(":")[1] : "";
-
-  function setHour(h: string) {
-    const m = mm || "00";
-    onChange(`${h.padStart(2, "0")}:${m}`);
-  }
-  function setMinute(m: string) {
-    const h = hh || "12";
-    onChange(`${h.padStart(2, "0")}:${m.padStart(2, "0")}`);
-  }
-
-  const inputClass = `bg-white border rounded-xl px-3 py-2.5 text-sm font-mono text-slate-900
-    focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
-    border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed
-    hover:border-slate-300 w-full text-center`;
-
   return (
-    <div className="flex gap-2 items-center">
-      <input
-        type="number" min={0} max={23} disabled={disabled}
-        placeholder="HH" value={hh}
-        onChange={(e) => setHour(e.target.value)}
-        className={inputClass}
-      />
-      <span className="text-slate-400 font-mono text-lg">:</span>
-      <input
-        type="number" min={0} max={59} disabled={disabled}
-        placeholder="MM" value={mm}
-        onChange={(e) => setMinute(e.target.value)}
-        className={inputClass}
-      />
-    </div>
+    <input
+      type="time"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={disabled}
+      className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-mono text-slate-900
+        focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+        border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed
+        hover:border-slate-300`}
+    />
   );
 }
 
@@ -399,7 +433,8 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
     searchTimeout.current = setTimeout(async () => {
       setGeoLoading(true);
       try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=5&addressdetails=1`;
+        // limit=8 para que ciudades pequeñas no queden fuera si hay homónimas más grandes
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=8&addressdetails=1`;
         const res = await fetch(url, { headers: { "Accept-Language": "es,en" } });
         const data: GeoResult[] = await res.json();
         setGeoResults(data);
@@ -412,12 +447,34 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
     }, 400);
   }
 
+  /** Formatea el display_name de Nominatim como "Ciudad · Región · País"
+   *  para que sea legible y permita distinguir entre ciudades homónimas. */
+  function formatCityLabel(displayName: string): string {
+    const parts = displayName.split(",").map((s) => s.trim()).filter(Boolean);
+    // Eliminar partes que son solo números (códigos postales)
+    const filtered = parts.filter((p) => !/^\d+$/.test(p));
+    if (filtered.length === 0) return displayName;
+    if (filtered.length === 1) return filtered[0];
+    // Mostrar: primera parte (ciudad/barrio), penúltima (estado/departamento), última (país)
+    const city    = filtered[0];
+    const country = filtered[filtered.length - 1];
+    const region  = filtered.length >= 3 ? filtered[filtered.length - 2] : null;
+    return region ? `${city} · ${region} · ${country}` : `${city} · ${country}`;
+  }
+
   function selectCity(result: GeoResult) {
     const lat = parseFloat(result.lat).toFixed(4);
     const lon = parseFloat(result.lon).toFixed(4);
     const countryCode = result.address?.country_code ?? "";
-    const zone = COUNTRY_TZ[countryCode] ?? null;
     const birthDate = form.birth_date || "1990-01-01";
+
+    // Buscar zona primero por estado/provincia (más preciso para países multi-zona),
+    // luego por país como fallback.
+    const stateOrProvince =
+      (result.address as Record<string, string | undefined>)?.state ??
+      (result.address as Record<string, string | undefined>)?.province ??
+      "";
+    const zone = STATE_TZ[stateOrProvince] ?? COUNTRY_TZ[countryCode] ?? null;
 
     let newOffset = String(Math.max(-12, Math.min(12, Math.round(parseFloat(result.lon) / 15))));
     let newLabel: string | null = null;
@@ -577,13 +634,18 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
               <button
                 key={i} type="button"
                 onClick={() => selectCity(r)}
-                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors border-b border-border last:border-0 font-mono truncate"
+                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-border last:border-0"
               >
-                {r.display_name}
+                <span className="text-sm text-slate-700 font-mono block truncate">
+                  {formatCityLabel(r.display_name)}
+                </span>
               </button>
             ))}
           </div>
         )}
+        <p className="mt-1 text-xs text-slate-400 font-mono">
+          Si no aparece tu ciudad, añade el país: <span className="italic">Villarrica, Chile</span>
+        </p>
       </div>
 
       {/* Coordenadas */}

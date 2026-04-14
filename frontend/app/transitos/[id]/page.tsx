@@ -173,7 +173,7 @@ export default function TransitosPage() {
           </h2>
           <div className="space-y-4">
             {significantTransits.map((t, i) => (
-              <InterpretationCard key={i} transit={t} />
+              <InterpretationCard key={i} transit={t} natalPlanets={chart.planets} />
             ))}
           </div>
         </section>

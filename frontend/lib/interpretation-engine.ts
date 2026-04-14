@@ -12,15 +12,23 @@ const PLANET_ARCHETYPE: Record<string, { role: string; areas: string[]; energy: 
 };
 
 const NATAL_ARCHETYPE: Record<string, { role: string; areas: string[] }> = {
-  "Sol":         { role: "tu identidad y voluntad",        areas: ["identidad", "vitalidad", "ego", "propósito"] },
-  "Luna":        { role: "tus emociones y hábitos",        areas: ["emociones", "hogar", "familia", "instintos"] },
-  "Mercurio":    { role: "tu mente y comunicación",        areas: ["comunicación", "aprendizaje", "contratos", "pensamiento"] },
-  "Venus":       { role: "tus valores y relaciones",       areas: ["amor", "dinero", "belleza", "relaciones"] },
-  "Marte":       { role: "tu energía y acción",            areas: ["acción", "sexualidad", "coraje", "conflictos"] },
-  "Júpiter":     { role: "tu expansión y optimismo",       areas: ["expansión", "fe", "crecimiento", "filosofía"] },
-  "Saturno":     { role: "tu estructura y limitaciones",   areas: ["disciplina", "madurez", "restricciones", "karma"] },
-  "Ascendente":  { role: "tu personalidad e imagen",       areas: ["identidad", "apariencia", "comienzos", "perspectiva"] },
-  "MC":          { role: "tu vocación y imagen pública",   areas: ["carrera", "reputación", "vocación", "logros"] },
+  "Sol":         { role: "tu identidad y voluntad",                  areas: ["identidad", "vitalidad", "ego", "propósito"] },
+  "Luna":        { role: "tus emociones y hábitos",                  areas: ["emociones", "hogar", "familia", "instintos"] },
+  "Mercurio":    { role: "tu mente y comunicación",                  areas: ["comunicación", "aprendizaje", "contratos", "pensamiento"] },
+  "Venus":       { role: "tus valores y relaciones",                 areas: ["amor", "dinero", "belleza", "relaciones"] },
+  "Marte":       { role: "tu energía y acción",                      areas: ["acción", "sexualidad", "coraje", "conflictos"] },
+  "Júpiter":     { role: "tu expansión y optimismo",                 areas: ["expansión", "fe", "crecimiento", "filosofía"] },
+  "Saturno":     { role: "tu estructura y limitaciones",             areas: ["disciplina", "madurez", "restricciones", "karma"] },
+  // Planetas transpersonales como puntos natales (Tompkins, Sasportas):
+  // cuando son aspectados por tránsitos representan el nivel generacional
+  // y colectivo de la psique siendo activado por el ciclo actual.
+  "Urano":       { role: "tu necesidad de libertad e innovación",    areas: ["libertad", "cambios", "originalidad", "rebeldía"] },
+  "Neptuno":     { role: "tu vida espiritual e imaginativa",         areas: ["espiritualidad", "imaginación", "ideales", "compasión"] },
+  "Plutón":      { role: "tu capacidad de transformación y poder",   areas: ["transformación", "poder", "sombra", "regeneración"] },
+  "Nodo Norte":  { role: "tu dirección evolutiva y karma",           areas: ["propósito kármico", "crecimiento", "destino", "aprendizaje"] },
+  "Quirón":      { role: "tu herida y potencial de sanación",        areas: ["herida", "sanación", "vulnerabilidad", "maestría"] },
+  "Ascendente":  { role: "tu personalidad e imagen",                 areas: ["identidad", "apariencia", "comienzos", "perspectiva"] },
+  "MC":          { role: "tu vocación y imagen pública",             areas: ["carrera", "reputación", "vocación", "logros"] },
 };
 
 const ASPECT_TEMPLATE: Record<string, {
@@ -149,6 +157,71 @@ const OVERRIDES: Partial<Record<string, Partial<TransitInterpretation>>> = {
     life_areas: ["carrera", "reputación", "logros", "visibilidad"],
     advice: "Visibilízate. Presenta tus proyectos, postúlate, haztu trabajo conocido: el timing es perfecto.",
   },
+
+  // ── Ciclos planetarios propios — hitos biográficos (Sasportas "The Gods of Change",
+  //    Arroyo "Astrology, Karma & Transformation"). Saturno/Urano/Neptuno/Plutón
+  //    retornan o hacen cuadratura/oposición a su posición natal en edades específicas
+  //    que la bibliografía reconoce como crisis de desarrollo universales. ──────────
+
+  // Saturno retorno (≈29 y 58 años) — el más conocido
+  "saturno_conjunción_saturno": {
+    title: "Retorno de Saturno",
+    summary: "El retorno de Saturno (~29 y ~58 años) marca el fin de una era vital. Nada que no sea genuino sobrevive a este tránsito: relaciones, carreras y estructuras de vida se someten a examen.",
+    detailed: "Es el rito de paso astrológico por excelencia. Saturno regresa a su posición natal e inaugura un nuevo ciclo de 29 años. La primera vuelta (~29 años) cierra la juventud y exige hacerse responsable de la propia vida. La segunda vuelta (~58 años) invita a la sabiduría y la transmisión. Lo que sientes que 'ya no te sirve' necesita ser honradamente soltado; lo que construiste sobre bases sólidas encontrará su forma definitiva.",
+    life_areas: ["madurez", "estructura vital", "carrera", "relaciones comprometidas"],
+    nature: "transformador",
+    advice: "No huyas de las responsabilidades que aparecen ahora. Son el precio de la autenticidad y la base de la próxima fase de tu vida.",
+    duration_note: "Proceso de 1-2 años. Puede haber triple pasada si Saturno retrograda sobre su posición natal.",
+  },
+  "saturno_cuadratura_saturno": {
+    title: "Cuadratura de Saturno (~21 y ~43 años)",
+    summary: "Crisis de estructura vital. Las cuadraturas de Saturno a sí mismo (~7, 21, 36, 43 años) son puntos de inflexión donde lo construido hasta ahora se somete a prueba.",
+    detailed: "La cuadratura de Saturno a sí mismo es la 'fricción kármica' de su propio ciclo. A los ~21 años, el individuo enfrenta el desafío de construir su propia estructura separada de la familia. A los ~43, la estructura de la madurez confronta sus límites y exige actualización. El dolor no es un fracaso: es la señal de que algo necesita ser rediseñado con mayor autenticidad.",
+    life_areas: ["estructura", "carrera", "relaciones", "responsabilidades"],
+    nature: "desafiante",
+    advice: "Identifica qué estructuras de tu vida ya no reflejan quién eres hoy. Este tránsito no pide que lo destruyas todo, sino que lo fortalezcas honestamente.",
+  },
+  "saturno_oposición_saturno": {
+    title: "Oposición de Saturno (~44 años) — crisis de mediana vida",
+    summary: "La oposición de Saturno a sí mismo (~44 años) es la 'crisis de la mediana vida' estructural: el momento en que debes integrar lo logrado y lo no logrado con ecuanimidad.",
+    detailed: "Saturno se opone a su posición natal una sola vez en la vida, alrededor de los 44-45 años. Es la culminación del primer ciclo completo: todo lo que construiste, rechazaste o postergaste sale a la luz. Los compromisos actuales —laborales, relacionales, de identidad— se someten a una auditoría existencial.",
+    life_areas: ["identidad madura", "carrera", "relaciones de largo plazo", "legado"],
+    nature: "desafiante",
+    advice: "No compares tu vida con la de otros: compárala con lo que viniste a vivir. La honestidad contigo mismo es el único camino.",
+  },
+
+  // Urano oposición Urano (~42 años) — el detonador de la crisis de mediana vida
+  "urano_oposición_urano": {
+    title: "Oposición de Urano (~42 años) — despertar del alma",
+    summary: "La oposición de Urano a sí mismo (~42 años) es el detonante astrológico clásico de la 'crisis de mediana vida'. El alma exige libertad de todo aquello que la tuvo encadenada.",
+    detailed: "Este tránsito solo ocurre una vez en la vida y suele precipitar cambios radicales e inesperados: divorcios, cambios de carrera, relocalizaciones o crisis espirituales. La presión que sientes no es desintegración: es el auténtico yo rompiéndose paso. Urano no acepta estructuras artificiales a los 42 años; lo que cae tenía que caer.",
+    life_areas: ["libertad", "identidad auténtica", "relaciones", "carrera y vocación"],
+    nature: "transformador",
+    advice: "No tomes decisiones impulsivas bajo la primera descarga de energía. Pero tampoco ignores lo que te pide salir. La pregunta clave: ¿qué estarías haciendo si no tuvieras miedo?",
+    duration_note: "Tránsito generacional: 1-2 años de proceso. La revelación puede llegar de golpe.",
+  },
+
+  // Neptuno cuadratura Neptuno (~40-42 años) y oposición (~80-84 años)
+  "neptuno_cuadratura_neptuno": {
+    title: "Cuadratura de Neptuno (~40-42 años) — crisis de los ideales",
+    summary: "La primera cuadratura de Neptuno a sí mismo (~40-42 años) señala el momento en que los ideales de juventud chocan con la realidad. ¿Qué parte de tus sueños era auténtica?",
+    detailed: "Neptuno cuestiona los ideales, las ilusiones y las aspiraciones profundas con las que construiste tu identidad. Lo que descubres no es que los sueños estaban mal: es que algunos necesitaban madurar y otros necesitan ser honradamente soltados. Puede haber confusión, desilusión o, paradójicamente, una renovación espiritual profunda si permites que el proceso ocurra sin resistir.",
+    life_areas: ["ideales", "espiritualidad", "propósito profundo", "mundo interior"],
+    nature: "transformador",
+    advice: "Distingue entre el sueño que te trajo hasta aquí y el sueño que necesitas para el siguiente capítulo. No son el mismo.",
+    duration_note: "Proceso de 2-3 años. Neptuno se mueve lentamente y el tránsito puede tener múltiples exactos.",
+  },
+
+  // Plutón cuadratura Plutón (~36-40 años generación Plutón en Libra/Virgo)
+  "plutón_cuadratura_plutón": {
+    title: "Cuadratura de Plutón (~36-40 años) — crisis de poder",
+    summary: "La cuadratura de Plutón a sí mismo (~36-40 años según la generación) marca una crisis de poder personal: lo que no lograste transformar antes, se vuelve urgente ahora.",
+    detailed: "Plutón cuestiona la distribución de poder en tu vida: ¿dónde te has sometido por miedo? ¿Dónde ejerces poder de forma no auténtica? Este tránsito fuerza una actualización psicológica profunda. Lo que resistes, persiste. Lo que permites que muera, renace transformado.",
+    life_areas: ["poder personal", "transformación psicológica", "relaciones de poder", "sombra"],
+    nature: "transformador",
+    advice: "Este no es el momento de controlar más: es el momento de soltar lo que no era tuyo. La psicoterapia, el trabajo con el cuerpo o la práctica espiritual son aliados naturales.",
+    duration_note: "Proceso de 2-3 años. El tránsito puede tener hasta 3 pasadas exactas por retrogradación de Plutón.",
+  },
 };
 
 // ── Generador de interpretaciones ─────────────────────────────────────────────
@@ -189,7 +262,14 @@ function generate(tp: string, aspect: string, np: string): TransitInterpretation
 
 const TRANSIT_PLANETS = ["Júpiter", "Saturno", "Urano", "Neptuno", "Plutón", "Marte"];
 const ASPECTS = ["Conjunción", "Oposición", "Cuadratura", "Trígono", "Sextil"];
-const NATAL_PLANETS = ["Sol", "Luna", "Mercurio", "Venus", "Marte", "Júpiter", "Saturno", "Ascendente", "MC"];
+// Incluye los 5 planetas natales que faltaban: Urano/Neptuno/Plutón/Nodo Norte/Quirón.
+// Sin esto, getInterpretation() devolvía undefined para cualquier tránsito
+// que tocara uno de estos puntos natales (p. ej. Saturno cuadratura Plutón natal).
+const NATAL_PLANETS = [
+  "Sol", "Luna", "Mercurio", "Venus", "Marte",
+  "Júpiter", "Saturno", "Urano", "Neptuno", "Plutón",
+  "Nodo Norte", "Quirón", "Ascendente", "MC",
+];
 
 export const INTERPRETATIONS: Record<string, TransitInterpretation> = {};
 
