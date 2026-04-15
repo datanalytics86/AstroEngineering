@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
-import type { TransitResponse, ChartResponse } from "@/lib/types";
+import dynamic from "next/dynamic";
+import type { TransitResponse, ChartResponse, MonthlyForecast } from "@/lib/types";
 import { loadTransits, loadChart } from "@/lib/storage";
-import TransitTimeline from "@/components/TransitTimeline";
 import ForecastDashboard from "@/components/ForecastDashboard";
 import { IMPORTANCE_COLORS } from "@/lib/zodiac-utils";
 import { getInterpretationByComponents } from "@/lib/interpretation-engine";
+import { generateTransitSummary } from "@/lib/transit-summary";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+const TransitWheel                 = dynamic(() => import("@/components/TransitWheel"), { ssr: false });
+const MonthDetailModal             = dynamic(() => import("@/components/MonthDetailModal"), { ssr: false });
+const TransitExecutiveSummaryModal = dynamic(() => import("@/components/TransitExecutiveSummaryModal"), { ssr: false });
 
 const PLANET_SYMBOLS: Record<string, string> = {
   Sol: "☉", Luna: "☽", Mercurio: "☿", Venus: "♀", Marte: "♂",
@@ -37,6 +42,10 @@ export default function TransitosPage() {
   const [transits, setTransits] = useState<TransitResponse | null>(null);
   const [chart, setChart]       = useState<ChartResponse | null>(null);
 
+  // Modal state
+  const [selectedMonth, setSelectedMonth]     = useState<MonthlyForecast | null>(null);
+  const [showExecSummary, setShowExecSummary] = useState(false);
+
   useEffect(() => {
     if (!id) { router.push("/"); return; }
     const t = loadTransits(id);
@@ -45,6 +54,11 @@ export default function TransitosPage() {
     setTransits(t);
     setChart(c.chart);
   }, [id, router]);
+
+  const execSummary = useMemo(() => {
+    if (!transits || !chart) return null;
+    return generateTransitSummary(transits, chart);
+  }, [transits, chart]);
 
   if (!transits || !chart) {
     return (
@@ -57,7 +71,7 @@ export default function TransitosPage() {
     );
   }
 
-  const today   = new Date().toISOString().slice(0, 10);
+  const today    = new Date().toISOString().slice(0, 10);
   const nextYear = new Date();
   nextYear.setFullYear(nextYear.getFullYear() + 1);
   const endDate = nextYear.toISOString().slice(0, 10);
@@ -78,7 +92,7 @@ export default function TransitosPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">Tu año astrológico</h1>
@@ -86,15 +100,25 @@ export default function TransitosPage() {
             {chart.name} · {today} → {endDate}
           </p>
         </div>
-        <button
-          onClick={() => router.push(`/carta/${id}`)}
-          className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
-        >
-          ← Carta Natal
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {execSummary && (
+            <button
+              onClick={() => setShowExecSummary(true)}
+              className="flex items-center gap-1.5 border border-blue-200 bg-blue-50 text-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-100 hover:border-blue-300 transition-colors font-mono"
+            >
+              <span>✦</span> Resumen ejecutivo 12 meses
+            </button>
+          )}
+          <button
+            onClick={() => router.push(`/carta/${id}`)}
+            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
+          >
+            ← Carta Natal
+          </button>
+        </div>
       </div>
 
-      {/* Hero stats */}
+      {/* ── Hero stats ── */}
       <div className="bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-100 rounded-2xl p-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
           {[
@@ -122,7 +146,7 @@ export default function TransitosPage() {
         )}
       </div>
 
-      {/* Próximos eventos clave */}
+      {/* ── Próximos eventos clave ── */}
       {keyEvents.length > 0 && (
         <section>
           <h2 className="font-semibold text-lg text-slate-800 mb-4">Próximos eventos clave</h2>
@@ -158,7 +182,7 @@ export default function TransitosPage() {
         </section>
       )}
 
-      {/* ── Tránsitos Tier 1 — los 4 de mayor peso del año ────────────────────── */}
+      {/* ── Tránsitos Tier 1 ── */}
       {tier1.length > 0 && (
         <section>
           <h2 className="font-semibold text-lg text-slate-800 mb-1">Tránsitos principales del año</h2>
@@ -181,7 +205,6 @@ export default function TransitosPage() {
                   key={i}
                   className={`rounded-2xl border bg-gradient-to-br ${gradient} p-5 flex flex-col gap-3`}
                 >
-                  {/* Planet + aspect */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-baseline gap-2">
                       <span className="text-3xl font-mono leading-none" style={{ color }}>
@@ -206,7 +229,6 @@ export default function TransitosPage() {
                     </span>
                   </div>
 
-                  {/* Interpretation summary */}
                   {interp ? (
                     <p className="text-xs text-slate-700 leading-relaxed">{interp.summary}</p>
                   ) : (
@@ -216,7 +238,6 @@ export default function TransitosPage() {
                     </p>
                   )}
 
-                  {/* Duration bar */}
                   <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
                     <span>{t.enters_orb}</span>
                     <div className="flex-1 h-0.5 rounded-full" style={{ backgroundColor: `${color}40` }} />
@@ -229,7 +250,7 @@ export default function TransitosPage() {
         </section>
       )}
 
-      {/* Pronóstico mensual — tarjetas clicables */}
+      {/* ── Pronóstico mes a mes ── */}
       <section>
         <h2 className="font-semibold text-lg text-slate-800 mb-1">Pronóstico mes a mes</h2>
         <p className="text-xs text-slate-400 font-mono mb-4">
@@ -241,16 +262,34 @@ export default function TransitosPage() {
         />
       </section>
 
-      {/* Vista temporal Gantt */}
+      {/* ── Rueda de tránsitos ── */}
       <section>
-        <h2 className="font-semibold text-lg text-slate-800 mb-4">Vista temporal</h2>
-        <TransitTimeline
-          transits={transits.current_transits}
-          startDate={today}
-          endDate={endDate}
+        <h2 className="font-semibold text-lg text-slate-800 mb-1">Rueda de tránsitos</h2>
+        <p className="text-xs text-slate-400 font-mono mb-4">
+          Planetas lentos (Júpiter → Plutón) por mes · Haz clic en un sector para ver el detalle
+        </p>
+        <TransitWheel
+          timeline={transits.timeline}
+          onMonthClick={(m) => setSelectedMonth(m)}
         />
       </section>
 
+      {/* ── Modales ── */}
+      {selectedMonth && (
+        <MonthDetailModal
+          month={selectedMonth}
+          natalPlanets={chart.planets}
+          onClose={() => setSelectedMonth(null)}
+        />
+      )}
+
+      {showExecSummary && execSummary && (
+        <TransitExecutiveSummaryModal
+          summary={execSummary}
+          name={chart.name}
+          onClose={() => setShowExecSummary(false)}
+        />
+      )}
     </div>
   );
 }

@@ -8,11 +8,29 @@ interface Props {
   loading?: boolean;
 }
 
+interface GeoAddress {
+  country_code?: string;
+  country?: string;
+  state?: string;
+  province?: string;
+  region?: string;
+  county?: string;
+  city?: string;
+  town?: string;
+  village?: string;
+  municipality?: string;
+  city_district?: string;
+  suburb?: string;
+  neighbourhood?: string;
+  quarter?: string;
+  [key: string]: string | undefined;
+}
+
 interface GeoResult {
   display_name: string;
   lat: string;
   lon: string;
-  address?: { country_code?: string };
+  address?: GeoAddress;
 }
 
 // Lookup de estado/provincia → zona IANA para países con múltiples zonas horarias.
@@ -447,19 +465,40 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
     }, 400);
   }
 
-  /** Formatea el display_name de Nominatim como "Ciudad · Región · País"
-   *  para que sea legible y permita distinguir entre ciudades homónimas. */
-  function formatCityLabel(displayName: string): string {
-    const parts = displayName.split(",").map((s) => s.trim()).filter(Boolean);
-    // Eliminar partes que son solo números (códigos postales)
-    const filtered = parts.filter((p) => !/^\d+$/.test(p));
-    if (filtered.length === 0) return displayName;
-    if (filtered.length === 1) return filtered[0];
-    // Mostrar: primera parte (ciudad/barrio), penúltima (estado/departamento), última (país)
-    const city    = filtered[0];
-    const country = filtered[filtered.length - 1];
-    const region  = filtered.length >= 3 ? filtered[filtered.length - 2] : null;
-    return region ? `${city} · ${region} · ${country}` : `${city} · ${country}`;
+  /** Formatea el resultado de Nominatim usando el objeto address estructurado.
+   *  Muestra hasta 4 niveles: barrio/comuna · ciudad · región · país
+   *  Ejemplo: "Santiago Centro · Santiago · Región Metropolitana · Chile" */
+  function formatCityLabel(displayName: string, address?: GeoAddress): string {
+    if (!address) {
+      // Fallback: parsear display_name
+      const parts = displayName.split(",").map((s) => s.trim()).filter((p) => !/^\d+$/.test(p));
+      if (parts.length <= 1) return displayName;
+      const country = parts[parts.length - 1];
+      const region  = parts.length >= 3 ? parts[parts.length - 2] : null;
+      return region ? `${parts[0]} · ${region} · ${country}` : `${parts[0]} · ${country}`;
+    }
+
+    // Nivel más fino disponible (barrio / comuna / distrito)
+    const micro =
+      address.neighbourhood ?? address.quarter ??
+      address.suburb ?? address.city_district ?? null;
+
+    // Ciudad / municipio
+    const city =
+      address.city ?? address.town ?? address.village ?? address.municipality ?? null;
+
+    // Estado / región / provincia
+    const region =
+      address.state ?? address.region ?? address.province ?? address.county ?? null;
+
+    // País
+    const country = address.country ?? null;
+
+    const parts = [micro, city, region, country].filter(Boolean) as string[];
+    // Desduplicar partes consecutivas iguales (ej. ciudad = región en ciudades-estado)
+    const deduped = parts.filter((p, i) => i === 0 || p !== parts[i - 1]);
+
+    return deduped.length > 0 ? deduped.join(" · ") : displayName;
   }
 
   function selectCity(result: GeoResult) {
@@ -496,7 +535,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
 
     setForm((prev) => ({
       ...prev,
-      city_search:     result.display_name.split(",").slice(0, 2).join(",").trim(),
+      city_search:     formatCityLabel(result.display_name, result.address),
       latitude:        lat,
       longitude:       lon,
       timezone_offset: newOffset,
@@ -637,7 +676,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
                 className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-border last:border-0"
               >
                 <span className="text-sm text-slate-700 font-mono block truncate">
-                  {formatCityLabel(r.display_name)}
+                  {formatCityLabel(r.display_name, r.address)}
                 </span>
               </button>
             ))}

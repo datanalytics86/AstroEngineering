@@ -161,6 +161,40 @@ export interface NatalInterpretation {
   keyphrase: string;
 }
 
+// ── Transit Executive Summary Types ───────────────────────────────────────────
+
+export interface MajorCycle {
+  planet: string;
+  aspect: string;
+  natal_planet: string;
+  enters: string;
+  leaves: string;
+  headline: string;
+  description: string;
+  life_area: string;
+}
+
+export interface QuarterNarrative {
+  quarter: string;        // "Q1 2026", "Q2 2026" …
+  months: string;         // "Ene–Mar 2026"
+  intensity: "alta" | "media" | "baja";
+  narrative: string;
+  key_transit: string;
+}
+
+export interface TransitExecutiveSummary {
+  headline: string;
+  year_theme: string;
+  year_description: string;
+  major_cycles: MajorCycle[];
+  quarters: QuarterNarrative[];
+  opportunities: string[];
+  challenges: string[];
+  integrating_advice: string;
+  peak_month: string;
+  peak_month_label: string;
+}
+
 export type ClickTarget =
   | { type: "planet"; planet: PlanetPosition; aspects: Aspect[] }
   | { type: "aspect"; aspect: Aspect }
