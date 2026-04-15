@@ -221,11 +221,14 @@ export default function TransitWheel({ timeline, onMonthClick }: Props) {
               opacity={hoveredMonth && timeline[arc.monthIdx]?.month !== hoveredMonth ? 0.25 : 0.75}
               className="cursor-pointer transition-opacity duration-150"
               onMouseEnter={(e) => {
-                const rect = (e.target as SVGPathElement)
-                  .closest("svg")!.getBoundingClientRect();
+                const svgEl = (e.target as SVGPathElement).closest("svg")!;
+                const rect  = svgEl.getBoundingClientRect();
+                // Scale from CSS pixels → SVG viewport coordinates
+                const scaleX = SVG_SIZE / rect.width;
+                const scaleY = SVG_SIZE / rect.height;
                 setTooltip({
-                  x: e.clientX - rect.left,
-                  y: e.clientY - rect.top,
+                  x: (e.clientX - rect.left) * scaleX,
+                  y: (e.clientY - rect.top)  * scaleY,
                   planet: arc.planet, aspect: arc.aspect, natal: arc.natal,
                   month: format(new Date(`${timeline[arc.monthIdx]?.month ?? ""}-01`), "MMM yyyy", { locale: es }),
                 });

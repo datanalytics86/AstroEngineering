@@ -11,6 +11,8 @@ const MonthDetailModal = dynamic(() => import("./MonthDetailModal"), { ssr: fals
 interface Props {
   timeline: MonthlyForecast[];
   natalPlanets?: PlanetPosition[];
+  /** If provided, the parent owns the modal — no modal is rendered inside this component. */
+  onMonthClick?: (month: MonthlyForecast) => void;
 }
 
 function intensityInfo(score: number): { label: string; color: string; bg: string; border: string } {
@@ -25,13 +27,21 @@ const ASPECT_SYMBOLS: Record<string, string> = {
   Sesquicuadratura: "⚼", "Semi-sextil": "⚺",
 };
 
-export default function ForecastDashboard({ timeline, natalPlanets }: Props) {
+export default function ForecastDashboard({ timeline, natalPlanets, onMonthClick }: Props) {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
   const selectedData = useMemo(
-    () => timeline.find((m) => m.month === selectedMonth) ?? null,
-    [timeline, selectedMonth],
+    () => (onMonthClick ? null : timeline.find((m) => m.month === selectedMonth) ?? null),
+    [timeline, selectedMonth, onMonthClick],
   );
+
+  function handleCardClick(month: MonthlyForecast) {
+    if (onMonthClick) {
+      onMonthClick(month);
+    } else {
+      setSelectedMonth(month.month);
+    }
+  }
 
   return (
     <>
@@ -48,7 +58,7 @@ export default function ForecastDashboard({ timeline, natalPlanets }: Props) {
             <button
               key={month.month}
               type="button"
-              onClick={() => setSelectedMonth(month.month)}
+              onClick={() => handleCardClick(month)}
               className={`rounded-xl border p-4 flex flex-col gap-2.5 text-left transition-all duration-200
                 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400
                 ${isSelected ? "ring-2 ring-blue-500 shadow-md" : ""}`}

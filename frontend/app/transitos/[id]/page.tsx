@@ -259,6 +259,7 @@ export default function TransitosPage() {
         <ForecastDashboard
           timeline={transits.timeline}
           natalPlanets={chart.planets}
+          onMonthClick={(m) => setSelectedMonth(m)}
         />
       </section>
 
