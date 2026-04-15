@@ -6,10 +6,28 @@ import type { TransitResponse, ChartResponse } from "@/lib/types";
 import { loadTransits, loadChart } from "@/lib/storage";
 import TransitTimeline from "@/components/TransitTimeline";
 import ForecastDashboard from "@/components/ForecastDashboard";
-import InterpretationCard from "@/components/InterpretationCard";
 import { IMPORTANCE_COLORS } from "@/lib/zodiac-utils";
+import { getInterpretationByComponents } from "@/lib/interpretation-engine";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+
+const PLANET_SYMBOLS: Record<string, string> = {
+  Sol: "☉", Luna: "☽", Mercurio: "☿", Venus: "♀", Marte: "♂",
+  Júpiter: "♃", Saturno: "♄", Urano: "♅", Neptuno: "♆", Plutón: "♇",
+  "Nodo Norte": "☊", Quirón: "⚷",
+};
+
+const ASPECT_SYMBOLS: Record<string, string> = {
+  Conjunción: "☌", Oposición: "☍", Cuadratura: "□",
+  Trígono: "△", Sextil: "⚹", Quincuncio: "⚻",
+  Sesquicuadratura: "⚼", "Semi-sextil": "⚺",
+};
+
+function tierStyle(nature: string): { gradient: string; color: string } {
+  if (nature === "armonioso") return { gradient: "from-emerald-50 to-green-50 border-emerald-200",  color: "#10B981" };
+  if (nature === "tenso")     return { gradient: "from-red-50 to-rose-50 border-red-200",           color: "#EF4444" };
+  return                             { gradient: "from-violet-50 to-purple-50 border-violet-200",   color: "#7C3AED" };
+}
 
 export default function TransitosPage() {
   const router = useRouter();
@@ -17,7 +35,7 @@ export default function TransitosPage() {
   const id = params?.id as string;
 
   const [transits, setTransits] = useState<TransitResponse | null>(null);
-  const [chart, setChart] = useState<ChartResponse | null>(null);
+  const [chart, setChart]       = useState<ChartResponse | null>(null);
 
   useEffect(() => {
     if (!id) { router.push("/"); return; }
@@ -39,33 +57,31 @@ export default function TransitosPage() {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today   = new Date().toISOString().slice(0, 10);
   const nextYear = new Date();
   nextYear.setFullYear(nextYear.getFullYear() + 1);
   const endDate = nextYear.toISOString().slice(0, 10);
 
-  // Upcoming key events (critical + high, sorted by exact date)
+  // Próximos 6 eventos críticos/altos con fecha exacta
   const keyEvents = transits.current_transits
     .filter((t) => (t.importance === "crítica" || t.importance === "alta") && t.exact_date)
     .sort((a, b) => (a.exact_date ?? "").localeCompare(b.exact_date ?? ""))
     .slice(0, 6);
 
-  // Most significant transits for list
-  const significantTransits = transits.current_transits
-    .filter((t) => t.importance !== "baja")
-    .sort((a, b) => b.score - a.score);
+  // Top 4 tránsitos del año por score — Tier 1
+  const tier1 = [...transits.current_transits]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4);
 
-  // Dominant theme for the year
   const peakMonth = [...transits.timeline].sort((a, b) => b.intensity_score - a.intensity_score)[0];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">
-            Tu año astrológico
-          </h1>
+          <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">Tu año astrológico</h1>
           <p className="text-slate-400 font-mono text-sm mt-1">
             {chart.name} · {today} → {endDate}
           </p>
@@ -78,7 +94,7 @@ export default function TransitosPage() {
         </button>
       </div>
 
-      {/* Hero narrative card */}
+      {/* Hero stats */}
       <div className="bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-100 rounded-2xl p-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
           {[
@@ -101,8 +117,7 @@ export default function TransitosPage() {
             </span>
             {peakMonth.dominant_theme && (
               <>, con énfasis en <span className="italic">{peakMonth.dominant_theme}</span></>
-            )}
-            .
+            )}.
           </p>
         )}
       </div>
@@ -130,13 +145,10 @@ export default function TransitosPage() {
                   </div>
                   <div className="flex-1 text-sm text-slate-700 font-mono">
                     <span className="font-semibold">{t.transit_planet}</span>
-                    <span className="text-slate-400 mx-1">{t.aspect_name}</span>
+                    <span className="text-slate-400 mx-1">{ASPECT_SYMBOLS[t.aspect_name] ?? t.aspect_name}</span>
                     <span>{t.natal_planet} natal</span>
                   </div>
-                  <span
-                    className="text-xs font-mono uppercase tracking-wide shrink-0"
-                    style={{ color: importColor }}
-                  >
+                  <span className="text-xs font-mono uppercase tracking-wide shrink-0" style={{ color: importColor }}>
                     {t.importance}
                   </span>
                 </div>
@@ -146,13 +158,90 @@ export default function TransitosPage() {
         </section>
       )}
 
-      {/* Pronóstico mensual */}
+      {/* ── Tránsitos Tier 1 — los 4 de mayor peso del año ────────────────────── */}
+      {tier1.length > 0 && (
+        <section>
+          <h2 className="font-semibold text-lg text-slate-800 mb-1">Tránsitos principales del año</h2>
+          <p className="text-xs text-slate-400 font-mono mb-4">
+            Los 4 tránsitos de mayor impacto según scoring astral (Sasportas · Forrest · Arroyo)
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {tier1.map((t, i) => {
+              const { gradient, color } = tierStyle(t.nature);
+              const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet);
+              const exactStr = t.exact_date
+                ? format(new Date(t.exact_date.slice(0, 10)), "d MMM yyyy", { locale: es })
+                : null;
+              const importColor = IMPORTANCE_COLORS[t.importance] ?? "#94A3B8";
+              const planetSym = PLANET_SYMBOLS[t.transit_planet] ?? "";
+              const aspectSym = ASPECT_SYMBOLS[t.aspect_name] ?? t.aspect_name;
+
+              return (
+                <div
+                  key={i}
+                  className={`rounded-2xl border bg-gradient-to-br ${gradient} p-5 flex flex-col gap-3`}
+                >
+                  {/* Planet + aspect */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-mono leading-none" style={{ color }}>
+                        {planetSym}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800 font-mono leading-tight">
+                          {t.transit_planet}{" "}
+                          <span style={{ color }}>{aspectSym}</span>{" "}
+                          {t.natal_planet} natal
+                        </p>
+                        {exactStr && (
+                          <p className="text-xs text-slate-500 font-mono mt-0.5">Exacto: {exactStr}</p>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className="text-xs font-mono uppercase tracking-wider border rounded px-2 py-0.5 shrink-0"
+                      style={{ color: importColor, borderColor: `${importColor}55`, backgroundColor: `${importColor}10` }}
+                    >
+                      {t.importance}
+                    </span>
+                  </div>
+
+                  {/* Interpretation summary */}
+                  {interp ? (
+                    <p className="text-xs text-slate-700 leading-relaxed">{interp.summary}</p>
+                  ) : (
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      {t.transit_planet} {t.aspect_name.toLowerCase()} {t.natal_planet} natal
+                      — orbe {t.orb.toFixed(1)}°
+                    </p>
+                  )}
+
+                  {/* Duration bar */}
+                  <div className="flex items-center gap-2 text-xs font-mono text-slate-400">
+                    <span>{t.enters_orb}</span>
+                    <div className="flex-1 h-0.5 rounded-full" style={{ backgroundColor: `${color}40` }} />
+                    <span>{t.leaves_orb}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* Pronóstico mensual — tarjetas clicables */}
       <section>
-        <h2 className="font-semibold text-lg text-slate-800 mb-4">Pronóstico mes a mes</h2>
-        <ForecastDashboard timeline={transits.timeline} />
+        <h2 className="font-semibold text-lg text-slate-800 mb-1">Pronóstico mes a mes</h2>
+        <p className="text-xs text-slate-400 font-mono mb-4">
+          Haz clic en un mes para ver el detalle e interpretación completa
+        </p>
+        <ForecastDashboard
+          timeline={transits.timeline}
+          natalPlanets={chart.planets}
+        />
       </section>
 
-      {/* Gantt timeline */}
+      {/* Vista temporal Gantt */}
       <section>
         <h2 className="font-semibold text-lg text-slate-800 mb-4">Vista temporal</h2>
         <TransitTimeline
@@ -162,22 +251,6 @@ export default function TransitosPage() {
         />
       </section>
 
-      {/* Lista detallada */}
-      {significantTransits.length > 0 && (
-        <section>
-          <h2 className="font-semibold text-lg text-slate-800 mb-4">
-            Tránsitos destacados
-            <span className="ml-2 text-sm font-normal text-slate-400">
-              ({significantTransits.length})
-            </span>
-          </h2>
-          <div className="space-y-4">
-            {significantTransits.map((t, i) => (
-              <InterpretationCard key={i} transit={t} natalPlanets={chart.planets} />
-            ))}
-          </div>
-        </section>
-      )}
     </div>
   );
 }
