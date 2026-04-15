@@ -113,3 +113,42 @@ class TransitResponse(BaseModel):
     current_transits: list[TransitEvent]
     timeline: list[MonthlyForecast]
     exact_aspects_calendar: list[ExactAspectEvent]
+
+
+# ── Mundane Models ─────────────────────────────────────────────────────────────
+
+class MundaneRequest(BaseModel):
+    country: str = Field(..., description="País: usa | chile | uk | eu | germany | france | china | russia")
+    start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
+class IngressEvent(BaseModel):
+    date: str
+    planet: str
+    sign: str
+    retrograde: bool
+
+
+class NationalChartData(BaseModel):
+    country_key: str
+    country_name: str
+    founding_date: str
+    founding_time: str
+    location: str
+    source: str
+    planets: list[PlanetPosition]
+    ascendant: Optional[AnglePoint] = None
+    midheaven: Optional[AnglePoint] = None
+    houses: Optional[list[HouseCusp]] = None
+    aspects: Optional[list[Aspect]] = None
+
+
+class MundaneResponse(BaseModel):
+    country_key: str
+    country_name: str
+    national_chart: NationalChartData
+    current_sky: list[PlanetPosition]
+    current_transits: list[TransitEvent]
+    timeline: list[MonthlyForecast]
+    ingresses: list[IngressEvent]

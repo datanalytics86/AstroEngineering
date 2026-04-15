@@ -6,9 +6,10 @@ FastAPI + pyswisseph
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse
+from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, MundaneRequest, MundaneResponse
 from astro.chart import calculate_natal_chart
 from astro.transits import calculate_transit_timeline
+from astro.mundane import calculate_mundane_response
 
 app = FastAPI(
     title="AstroEngine Pro API",
@@ -65,3 +66,30 @@ def get_transits(body: TransitRequest):
         return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error en cálculo de tránsitos: {str(exc)}")
+
+
+@app.post("/api/mundane", response_model=MundaneResponse)
+def get_mundane(body: MundaneRequest):
+    """
+    Calcula tránsitos de planetas lentos sobre la carta natal de un país.
+
+    Países disponibles: usa, chile, uk, eu, germany, france, china, russia
+
+    Devuelve:
+      - national_chart: carta natal del país (Campion canonical)
+      - current_sky: posiciones actuales de todos los planetas
+      - current_transits: tránsitos activos sobre la carta nacional
+      - timeline: pronóstico mensual (12 meses)
+      - ingresses: ingresos de signo en el período
+    """
+    try:
+        result = calculate_mundane_response(
+            country_key=body.country,
+            start_date_str=body.start_date,
+            end_date_str=body.end_date,
+        )
+        return result
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error en cálculo mundano: {str(exc)}")

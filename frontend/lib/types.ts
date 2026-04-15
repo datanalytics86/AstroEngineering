@@ -200,3 +200,42 @@ export type ClickTarget =
   | { type: "aspect"; aspect: Aspect }
   | { type: "house"; house: HouseCusp }
   | { type: "angle"; name: "ASC" | "DSC" | "MC" | "IC"; longitude: number; sign: string; degree_display: string }
+
+// ── Mundane Astrology Types ────────────────────────────────────────────────────
+
+export interface MundaneRequest {
+  country: string;    // "usa" | "chile" | "uk" | "eu" | "germany" | "france" | "china" | "russia"
+  start_date: string; // "YYYY-MM-DD"
+  end_date: string;   // "YYYY-MM-DD"
+}
+
+export interface NationalChartData {
+  country_key: string;
+  country_name: string;
+  founding_date: string;
+  founding_time: string;
+  location: string;
+  source: string;
+  planets: PlanetPosition[];
+  ascendant?: AnglePoint;
+  midheaven?: AnglePoint;
+  houses?: HouseCusp[];
+  aspects?: Aspect[];
+}
+
+export interface IngressEvent {
+  date: string;
+  planet: string;
+  sign: string;
+  retrograde: boolean;
+}
+
+export interface MundaneResponse {
+  country_key: string;
+  country_name: string;
+  national_chart: NationalChartData;
+  current_sky: PlanetPosition[];   // today's planetary positions
+  current_transits: TransitEvent[];
+  timeline: MonthlyForecast[];
+  ingresses: IngressEvent[];
+}

@@ -13,6 +13,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 const TransitWheel                 = dynamic(() => import("@/components/TransitWheel"), { ssr: false });
+const TransitZodiacWheel           = dynamic(() => import("@/components/TransitZodiacWheel"), { ssr: false });
 const MonthDetailModal             = dynamic(() => import("@/components/MonthDetailModal"), { ssr: false });
 const TransitExecutiveSummaryModal = dynamic(() => import("@/components/TransitExecutiveSummaryModal"), { ssr: false });
 
@@ -76,6 +77,24 @@ export default function TransitosPage() {
   nextYear.setFullYear(nextYear.getFullYear() + 1);
   const endDate = nextYear.toISOString().slice(0, 10);
 
+  // Deduplicate transit planet positions for the zodiac biwheel
+  const zodiacTransitPlanets = useMemo(() => {
+    if (!transits) return [];
+    const seen = new Set<string>();
+    const result: { name: string; symbol: string; longitude: number; retrograde?: boolean }[] = [];
+    for (const t of [...transits.current_transits].sort((a, b) => b.score - a.score)) {
+      if (!seen.has(t.transit_planet)) {
+        seen.add(t.transit_planet);
+        result.push({
+          name:      t.transit_planet,
+          symbol:    PLANET_SYMBOLS[t.transit_planet] ?? t.transit_planet[0],
+          longitude: t.transit_longitude,
+        });
+      }
+    }
+    return result;
+  }, [transits]);
+
   // Próximos 6 eventos críticos/altos con fecha exacta
   const keyEvents = transits.current_transits
     .filter((t) => (t.importance === "crítica" || t.importance === "alta") && t.exact_date)
@@ -109,6 +128,12 @@ export default function TransitosPage() {
               <span>✦</span> Resumen ejecutivo 12 meses
             </button>
           )}
+          <button
+            onClick={() => router.push("/mundial")}
+            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
+          >
+            🌍 Mundial
+          </button>
           <button
             onClick={() => router.push(`/carta/${id}`)}
             className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
@@ -272,6 +297,23 @@ export default function TransitosPage() {
         <TransitWheel
           timeline={transits.timeline}
           onMonthClick={(m) => setSelectedMonth(m)}
+        />
+      </section>
+
+      {/* ── Birueda zodiacal ── */}
+      <section>
+        <h2 className="font-semibold text-lg text-slate-800 mb-1">Birueda zodiacal</h2>
+        <p className="text-xs text-slate-400 font-mono mb-4">
+          Tránsitos actuales (anillo exterior) sobre carta natal (anillo interior)
+        </p>
+        <TransitZodiacWheel
+          natalPlanets={chart.planets}
+          natalHouses={chart.houses}
+          ascendant={chart.ascendant}
+          midheaven={chart.midheaven}
+          natalAspects={chart.aspects}
+          transitPlanets={zodiacTransitPlanets}
+          transitEvents={transits.current_transits}
         />
       </section>
 
