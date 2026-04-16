@@ -61,22 +61,6 @@ export default function TransitosPage() {
     return generateTransitSummary(transits, chart);
   }, [transits, chart]);
 
-  if (!transits || !chart) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-400 font-mono text-sm">Cargando tránsitos…</p>
-        </div>
-      </div>
-    );
-  }
-
-  const today    = new Date().toISOString().slice(0, 10);
-  const nextYear = new Date();
-  nextYear.setFullYear(nextYear.getFullYear() + 1);
-  const endDate = nextYear.toISOString().slice(0, 10);
-
   // Deduplicate transit planet positions for the zodiac biwheel
   const zodiacTransitPlanets = useMemo(() => {
     if (!transits) return [];
@@ -95,6 +79,22 @@ export default function TransitosPage() {
     return result;
   }, [transits]);
 
+  if (!transits || !chart) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-slate-400 font-mono text-sm">Cargando tránsitos…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const today    = new Date().toISOString().slice(0, 10);
+  const nextYear = new Date();
+  nextYear.setFullYear(nextYear.getFullYear() + 1);
+  const endDate = nextYear.toISOString().slice(0, 10);
+
   // Próximos 6 eventos críticos/altos con fecha exacta
   const keyEvents = transits.current_transits
     .filter((t) => (t.importance === "crítica" || t.importance === "alta") && t.exact_date)
@@ -109,6 +109,7 @@ export default function TransitosPage() {
   const peakMonth = [...transits.timeline].sort((a, b) => b.intensity_score - a.intensity_score)[0];
 
   return (
+
     <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
 
       {/* ── Header ── */}

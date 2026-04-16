@@ -52,6 +52,21 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 - [x] QA/bugfix: 4 bugs corregidos (applying logic, DMS truncation, exact-date search range, null crash)
 - [x] Rediseño UI: paleta blanca/azul minimalista, formulario mejorado con DatePicker/DST, vista tránsitos narrativa
 - [x] Testing de precisión contra astro.com (3 cartas de prueba) — ✓ validado, error máximo ±1' (Moshier)
+- [x] Frontend: `components/MonthDetailModal.tsx` — slide-in desde la derecha con detalle mensual
+- [x] Frontend: `components/TransitWheel.tsx` — rueda radial SVG de tránsitos (12 meses × 5 planetas lentos)
+- [x] Frontend: `components/TransitExecutiveSummaryModal.tsx` — resumen ejecutivo 12 meses
+- [x] Frontend: `components/TransitZodiacWheel.tsx` — birueda zodiacal tradicional (tránsitos vs natal)
+- [x] Frontend: `lib/wheel-geometry.ts` — helpers SVG compartidos (polarXY, describeSector, makeToAngle)
+- [x] Frontend: `lib/transit-summary.ts` — generador de resumen ejecutivo (Sasportas/Forrest/Arroyo)
+- [x] Frontend: `lib/mundane-interpretations.ts` — 20+ interpretaciones mundanas (Campion/Tarnas/Barbault)
+- [x] Frontend: `app/mundial/page.tsx` — página de astrología mundial con birueda + pronóstico + cielo actual
+- [x] Frontend: `app/api/mundane/route.ts` — proxy Next.js para /api/mundane
+- [x] Backend: `astro/mundane_charts.py` — 8 cartas nacionales canónicas (Campion)
+- [x] Backend: `astro/mundane.py` — calculate_mundane_response() + ingresos de signo
+- [x] Backend: `POST /api/mundane` endpoint con modelos Pydantic
+- [x] UI: Ciudad granular con addressdetails Nominatim (barrio · ciudad · estado · país)
+- [x] UI: Birueda zodiacal en vista de tránsitos personales
+- [x] UI: Navegación → /mundial desde página principal y vista de tránsitos
 
 ---
 
@@ -72,7 +87,9 @@ AstroEngineering/
 │       ├── chart.py                ← Carta natal: planetas, ascendente, MC
 │       ├── aspects.py              ← Detección y scoring de aspectos
 │       ├── houses.py               ← Casas Placidus (fallback: Whole Sign)
-│       └── transits.py             ← Escaneo diario + refinamiento binario
+│       ├── transits.py             ← Escaneo diario + refinamiento binario
+│       ├── mundane_charts.py       ← 8 cartas nacionales (Campion canonical)
+│       └── mundane.py              ← Tránsitos sobre cartas nacionales + ingresos
 └── frontend/                       ← Next.js 14 App Router + TypeScript
     ├── package.json
     ├── tailwind.config.ts
