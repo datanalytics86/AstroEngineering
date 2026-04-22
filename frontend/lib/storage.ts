@@ -55,6 +55,53 @@ export function loadTransits(id: string): TransitResponse | null {
   }
 }
 
+// ── Saved-chart list ─────────────────────────────────────────────────────────
+
+export interface SavedChartMeta {
+  id: string;
+  name: string;
+  birth_date: string;
+  birth_time: string;
+  ascendant: string;
+  hasTransits: boolean;
+}
+
+export function listCharts(): SavedChartMeta[] {
+  try {
+    const ids = Object.keys(localStorage)
+      .filter((k) => k.startsWith(PREFIX_CHART))
+      .map((k) => k.slice(PREFIX_CHART.length));
+
+    return ids
+      .map((id): SavedChartMeta | null => {
+        try {
+          const chartStr = localStorage.getItem(PREFIX_CHART + id);
+          if (!chartStr) return null;
+          const chart = JSON.parse(chartStr) as ChartResponse;
+          return {
+            id,
+            name: chart.name,
+            birth_date: chart.birth_date,
+            birth_time: chart.birth_time,
+            ascendant: chart.ascendant.sign,
+            hasTransits: !!localStorage.getItem(PREFIX_TRANSIT + id),
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter((x): x is SavedChartMeta => x !== null);
+  } catch {
+    return [];
+  }
+}
+
+export function deleteChart(id: string): void {
+  localStorage.removeItem(PREFIX_CHART + id);
+  localStorage.removeItem(PREFIX_BIRTH + id);
+  localStorage.removeItem(PREFIX_TRANSIT + id);
+}
+
 // ── Housekeeping ──────────────────────────────────────────────────────────────
 
 function pruneStorage(): void {

@@ -67,6 +67,9 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 - [x] UI: Ciudad granular con addressdetails Nominatim (barrio · ciudad · estado · país)
 - [x] UI: Birueda zodiacal en vista de tránsitos personales
 - [x] UI: Navegación → /mundial desde página principal y vista de tránsitos
+- [x] UI: TransitZodiacWheel rediseñada estilo astro.com — agujas radiales, etiquetas de grado, colisiones resueltas, 360 ticks, labels 10°/20°
+- [x] UI: ForecastDashboard con filtro por temática (pills) + vista cronología vertical (cuando hay filtro activo)
+- [x] UI: Página principal muestra "Cartas guardadas" (listCharts) con acceso directo, tránsitos y borrado
 
 ---
 

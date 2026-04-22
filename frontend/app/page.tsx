@@ -1,15 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import BirthDataForm from "@/components/BirthDataForm";
 import type { BirthData, ChartResponse } from "@/lib/types";
-import { saveChart } from "@/lib/storage";
+import { saveChart, listCharts, deleteChart, type SavedChartMeta } from "@/lib/storage";
+
+const SIGN_COLORS: Record<string, string> = {
+  Aries: "#EF4444", Tauro: "#16A34A", Géminis: "#EAB308", Cáncer: "#2563EB",
+  Leo: "#F97316", Virgo: "#65A30D", Libra: "#06B6D4", Escorpio: "#7C3AED",
+  Sagitario: "#DC2626", Capricornio: "#64748B", Acuario: "#0EA5E9", Piscis: "#8B5CF6",
+};
 
 export default function HomePage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading]       = useState(false);
+  const [error, setError]           = useState<string | null>(null);
+  const [saved, setSaved]           = useState<SavedChartMeta[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSaved(listCharts());
+  }, []);
 
   async function handleSubmit(data: BirthData) {
     setLoading(true);
@@ -34,8 +46,14 @@ export default function HomePage() {
     }
   }
 
+  function handleDelete(id: string) {
+    deleteChart(id);
+    setSaved((prev) => prev.filter((c) => c.id !== id));
+    setDeleteTarget(null);
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-base">
+    <div className="min-h-screen flex flex-col items-center justify-start p-6 bg-base pt-12">
       <div className="w-full max-w-lg">
         {/* Hero */}
         <div className="text-center mb-8">
@@ -68,6 +86,86 @@ export default function HomePage() {
             🌍 Astrología Mundial → tránsitos sobre cartas nacionales
           </button>
         </div>
+
+        {/* ── Cartas guardadas ── */}
+        {saved.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest font-mono mb-3">
+              Cartas guardadas
+            </h2>
+            <div className="space-y-2">
+              {saved.map((c) => {
+                const asc = c.ascendant;
+                const color = SIGN_COLORS[asc] ?? "#6B7280";
+                const isConfirming = deleteTarget === c.id;
+                return (
+                  <div
+                    key={c.id}
+                    className="bg-white border border-border rounded-xl px-4 py-3 shadow-card flex items-center gap-3"
+                  >
+                    {/* Color dot */}
+                    <div
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: color }}
+                    />
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{c.name}</p>
+                      <p className="text-xs font-mono text-slate-400">
+                        {c.birth_date} · {c.birth_time} ·{" "}
+                        <span style={{ color }} className="font-semibold">{asc} ASC</span>
+                      </p>
+                    </div>
+
+                    {/* Acciones */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      {c.hasTransits && (
+                        <button
+                          onClick={() => router.push(`/transitos/${c.id}`)}
+                          title="Ver tránsitos"
+                          className="text-xs font-mono px-2 py-1 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors"
+                        >
+                          ✦ Tránsitos
+                        </button>
+                      )}
+                      <button
+                        onClick={() => router.push(`/carta/${c.id}`)}
+                        className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-800 transition-colors"
+                      >
+                        Ver carta
+                      </button>
+                      {isConfirming ? (
+                        <>
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            className="text-xs font-mono px-2 py-1 rounded-lg bg-red-50 border border-red-300 text-red-600 hover:bg-red-100 transition-colors"
+                          >
+                            Confirmar
+                          </button>
+                          <button
+                            onClick={() => setDeleteTarget(null)}
+                            className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-400 hover:border-slate-400 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setDeleteTarget(c.id)}
+                          title="Eliminar"
+                          className="text-xs font-mono w-7 h-7 rounded-lg border border-slate-200 text-slate-300 hover:border-red-300 hover:text-red-400 transition-colors flex items-center justify-center"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Info técnica */}
         <div className="mt-6 grid grid-cols-3 gap-3 text-center">
