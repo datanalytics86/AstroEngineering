@@ -46,6 +46,7 @@ export default function TransitosPage() {
   // Modal state
   const [selectedMonth, setSelectedMonth]     = useState<MonthlyForecast | null>(null);
   const [showExecSummary, setShowExecSummary] = useState(false);
+  const [showCalendar, setShowCalendar]       = useState(false);
 
   useEffect(() => {
     if (!id) { router.push("/"); return; }
@@ -205,6 +206,72 @@ export default function TransitosPage() {
               );
             })}
           </div>
+        </section>
+      )}
+
+      {/* ── Calendario de fechas exactas ── */}
+      {transits.exact_aspects_calendar.length > 0 && (
+        <section>
+          <button
+            type="button"
+            onClick={() => setShowCalendar((v) => !v)}
+            className="flex items-center gap-2 w-full text-left group"
+          >
+            <h2 className="font-semibold text-lg text-slate-800">
+              Calendario de fechas exactas
+            </h2>
+            <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+              {transits.exact_aspects_calendar.length} eventos
+            </span>
+            <span className="ml-auto text-slate-400 group-hover:text-slate-600 transition-colors text-sm">
+              {showCalendar ? "▲ ocultar" : "▼ mostrar"}
+            </span>
+          </button>
+          <p className="text-xs text-slate-400 font-mono mt-1 mb-3">
+            Fechas precisas en que cada aspecto alcanza su punto de exactitud (orbe 0°)
+          </p>
+
+          {showCalendar && (
+            <div className="space-y-1.5">
+              {[...transits.exact_aspects_calendar]
+                .sort((a, b) => a.date.localeCompare(b.date))
+                .map((ev, i) => {
+                  const dateStr = format(new Date(ev.date), "d MMM yyyy", { locale: es });
+                  const dayStr  = format(new Date(ev.date), "EEEE", { locale: es });
+                  const sym     = PLANET_SYMBOLS[ev.transit_planet] ?? ev.transit_planet[0];
+                  const asp     = ASPECT_SYMBOLS[ev.aspect] ?? ev.aspect.slice(0, 3);
+                  const isPast  = ev.date < new Date().toISOString().slice(0, 10);
+
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center gap-3 rounded-xl border px-4 py-2.5 shadow-card ${
+                        isPast ? "opacity-50 bg-slate-50" : "bg-white"
+                      }`}
+                      style={{ borderColor: isPast ? "#E2E8F0" : "#BFDBFE" }}
+                    >
+                      {/* Date block */}
+                      <div className="w-28 shrink-0">
+                        <div className="text-xs font-mono font-semibold text-slate-700 capitalize">
+                          {dateStr}
+                        </div>
+                        <div className="text-xs text-slate-400 capitalize">{dayStr}</div>
+                      </div>
+                      {/* Planet + aspect */}
+                      <div className="flex items-center gap-1.5 flex-1 font-mono text-sm min-w-0">
+                        <span className="text-blue-500">{sym}</span>
+                        <span className="font-semibold text-slate-800">{ev.transit_planet}</span>
+                        <span className="text-slate-400">{asp}</span>
+                        <span className="text-slate-600 truncate">{ev.natal_planet} natal</span>
+                      </div>
+                      {isPast && (
+                        <span className="text-xs font-mono text-slate-300 shrink-0">pasado</span>
+                      )}
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </section>
       )}
 
