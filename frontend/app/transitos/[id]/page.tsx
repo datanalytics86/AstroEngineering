@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import type { TransitResponse, ChartResponse, MonthlyForecast } from "@/lib/types";
 import { loadTransits, loadChart } from "@/lib/storage";
 import ForecastDashboard from "@/components/ForecastDashboard";
+import YearSummaryPanel from "@/components/YearSummaryPanel";
 import { IMPORTANCE_COLORS } from "@/lib/zodiac-utils";
 import { getInterpretationByComponents } from "@/lib/interpretation-engine";
 import { generateTransitSummary } from "@/lib/transit-summary";
@@ -111,7 +112,11 @@ export default function TransitosPage() {
 
   return (
 
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-10">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-8 xl:items-start">
+
+      {/* ── LEFT COLUMN ── */}
+      <div className="space-y-10">
 
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -401,6 +406,20 @@ export default function TransitosPage() {
           onClose={() => setShowExecSummary(false)}
         />
       )}
+      </div>{/* end LEFT COLUMN */}
+
+      {/* ── RIGHT COLUMN — sticky summary panel ── */}
+      {execSummary && (
+        <div className="hidden xl:block xl:sticky xl:top-6">
+          <YearSummaryPanel
+            summary={execSummary}
+            name={chart.name}
+            subtitle="Resumen · próximos 12 meses"
+          />
+        </div>
+      )}
+
+      </div>{/* end grid */}
     </div>
   );
 }

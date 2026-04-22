@@ -8,7 +8,10 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import ForecastDashboard from "@/components/ForecastDashboard";
 import MonthDetailModal from "@/components/MonthDetailModal";
+import YearSummaryPanel from "@/components/YearSummaryPanel";
 import { getMundaneInterpretation } from "@/lib/mundane-interpretations";
+import { generateTransitSummary } from "@/lib/transit-summary";
+import type { TransitResponse, ChartResponse } from "@/lib/types";
 
 const TransitZodiacWheel = dynamic(
   () => import("@/components/TransitZodiacWheel"),
@@ -111,8 +114,19 @@ export default function MundialPage() {
 
   const nc = data?.national_chart;
 
+  const mundaneSummary = useMemo(() => {
+    if (!data || !data.current_transits.length) return null;
+    const fakeTransits: TransitResponse = {
+      current_transits: data.current_transits,
+      timeline: data.timeline,
+      exact_aspects_calendar: [],
+    };
+    const fakeChart = { name: data.country_name } as ChartResponse;
+    return generateTransitSummary(fakeTransits, fakeChart);
+  }, [data]);
+
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
 
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -196,7 +210,9 @@ export default function MundialPage() {
 
       {/* ── Data loaded ── */}
       {data && !loading && (
-        <>
+        <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-8 xl:items-start">
+        {/* LEFT COLUMN */}
+        <div className="space-y-6">
           {/* National chart info card */}
           <div className="bg-white border border-border rounded-2xl p-5 shadow-card">
             <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
@@ -472,7 +488,20 @@ export default function MundialPage() {
               )}
             </section>
           )}
-        </>
+        </div>{/* end LEFT COLUMN */}
+
+        {/* RIGHT COLUMN — sticky summary panel */}
+        {mundaneSummary && (
+          <div className="hidden xl:block xl:sticky xl:top-6">
+            <YearSummaryPanel
+              summary={mundaneSummary}
+              name={data.country_name}
+              subtitle="Pronóstico geopolítico · 12 meses"
+            />
+          </div>
+        )}
+
+        </div> /* end grid */
       )}
 
       {/* ── Month detail modal ── */}
