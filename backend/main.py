@@ -19,8 +19,9 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    # Vercel previews + GitHub Codespaces (*.app.github.dev / *.github.dev)
+    allow_origin_regex=r"https://(.*\.vercel\.app|.*\.app\.github\.dev|.*\.github\.dev)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

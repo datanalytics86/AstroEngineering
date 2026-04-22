@@ -176,9 +176,13 @@ export function getMundaneInterpretation(
   aspect: string,
   natalPlanet: string,
 ): MundaneInterpretation | undefined {
-  const key = `${transitPlanet.toLowerCase().replace("ú", "u")}_${
-    aspect.toLowerCase().replace("ó", "o").replace("á", "a").replace(" ", "_")
-  }_${natalPlanet.toLowerCase()}`;
+  const normalize = (s: string) =>
+    s.toLowerCase()
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, "_");
+
+  const key = `${normalize(transitPlanet)}_${normalize(aspect)}_${normalize(natalPlanet)}`;
   return interps.find((i) => i.key === key);
 }
 

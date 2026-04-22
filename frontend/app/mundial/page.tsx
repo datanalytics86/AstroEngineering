@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import ForecastDashboard from "@/components/ForecastDashboard";
 import MonthDetailModal from "@/components/MonthDetailModal";
+import { getMundaneInterpretation } from "@/lib/mundane-interpretations";
 
 const TransitZodiacWheel = dynamic(
   () => import("@/components/TransitZodiacWheel"),
@@ -260,7 +261,7 @@ export default function MundialPage() {
 
           {/* ── TAB: Biwheel ── */}
           {activeTab === "Birueda Natal" && (
-            <section className="space-y-4">
+            <section className="space-y-6">
               <div>
                 <h3 className="font-semibold text-base text-slate-800">Birueda Natal / Tránsitos actuales</h3>
                 <p className="text-xs text-slate-400 font-mono mt-0.5">
@@ -276,6 +277,63 @@ export default function MundialPage() {
                 transitPlanets={transitPlanets}
                 transitEvents={data.current_transits}
               />
+
+              {/* Top transits with mundane interpretations */}
+              {data.current_transits.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm text-slate-700">
+                    Tránsitos activos — interpretación mundana
+                  </h4>
+                  {data.current_transits
+                    .filter((t) => t.importance === "crítica" || t.importance === "alta")
+                    .slice(0, 6)
+                    .map((t, i) => {
+                      const interp = getMundaneInterpretation(t.transit_planet, t.aspect_name, t.natal_planet);
+                      const importColor = t.importance === "crítica" ? "#EF4444" : "#F97316";
+                      const tColor = TRANSIT_COLORS[t.transit_planet] ?? "#94A3B8";
+                      return (
+                        <div
+                          key={i}
+                          className="bg-white border border-border rounded-xl p-4 space-y-2"
+                        >
+                          <div className="flex items-center gap-3">
+                            <span className="text-base" style={{ color: tColor }}>
+                              {PLANET_SYMBOLS[t.transit_planet] ?? ""}
+                            </span>
+                            <span className="font-mono text-sm font-semibold text-slate-800">
+                              {t.transit_planet} {t.aspect_name} {t.natal_planet} natal
+                            </span>
+                            <span
+                              className="ml-auto text-xs font-mono uppercase tracking-wide border rounded px-2 py-0.5 shrink-0"
+                              style={{ color: importColor, borderColor: `${importColor}44`, backgroundColor: `${importColor}10` }}
+                            >
+                              {t.importance}
+                            </span>
+                          </div>
+                          {interp ? (
+                            <>
+                              <p className="text-xs text-slate-600 leading-relaxed">{interp.summary}</p>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {interp.domains.map((d) => (
+                                  <span key={d} className="text-xs font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded">
+                                    {d}
+                                  </span>
+                                ))}
+                              </div>
+                              {interp.historical_examples && (
+                                <p className="text-xs text-slate-400 italic">{interp.historical_examples}</p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="text-xs text-slate-400 font-mono">
+                              {t.transit_planet} {t.aspect_name.toLowerCase()} {t.natal_planet} natal — orbe {t.orb.toFixed(1)}°
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
             </section>
           )}
 
@@ -381,24 +439,30 @@ export default function MundialPage() {
                         const exactStr = t.exact_date
                           ? format(new Date(t.exact_date.slice(0, 10)), "d MMM yyyy", { locale: es })
                           : null;
+                        const interp = getMundaneInterpretation(t.transit_planet, t.aspect_name, t.natal_planet);
                         return (
                           <div
                             key={i}
-                            className="flex items-center gap-3 bg-white border border-border rounded-lg px-4 py-3"
+                            className="bg-white border border-border rounded-xl px-4 py-3 space-y-1.5"
                           >
-                            <span
-                              className="text-xs font-mono font-semibold border rounded px-2 py-0.5 shrink-0"
-                              style={{ color: importColor, borderColor: `${importColor}44`, backgroundColor: `${importColor}10` }}
-                            >
-                              {t.importance}
-                            </span>
-                            <span className="flex-1 text-xs font-mono text-slate-700">
-                              <span className="font-semibold">{t.transit_planet}</span>
-                              {" "}{t.aspect_name}{" "}
-                              <span className="font-semibold">{t.natal_planet}</span> natal
-                            </span>
-                            {exactStr && (
-                              <span className="text-xs font-mono text-slate-400 shrink-0">{exactStr}</span>
+                            <div className="flex items-center gap-3">
+                              <span
+                                className="text-xs font-mono font-semibold border rounded px-2 py-0.5 shrink-0"
+                                style={{ color: importColor, borderColor: `${importColor}44`, backgroundColor: `${importColor}10` }}
+                              >
+                                {t.importance}
+                              </span>
+                              <span className="flex-1 text-xs font-mono text-slate-700">
+                                <span className="font-semibold">{t.transit_planet}</span>
+                                {" "}{t.aspect_name}{" "}
+                                <span className="font-semibold">{t.natal_planet}</span> natal
+                              </span>
+                              {exactStr && (
+                                <span className="text-xs font-mono text-slate-400 shrink-0">{exactStr}</span>
+                              )}
+                            </div>
+                            {interp && (
+                              <p className="text-xs text-slate-500 leading-relaxed pl-1">{interp.summary}</p>
                             )}
                           </div>
                         );

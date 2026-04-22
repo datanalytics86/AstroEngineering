@@ -100,6 +100,12 @@ export default function CartaPage() {
             ← Nueva carta
           </button>
           <button
+            onClick={() => router.push("/mundial")}
+            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
+          >
+            🌍 Mundial
+          </button>
+          <button
             onClick={() => setShowSummary(true)}
             className="border border-blue-200 text-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors font-mono flex items-center gap-1.5"
           >
