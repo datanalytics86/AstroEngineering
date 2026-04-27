@@ -55,6 +55,26 @@ export function loadTransits(id: string): TransitResponse | null {
   }
 }
 
+// ── Solar Return ──────────────────────────────────────────────────────────────
+
+const PREFIX_SR = "astro_sr_";
+
+export function saveSolarReturn(id: string, chart: ChartResponse): void {
+  try {
+    localStorage.setItem(PREFIX_SR + id, JSON.stringify(chart));
+  } catch {
+    pruneStorage();
+    localStorage.setItem(PREFIX_SR + id, JSON.stringify(chart));
+  }
+}
+
+export function loadSolarReturn(id: string): ChartResponse | null {
+  try {
+    const s = localStorage.getItem(PREFIX_SR + id);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+
 // ── Saved-chart list ─────────────────────────────────────────────────────────
 
 export interface SavedChartMeta {

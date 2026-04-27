@@ -1,7 +1,7 @@
 "use client";
 
 import type { PlanetPosition } from "@/lib/types";
-import { signColor } from "@/lib/zodiac-utils";
+import { signColor, getPlanetDignity, DIGNITY_SYMBOL, DIGNITY_COLOR } from "@/lib/zodiac-utils";
 
 interface Props {
   planets: PlanetPosition[];
@@ -24,11 +24,14 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
             <th className="text-left px-4 py-2">Signo</th>
             <th className="text-left px-4 py-2">Posición</th>
             <th className="text-center px-4 py-2">Casa</th>
+            <th className="text-center px-4 py-2">D</th>
             <th className="text-center px-4 py-2">R</th>
           </tr>
         </thead>
         <tbody>
-          {planets.map((p) => (
+          {planets.map((p) => {
+            const dignity = getPlanetDignity(p.name, p.sign);
+            return (
             <tr
               key={p.name}
               onClick={() => onPlanetClick?.(p.name)}
@@ -50,6 +53,19 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
               <td className="px-4 py-2.5 text-slate-500">{p.degree_display}</td>
               <td className="px-4 py-2.5 text-center text-blue-600 font-semibold">{p.house}</td>
               <td className="px-4 py-2.5 text-center">
+                {dignity ? (
+                  <span
+                    title={dignity.charAt(0).toUpperCase() + dignity.slice(1)}
+                    style={{ color: DIGNITY_COLOR[dignity] }}
+                    className="text-sm font-semibold"
+                  >
+                    {DIGNITY_SYMBOL[dignity]}
+                  </span>
+                ) : (
+                  <span className="text-slate-300">—</span>
+                )}
+              </td>
+              <td className="px-4 py-2.5 text-center">
                 {p.retrograde ? (
                   <span className="text-red-500 text-xs">℞</span>
                 ) : (
@@ -57,7 +73,8 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
                 )}
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

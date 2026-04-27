@@ -59,6 +59,46 @@ export function formatLongitude(lon: number): string {
   return `${toDMS(deg)} ${sign}`;
 }
 
+export type Dignity = "domicilio" | "exaltación" | "detrimento" | "caída" | null;
+
+// Classical dignities: domicile, exaltation, detriment, fall
+const DIGNITIES: Record<string, { domicilio: string[]; exaltación: string[]; detrimento: string[]; caída: string[] }> = {
+  Sol:      { domicilio: ["Leo"],          exaltación: ["Aries"],       detrimento: ["Acuario"],     caída: ["Libra"] },
+  Luna:     { domicilio: ["Cáncer"],       exaltación: ["Tauro"],       detrimento: ["Capricornio"], caída: ["Escorpio"] },
+  Mercurio: { domicilio: ["Géminis","Virgo"], exaltación: ["Virgo"],    detrimento: ["Sagitario","Piscis"], caída: ["Piscis"] },
+  Venus:    { domicilio: ["Tauro","Libra"], exaltación: ["Piscis"],     detrimento: ["Aries","Escorpio"],   caída: ["Virgo"] },
+  Marte:    { domicilio: ["Aries","Escorpio"], exaltación: ["Capricornio"], detrimento: ["Libra","Tauro"], caída: ["Cáncer"] },
+  Júpiter:  { domicilio: ["Sagitario","Piscis"], exaltación: ["Cáncer"], detrimento: ["Géminis","Virgo"], caída: ["Capricornio"] },
+  Saturno:  { domicilio: ["Capricornio","Acuario"], exaltación: ["Libra"], detrimento: ["Cáncer","Leo"], caída: ["Aries"] },
+  Urano:    { domicilio: ["Acuario"],      exaltación: ["Escorpio"],    detrimento: ["Leo"],         caída: ["Tauro"] },
+  Neptuno:  { domicilio: ["Piscis"],       exaltación: ["Cáncer"],      detrimento: ["Virgo"],       caída: ["Capricornio"] },
+  Plutón:   { domicilio: ["Escorpio"],     exaltación: ["Aries"],       detrimento: ["Tauro"],       caída: ["Libra"] },
+};
+
+export const DIGNITY_SYMBOL: Record<string, string> = {
+  domicilio:  "⌂",
+  exaltación: "↑",
+  detrimento: "⊗",
+  caída:      "↓",
+};
+
+export const DIGNITY_COLOR: Record<string, string> = {
+  domicilio:  "#10B981",  // emerald
+  exaltación: "#3B82F6",  // blue
+  detrimento: "#F97316",  // orange
+  caída:      "#EF4444",  // red
+};
+
+export function getPlanetDignity(planet: string, sign: string): Dignity {
+  const d = DIGNITIES[planet];
+  if (!d) return null;
+  if (d.domicilio.includes(sign)) return "domicilio";
+  if (d.exaltación.includes(sign)) return "exaltación";
+  if (d.detrimento.includes(sign)) return "detrimento";
+  if (d.caída.includes(sign)) return "caída";
+  return null;
+}
+
 export const ASPECT_COLORS: Record<string, string> = {
   armonioso: "#10B981",   // emerald-500
   tenso:     "#EF4444",   // red-500

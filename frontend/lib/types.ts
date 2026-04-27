@@ -17,6 +17,15 @@ export interface TransitRequest {
   longitude: number;
 }
 
+export interface SolarReturnRequest {
+  natal_sun_longitude: number;
+  year: number;
+  latitude: number;
+  longitude: number;
+  timezone_offset: number;
+  name?: string;
+}
+
 // ── Chart Response Types ───────────────────────────────────────────────────────
 
 export interface PlanetPosition {

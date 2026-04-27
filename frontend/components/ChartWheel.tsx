@@ -1,31 +1,105 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
-import * as d3 from "d3";
+import { useState, useMemo } from "react";
 import type { PlanetPosition, HouseCusp, AnglePoint, Aspect, ClickTarget } from "@/lib/types";
-import { signColor, ASPECT_COLORS } from "@/lib/zodiac-utils";
+import { polarXY, makeToAngle, describeSector, SIGN_SYMBOLS, SIGN_NAMES } from "@/lib/wheel-geometry";
 
+// ── Geometry ─────────────────────────────────────────────────────────────────
+const SVG_SIZE      = 560;
+const cx            = SVG_SIZE / 2;
+const cy            = SVG_SIZE / 2;
+const R_ZODIAC_OUT  = 270;
+const R_ZODIAC_IN   = 222;
+const R_NEEDLE_OUT  = 220;
+const R_NEEDLE_IN   = 202;
+const R_GLYPH       = 194;
+const R_DEG_LABEL   = 182;
+const R_HOUSE_NUM   = 110;
+const R_ASPECT      = 88;
+const R_CENTER      = 22;
+
+// ── Zodiac ring: dark background with element tints ──────────────────────────
+const SIGN_DARK_BG = [
+  "#2A1515","#152A15","#2A2A0F","#0F1A2A",
+  "#2A1515","#152A15","#2A2A0F","#0F1A2A",
+  "#2A1515","#152A15","#2A2A0F","#0F1A2A",
+];
+
+// Bright glyph colors on dark bg (fire/earth/air/water repeating)
+const SIGN_GLYPH_COLOR = [
+  "#FF8888","#7ED87E","#F6DE6A","#7EB8F6",
+  "#FF8888","#7ED87E","#F6DE6A","#7EB8F6",
+  "#FF8888","#7ED87E","#F6DE6A","#7EB8F6",
+];
+
+// ── Planet colors ─────────────────────────────────────────────────────────────
+const PLANET_COLOR: Record<string, string> = {
+  Sol:          "#F59E0B",
+  Luna:         "#94A3B8",
+  Mercurio:     "#6366F1",
+  Venus:        "#EC4899",
+  Marte:        "#EF4444",
+  Júpiter:      "#10B981",
+  Saturno:      "#8B5CF6",
+  Urano:        "#06B6D4",
+  Neptuno:      "#3B82F6",
+  Plutón:       "#7C3AED",
+  "Nodo Norte": "#64748B",
+  Quirón:       "#A78BFA",
+};
+
+// ── Aspect colors (standard astrological) ────────────────────────────────────
+const ASPECT_LINE_COLOR: Record<string, string> = {
+  Conjunción:       "#475569",
+  Oposición:        "#DC2626",
+  Cuadratura:       "#EA580C",
+  Trígono:          "#2563EB",
+  Sextil:           "#059669",
+  Quincuncio:       "#7C3AED",
+  Sesquicuadratura: "#D97706",
+  "Semi-sextil":    "#0891B2",
+};
+
+const ASPECT_LINE_WIDTH: Record<string, number> = {
+  Conjunción: 1.5, Oposición: 1.4, Cuadratura: 1.3,
+  Trígono: 1.0, Sextil: 0.9,
+};
+
+// ── Collision resolver ────────────────────────────────────────────────────────
+function resolveCollisions<T extends { longitude: number }>(
+  items: T[],
+  minDeg = 6,
+): (T & { rOffset: number })[] {
+  const sorted = [...items].sort((a, b) => a.longitude - b.longitude);
+  const out = sorted.map((p) => ({ ...p, rOffset: 0 }));
+  for (let i = 0; i < out.length; i++) {
+    for (let j = i + 1; j < out.length; j++) {
+      const diff = Math.abs(out[j].longitude - out[i].longitude);
+      const angDiff = Math.min(diff, 360 - diff);
+      if (angDiff < minDeg) {
+        if (out[i].rOffset === 0) out[i].rOffset = -15;
+        if (out[j].rOffset === 0) out[j].rOffset = +15;
+      }
+    }
+  }
+  return out;
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
 interface Props {
   planets: PlanetPosition[];
   houses: HouseCusp[];
   ascendant: AnglePoint;
   midheaven: AnglePoint;
   aspects: Aspect[];
-  transitPlanets?: PlanetPosition[];
+  transitPlanets?: { name: string; symbol: string; longitude: number; retrograde?: boolean }[];
   highlightedPlanet?: string;
   onPlanetClick?: (name: string) => void;
   onElementClick?: (target: ClickTarget) => void;
   width?: number;
 }
 
-const SIGN_NAMES_SHORT = [
-  "♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓",
-];
-const SIGN_FULL = [
-  "Aries", "Tauro", "Géminis", "Cáncer", "Leo", "Virgo",
-  "Libra", "Escorpio", "Sagitario", "Capricornio", "Acuario", "Piscis",
-];
-
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function ChartWheel({
   planets,
   houses,
@@ -36,315 +110,329 @@ export default function ChartWheel({
   highlightedPlanet,
   onPlanetClick,
   onElementClick,
-  width = 600,
 }: Props) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  // Use refs to avoid stale closures inside D3 handlers
-  const onElementClickRef = useRef(onElementClick);
-  const onPlanetClickRef = useRef(onPlanetClick);
-  useEffect(() => { onElementClickRef.current = onElementClick; }, [onElementClick]);
-  useEffect(() => { onPlanetClickRef.current = onPlanetClick; }, [onPlanetClick]);
+  const [tooltip, setTooltip] = useState<{ x: number; y: number; text: string } | null>(null);
 
-  const drawChart = useCallback(() => {
-    if (!svgRef.current || !planets.length) return;
-    const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
+  const toAngle = useMemo(() => makeToAngle(ascendant.longitude), [ascendant.longitude]);
+  const planetMap = useMemo(
+    () => Object.fromEntries(planets.map((p) => [p.name, p])),
+    [planets],
+  );
 
-    const cx = width / 2;
-    const cy = width / 2;
+  const resolvedPlanets = useMemo(() => resolveCollisions(planets), [planets]);
 
-    // Radio de los anillos
-    const R_ZODIAC_OUT = cx * 0.98;  // borde exterior del zodíaco
-    const R_ZODIAC_IN  = cx * 0.80;  // borde interior del zodíaco
-    const R_TRANSIT    = cx * 0.75;  // anillo de tránsitos
-    const R_NATAL      = cx * 0.62;  // anillo de planetas natales
-    const R_HOUSES     = cx * 0.50;  // líneas de casas llegan hasta aquí
-    const R_CORE       = cx * 0.28;  // círculo central
-
-    // El ASC siempre en 9 o'clock (180° en pantalla = eje izq)
-    const ascLon = ascendant.longitude;
-    function toAngle(lon: number): number {
-      // lon 0 = Aries, aumenta en sentido antihorario astronómico
-      // En SVG: 0° = derecha, aumenta horario
-      // ASC debe quedar a la izquierda (180°)
-      return ((lon - ascLon + 180) % 360 + 360) % 360;
-    }
-    function toRad(deg: number) { return (deg * Math.PI) / 180; }
-
-    const g = svg.append("g");
-
-    // ── Fondo ─────────────────────────────────────────────────────────────────
-    g.append("circle")
-      .attr("cx", cx).attr("cy", cy).attr("r", R_ZODIAC_OUT)
-      .attr("fill", "#FFFFFF").attr("stroke", "#E5E9F0").attr("stroke-width", 1);
-
-    // ── Anillo zodiacal (12 sectores de 30°) ──────────────────────────────────
-    for (let i = 0; i < 12; i++) {
-      const startLon = i * 30;
-      const sA = toAngle(startLon);
-      let eA = toAngle(startLon + 30);
-      // Asegurar que endAngle > startAngle para que D3 dibuje el arco correcto (~30°)
-      if (eA <= sA) eA += 360;
-
-      const arc = d3.arc<unknown>()
-        .innerRadius(R_ZODIAC_IN)
-        .outerRadius(R_ZODIAC_OUT)
-        .startAngle(toRad(sA))
-        .endAngle(toRad(eA));
-
-      g.append("path")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .attr("d", arc(null as any) as string)
-        .attr("transform", `translate(${cx},${cy})`)
-        .attr("fill", `${signColor(SIGN_FULL[i])}18`)
-        .attr("stroke", "#E5E9F0")
-        .attr("stroke-width", 0.5);
-
-      // Símbolo del signo en el centro del sector
-      const midAngle = toRad((sA + eA) / 2);
-      const midR = (R_ZODIAC_IN + R_ZODIAC_OUT) / 2;
-      g.append("text")
-        .attr("x", cx + midR * Math.cos(midAngle - Math.PI / 2))
-        .attr("y", cy + midR * Math.sin(midAngle - Math.PI / 2))
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "central")
-        .attr("font-size", width * 0.025)
-        .attr("fill", signColor(SIGN_FULL[i]))
-        .text(SIGN_NAMES_SHORT[i]);
-    }
-
-    // ── Círculos divisorios ───────────────────────────────────────────────────
-    [R_ZODIAC_IN, R_NATAL + 8, R_CORE].forEach((r) => {
-      g.append("circle")
-        .attr("cx", cx).attr("cy", cy).attr("r", r)
-        .attr("fill", "none")
-        .attr("stroke", "#CBD5E1")
-        .attr("stroke-width", 0.5);
-    });
-
-    // ── Líneas de casas ───────────────────────────────────────────────────────
-    houses.forEach((house) => {
-      const angle = toRad(toAngle(house.cusp_longitude));
-      const isAngular = [1, 4, 7, 10].includes(house.number);
-
-      g.append("line")
-        .attr("x1", cx + R_ZODIAC_IN * Math.cos(angle - Math.PI / 2))
-        .attr("y1", cy + R_ZODIAC_IN * Math.sin(angle - Math.PI / 2))
-        .attr("x2", cx + R_CORE * Math.cos(angle - Math.PI / 2))
-        .attr("y2", cy + R_CORE * Math.sin(angle - Math.PI / 2))
-        .attr("stroke", isAngular ? "#2563EB" : "#CBD5E1")
-        .attr("stroke-width", isAngular ? 1 : 0.5)
-        .attr("stroke-dasharray", isAngular ? "none" : "2,3");
-
-      // Número de casa — midpoint entre esta cúspide y la siguiente
-      const labelR = (R_HOUSES + R_CORE) / 2;
-      const nextCusp = houses[house.number % 12].cusp_longitude;
-      let nextAngleRaw = toAngle(nextCusp);
-      let thisAngleRaw = toAngle(house.cusp_longitude);
-      if (nextAngleRaw <= thisAngleRaw) nextAngleRaw += 360;
-      const midAngle = toRad((thisAngleRaw + nextAngleRaw) / 2);
-
-      const capturedHouse = house;
-      g.append("text")
-        .attr("x", cx + labelR * Math.cos(midAngle - Math.PI / 2))
-        .attr("y", cy + labelR * Math.sin(midAngle - Math.PI / 2))
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "central")
-        .attr("font-size", width * 0.018)
-        .attr("fill", "#94A3B8")
-        .attr("font-family", "JetBrains Mono, monospace")
-        .attr("cursor", "pointer")
-        .text(house.number)
-        .on("click", () => onElementClickRef.current?.({ type: "house", house: capturedHouse }));
-    });
-
-    // ── Líneas de aspectos (en el núcleo) ─────────────────────────────────────
-    const visibleAspects = highlightedPlanet
+  const visibleAspects = useMemo(() => {
+    const major = new Set(["Conjunción", "Oposición", "Cuadratura", "Trígono", "Sextil"]);
+    return highlightedPlanet
       ? aspects.filter((a) => a.planet1 === highlightedPlanet || a.planet2 === highlightedPlanet)
-      : aspects.filter((a) => ["Conjunción", "Oposición", "Cuadratura", "Trígono", "Sextil"].includes(a.aspect_name));
+      : aspects.filter((a) => major.has(a.aspect_name));
+  }, [aspects, highlightedPlanet]);
 
-    const planetMap = Object.fromEntries(planets.map((p) => [p.name, p]));
-
-    visibleAspects.forEach((asp) => {
-      const p1 = planetMap[asp.planet1];
-      const p2 = planetMap[asp.planet2];
-      if (!p1 || !p2) return;
-
-      const a1 = toRad(toAngle(p1.longitude));
-      const a2 = toRad(toAngle(p2.longitude));
-      const r  = R_CORE * 0.9;
-
-      const line = g.append("line")
-        .attr("x1", cx + r * Math.cos(a1 - Math.PI / 2))
-        .attr("y1", cy + r * Math.sin(a1 - Math.PI / 2))
-        .attr("x2", cx + r * Math.cos(a2 - Math.PI / 2))
-        .attr("y2", cy + r * Math.sin(a2 - Math.PI / 2))
-        .attr("stroke", ASPECT_COLORS[asp.nature])
-        .attr("stroke-width", 0.5)
-        .attr("opacity", 0.4)
-        .attr("cursor", "pointer");
-
-      // Hitbox más fácil de clickear
-      const midX = (cx + r * Math.cos(a1 - Math.PI / 2) + cx + r * Math.cos(a2 - Math.PI / 2)) / 2;
-      const midY = (cy + r * Math.sin(a1 - Math.PI / 2) + cy + r * Math.sin(a2 - Math.PI / 2)) / 2;
-      const capturedAsp = asp;
-      const hitLine = g.append("line")
-        .attr("x1", cx + r * Math.cos(a1 - Math.PI / 2))
-        .attr("y1", cy + r * Math.sin(a1 - Math.PI / 2))
-        .attr("x2", cx + r * Math.cos(a2 - Math.PI / 2))
-        .attr("y2", cy + r * Math.sin(a2 - Math.PI / 2))
-        .attr("stroke", "transparent")
-        .attr("stroke-width", 12)
-        .attr("cursor", "pointer");
-      hitLine.append("title").text(`${asp.planet1} ${asp.aspect_name} ${asp.planet2} (${asp.orb.toFixed(2)}°)`);
-      hitLine.on("click", () => {
-        onElementClickRef.current?.({ type: "aspect", aspect: capturedAsp });
-      });
-      line.on("click", () => {
-        onElementClickRef.current?.({ type: "aspect", aspect: capturedAsp });
-      });
+  function showTip(e: React.MouseEvent<SVGElement>, text: string) {
+    const svg = e.currentTarget.closest("svg") as SVGSVGElement;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const sx = SVG_SIZE / rect.width;
+    const sy = SVG_SIZE / rect.height;
+    setTooltip({
+      x: (e.clientX - rect.left) * sx,
+      y: (e.clientY - rect.top) * sy,
+      text,
     });
+  }
 
-    // ── Planetas natales ──────────────────────────────────────────────────────
-    const natalR = R_NATAL;
-    planets.forEach((p) => {
-      const angle = toRad(toAngle(p.longitude));
-      const isHighlighted = highlightedPlanet === p.name;
-
-      const px = cx + natalR * Math.cos(angle - Math.PI / 2);
-      const py = cy + natalR * Math.sin(angle - Math.PI / 2);
-
-      // Símbolo del planeta
-      const pText = g.append("text")
-        .attr("x", px).attr("y", py)
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "central")
-        .attr("font-size", width * 0.028)
-        .attr("fill", isHighlighted ? "#2563EB" : "#1E293B")
-        .attr("cursor", "pointer")
-        .attr("filter", isHighlighted ? "drop-shadow(0 0 4px #2563EB)" : "none")
-        .text(p.symbol);
-
-      // Grado bajo el símbolo
-      g.append("text")
-        .attr("x", px)
-        .attr("y", py + width * 0.025)
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "central")
-        .attr("font-size", width * 0.014)
-        .attr("fill", "#94A3B8")
-        .attr("font-family", "JetBrains Mono, monospace")
-        .text(`${Math.floor(p.degree_in_sign)}°`);
-
-      if (p.retrograde) {
-        g.append("text")
-          .attr("x", px + width * 0.018)
-          .attr("y", py - width * 0.018)
-          .attr("font-size", width * 0.012)
-          .attr("fill", "#EF4444")
-          .text("℞");
-      }
-
-      // Tooltip invisible para click
-      const hitbox = g.append("circle")
-        .attr("cx", px).attr("cy", py).attr("r", width * 0.025)
-        .attr("fill", "transparent")
-        .attr("cursor", "pointer");
-
-      hitbox.append("title").text(`${p.name} ${p.degree_display} ${p.sign} (Casa ${p.house})`);
-      const capturedPlanet = p;
-      hitbox.on("click", () => {
-        onPlanetClickRef.current?.(capturedPlanet.name);
-        onElementClickRef.current?.({ type: "planet", planet: capturedPlanet, aspects });
-      });
-      pText.on("click", () => {
-        onPlanetClickRef.current?.(capturedPlanet.name);
-        onElementClickRef.current?.({ type: "planet", planet: capturedPlanet, aspects });
-      });
-    });
-
-    // ── Planetas transitantes (anillo exterior al natal) ──────────────────────
-    if (transitPlanets?.length) {
-      const tR = R_TRANSIT;
-      g.append("circle")
-        .attr("cx", cx).attr("cy", cy).attr("r", tR + 10)
-        .attr("fill", "none").attr("stroke", "#E5E9F0").attr("stroke-width", 0.5);
-
-      transitPlanets.forEach((p) => {
-        const angle = toRad(toAngle(p.longitude));
-        const px = cx + tR * Math.cos(angle - Math.PI / 2);
-        const py = cy + tR * Math.sin(angle - Math.PI / 2);
-
-        g.append("text")
-          .attr("x", px).attr("y", py)
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "central")
-          .attr("font-size", width * 0.024)
-          .attr("fill", "#3B82F6")
-          .text(p.symbol)
-          .append("title")
-          .text(`${p.name} (tránsito) ${p.degree_display} ${p.sign}`);
-      });
-    }
-
-    // ── ASC / MC labels ───────────────────────────────────────────────────────
-    const labelR = R_ZODIAC_IN - 12;
-
-    function addAngleLabel(
-      lon: number,
-      label: "ASC" | "DSC" | "MC" | "IC",
-      color: string,
-      anglePoint: AnglePoint,
-    ) {
-      const angle = toRad(toAngle(lon));
-      g.append("text")
-        .attr("x", cx + labelR * Math.cos(angle - Math.PI / 2))
-        .attr("y", cy + labelR * Math.sin(angle - Math.PI / 2))
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "central")
-        .attr("font-size", width * 0.016)
-        .attr("fill", color)
-        .attr("font-family", "JetBrains Mono, monospace")
-        .attr("font-weight", "bold")
-        .attr("cursor", "pointer")
-        .text(label)
-        .on("click", () =>
-          onElementClickRef.current?.({
-            type: "angle",
-            name: label,
-            longitude: lon,
-            sign: anglePoint.sign,
-            degree_display: anglePoint.degree_display,
-          }),
-        );
-    }
-
-    addAngleLabel(ascendant.longitude, "ASC", "#2563EB", ascendant);
-    addAngleLabel((ascendant.longitude + 180) % 360, "DSC", "#94A3B8", {
-      longitude: (ascendant.longitude + 180) % 360,
-      sign: ascendant.sign,
-      degree_display: ascendant.degree_display,
-    });
-    addAngleLabel(midheaven.longitude, "MC", "#0EA5E9", midheaven);
-    addAngleLabel((midheaven.longitude + 180) % 360, "IC", "#94A3B8", {
-      longitude: (midheaven.longitude + 180) % 360,
-      sign: midheaven.sign,
-      degree_display: midheaven.degree_display,
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planets, houses, aspects, transitPlanets, highlightedPlanet, width]);
-
-  useEffect(() => { drawChart(); }, [drawChart]);
+  const anglePoints = useMemo(() => (
+    [
+      ascendant ? { lon: ascendant.longitude,               label: "ASC", color: "#60A5FA", obj: ascendant }  : null,
+      ascendant ? { lon: (ascendant.longitude + 180) % 360, label: "DSC", color: "#94A3B8", obj: ascendant }  : null,
+      midheaven ? { lon: midheaven.longitude,               label: "MC",  color: "#34D399", obj: midheaven }  : null,
+      midheaven ? { lon: (midheaven.longitude + 180) % 360, label: "IC",  color: "#94A3B8", obj: midheaven }  : null,
+    ] as Array<{ lon: number; label: string; color: string; obj: AnglePoint } | null>
+  ).filter((x): x is { lon: number; label: string; color: string; obj: AnglePoint } => x !== null),
+  [ascendant, midheaven]);
 
   return (
     <div className="flex items-center justify-center">
       <svg
-        ref={svgRef}
-        viewBox={`0 0 ${width} ${width}`}
-        width="100%"
-        style={{ maxWidth: width }}
-        className="rounded-xl"
-      />
+        viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}
+        className="w-full max-w-[560px]"
+        onMouseLeave={() => setTooltip(null)}
+      >
+        {/* ── White base circle ── */}
+        <circle cx={cx} cy={cy} r={R_ZODIAC_OUT + 2} fill="white" />
+
+        {/* ── ZODIAC RING ── */}
+        {SIGN_NAMES.map((name, i) => {
+          const startDeg = toAngle(i * 30);
+          const endDeg   = toAngle(i * 30 + 30);
+          const midDeg   = toAngle(i * 30 + 15);
+          const midPos   = polarXY(cx, cy, (R_ZODIAC_IN + R_ZODIAC_OUT) / 2, midDeg);
+          return (
+            <g key={name}>
+              <path
+                d={describeSector(cx, cy, R_ZODIAC_IN, R_ZODIAC_OUT, startDeg, endDeg)}
+                fill={SIGN_DARK_BG[i]}
+                stroke="#0D1520"
+                strokeWidth={0.5}
+              />
+              <text
+                x={midPos.x} y={midPos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={15} fill={SIGN_GLYPH_COLOR[i]} fontWeight="500"
+                className="select-none pointer-events-none"
+              >
+                {SIGN_SYMBOLS[i]}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* Sign divider lines */}
+        {Array.from({ length: 12 }, (_, i) => {
+          const ang = toAngle(i * 30);
+          const p1  = polarXY(cx, cy, R_ZODIAC_IN, ang);
+          const p2  = polarXY(cx, cy, R_ZODIAC_OUT, ang);
+          return <line key={i} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="#0D1520" strokeWidth={0.8} />;
+        })}
+
+        {/* Degree ticks every 5° (major 10°) */}
+        {Array.from({ length: 72 }, (_, i) => {
+          const deg     = i * 5;
+          const ang     = toAngle(deg);
+          const isMajor = deg % 10 === 0;
+          const len     = isMajor ? 10 : 6;
+          const p1      = polarXY(cx, cy, R_ZODIAC_IN, ang);
+          const p2      = polarXY(cx, cy, R_ZODIAC_IN - len, ang);
+          return (
+            <line key={i}
+              x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+              stroke="#FFFFFF" strokeWidth={isMajor ? 0.8 : 0.5} opacity={0.55}
+            />
+          );
+        })}
+
+        {/* 10°/20° labels inside zodiac */}
+        {Array.from({ length: 12 }, (_, sign) =>
+          [10, 20].map((deg) => {
+            const lon = sign * 30 + deg;
+            const ang = toAngle(lon);
+            const pos = polarXY(cx, cy, R_ZODIAC_IN - 17, ang);
+            return (
+              <text key={`${sign}-${deg}`}
+                x={pos.x} y={pos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={5.5} fill="#FFFFFF" opacity={0.45}
+                className="select-none pointer-events-none"
+              >{deg}</text>
+            );
+          })
+        )}
+
+        {/* Zodiac inner border */}
+        <circle cx={cx} cy={cy} r={R_ZODIAC_IN} fill="none" stroke="#2C3E60" strokeWidth={1.5} />
+
+        {/* ── HOUSE LINES ── */}
+        {houses.map((house) => {
+          const isAngular = [1, 4, 7, 10].includes(house.number);
+          const ang  = toAngle(house.cusp_longitude);
+          const p1   = polarXY(cx, cy, R_ZODIAC_IN, ang);
+          const p2   = polarXY(cx, cy, R_CENTER + 4, ang);
+
+          const nextHouse = houses[house.number % 12];
+          const nextAng   = toAngle(nextHouse.cusp_longitude);
+          const span      = ((nextAng - ang) + 360) % 360;
+          const midAng    = ang + span / 2;
+          const numPos    = polarXY(cx, cy, R_HOUSE_NUM, midAng);
+
+          return (
+            <g key={house.number}>
+              <line
+                x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
+                stroke={isAngular ? "#3B82F6" : "#94A3B8"}
+                strokeWidth={isAngular ? 1.2 : 0.6}
+                strokeDasharray={isAngular ? undefined : "3,3"}
+                opacity={isAngular ? 1 : 0.7}
+              />
+              <text
+                x={numPos.x} y={numPos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={9} fill="#94A3B8"
+                fontFamily="JetBrains Mono, monospace"
+                className="cursor-pointer select-none"
+                onClick={() => onElementClick?.({ type: "house", house })}
+              >
+                {house.number}
+              </text>
+            </g>
+          );
+        })}
+
+        {/* ── ASPECT LINES ── */}
+        {visibleAspects.map((asp, i) => {
+          const p1 = planetMap[asp.planet1];
+          const p2 = planetMap[asp.planet2];
+          if (!p1 || !p2) return null;
+          const a1    = toAngle(p1.longitude);
+          const a2    = toAngle(p2.longitude);
+          const pt1   = polarXY(cx, cy, R_ASPECT, a1);
+          const pt2   = polarXY(cx, cy, R_ASPECT, a2);
+          const color = ASPECT_LINE_COLOR[asp.aspect_name] ?? "#94A3B8";
+          const lw    = ASPECT_LINE_WIDTH[asp.aspect_name] ?? 0.7;
+          const isHl  = highlightedPlanet &&
+            (asp.planet1 === highlightedPlanet || asp.planet2 === highlightedPlanet);
+          return (
+            <g key={i}>
+              <line
+                x1={pt1.x} y1={pt1.y} x2={pt2.x} y2={pt2.y}
+                stroke={color}
+                strokeWidth={isHl ? lw * 2.5 : lw}
+                opacity={isHl ? 0.9 : 0.45}
+              />
+              <line
+                x1={pt1.x} y1={pt1.y} x2={pt2.x} y2={pt2.y}
+                stroke="transparent" strokeWidth={12}
+                className="cursor-pointer"
+                onClick={() => onElementClick?.({ type: "aspect", aspect: asp })}
+                onMouseEnter={(e) => showTip(e, `${asp.planet1} ${asp.aspect_name} ${asp.planet2} (${asp.orb.toFixed(1)}°)`)}
+                onMouseLeave={() => setTooltip(null)}
+              />
+            </g>
+          );
+        })}
+
+        {/* ── PLANET NEEDLES + GLYPHS ── */}
+        {resolvedPlanets.map((p) => {
+          const ang        = toAngle(p.longitude);
+          const isHl       = highlightedPlanet === p.name;
+          const color      = isHl ? "#2563EB" : (PLANET_COLOR[p.name] ?? "#1E293B");
+          const needleInR  = R_NEEDLE_IN + p.rOffset;
+          const glyphR     = R_GLYPH + p.rOffset;
+          const degR       = R_DEG_LABEL + p.rOffset;
+
+          const tipPos   = polarXY(cx, cy, R_NEEDLE_OUT, ang);
+          const basePos  = polarXY(cx, cy, needleInR, ang);
+          const glyphPos = polarXY(cx, cy, glyphR, ang);
+          const degPos   = polarXY(cx, cy, degR, ang);
+
+          return (
+            <g key={p.name}>
+              {/* Dot at zodiac inner border */}
+              <circle cx={tipPos.x} cy={tipPos.y} r={1.8} fill={color} />
+              {/* Radial needle */}
+              <line
+                x1={tipPos.x} y1={tipPos.y} x2={basePos.x} y2={basePos.y}
+                stroke={color} strokeWidth={0.8} opacity={0.65}
+              />
+              {/* Planet glyph */}
+              <text
+                x={glyphPos.x} y={glyphPos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={14} fill={color}
+                fontWeight={isHl ? "700" : "400"}
+                className="cursor-pointer select-none"
+                onClick={() => {
+                  onPlanetClick?.(p.name);
+                  onElementClick?.({ type: "planet", planet: p, aspects });
+                }}
+                onMouseEnter={(e) => showTip(e, `${p.name} ${p.degree_display} ${p.sign} · Casa ${p.house}`)}
+                onMouseLeave={() => setTooltip(null)}
+              >
+                {p.symbol}
+              </text>
+              {/* Degree label */}
+              <text
+                x={degPos.x} y={degPos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={6} fill={color} opacity={0.7}
+                className="select-none pointer-events-none"
+              >
+                {Math.floor(p.degree_in_sign)}°
+              </text>
+              {/* Retrograde ℞ */}
+              {p.retrograde && (
+                <text
+                  x={glyphPos.x + 9} y={glyphPos.y - 8}
+                  fontSize={7} fill="#EF4444" fontWeight="700"
+                  className="select-none pointer-events-none"
+                >℞</text>
+              )}
+            </g>
+          );
+        })}
+
+        {/* ── TRANSIT RING (optional) ── */}
+        {transitPlanets && transitPlanets.length > 0 && (
+          <>
+            <circle cx={cx} cy={cy} r={R_ZODIAC_IN - 4} fill="none" stroke="#60A5FA" strokeWidth={0.5} strokeDasharray="2,4" opacity={0.4} />
+            {transitPlanets.map((p) => {
+              const ang = toAngle(p.longitude);
+              const pos = polarXY(cx, cy, R_ZODIAC_IN - 18, ang);
+              return (
+                <text key={p.name}
+                  x={pos.x} y={pos.y}
+                  textAnchor="middle" dominantBaseline="central"
+                  fontSize={11} fill="#60A5FA" opacity={0.85}
+                  className="select-none pointer-events-none"
+                >
+                  {p.symbol}
+                </text>
+              );
+            })}
+          </>
+        )}
+
+        {/* ── ASC / DSC / MC / IC ── */}
+        {anglePoints.map(({ lon, label, color, obj }) => {
+          const ang      = toAngle(lon);
+          const inner    = polarXY(cx, cy, R_CENTER + 4, ang);
+          const outer    = polarXY(cx, cy, R_ZODIAC_IN, ang);
+          const labelPos = polarXY(cx, cy, R_ZODIAC_IN - 14, ang);
+          const isMain   = label === "ASC" || label === "MC";
+          return (
+            <g key={label}>
+              <line
+                x1={inner.x} y1={inner.y} x2={outer.x} y2={outer.y}
+                stroke={color} strokeWidth={isMain ? 1.5 : 1.0} opacity={0.9}
+              />
+              <text
+                x={labelPos.x} y={labelPos.y}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={7.5} fill={color} fontWeight="700"
+                fontFamily="JetBrains Mono, monospace"
+                className="cursor-pointer select-none"
+                onClick={() =>
+                  onElementClick?.({
+                    type: "angle",
+                    name: label as "ASC" | "DSC" | "MC" | "IC",
+                    longitude: lon,
+                    sign: obj.sign,
+                    degree_display: obj.degree_display,
+                  })
+                }
+              >{label}</text>
+            </g>
+          );
+        })}
+
+        {/* ── CENTER CIRCLE ── */}
+        <circle cx={cx} cy={cy} r={R_CENTER} fill="white" stroke="#E2E8F0" strokeWidth={1} />
+
+        {/* ── TOOLTIP ── */}
+        {tooltip && (() => {
+          const tx = Math.min(Math.max(tooltip.x, 85), SVG_SIZE - 85);
+          const ty = Math.max(tooltip.y - 30, 6);
+          return (
+            <g className="pointer-events-none">
+              <rect x={tx - 80} y={ty} width={160} height={22} rx={4} fill="#1E293B" opacity={0.93} />
+              <text x={tx} y={ty + 11}
+                textAnchor="middle" dominantBaseline="central"
+                fontSize={9} fill="white"
+                className="select-none"
+              >{tooltip.text}</text>
+            </g>
+          );
+        })()}
+      </svg>
     </div>
   );
 }

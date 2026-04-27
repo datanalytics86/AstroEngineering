@@ -105,6 +105,104 @@ NATIONAL_CHARTS: dict[str, dict] = {
         "timezone_offset": 3.0,  # MSK
         "source": "Campion (Acuerdos de Belavezha)",
     },
+    "argentina": {
+        "name": "Argentina",
+        "location": "Buenos Aires, Argentina",
+        "birth_date": "1816-07-09",
+        # Declaración de Independencia de Tucumán; mediodía LMT convencional.
+        # Campion #12, pp. 43-45.
+        "birth_time": "12:00",
+        "latitude": -34.6037,
+        "longitude": -58.3816,
+        # LMT Buenos Aires = -58.3816° / 15 ≈ -3.892 h
+        "timezone_offset": -3.892,
+        "source": "Campion #12",
+    },
+    "mexico": {
+        "name": "México",
+        "location": "Ciudad de México, México",
+        "birth_date": "1821-09-28",
+        # Proclamación del Acta de Independencia: se registra alrededor del mediodía.
+        # Campion #257.
+        "birth_time": "12:00",
+        "latitude": 19.4326,
+        "longitude": -99.1332,
+        # LMT CDMX = -99.1332° / 15 ≈ -6.609 h
+        "timezone_offset": -6.609,
+        "source": "Campion #257",
+    },
+    "brazil": {
+        "name": "Brasil",
+        "location": "Rio de Janeiro, Brasil",
+        "birth_date": "1822-09-07",
+        # Proclamación de Independencia (Grito de Ipiranga): ≈16:30 LMT.
+        # Campion #53.
+        "birth_time": "16:30",
+        "latitude": -22.9068,
+        "longitude": -43.1729,
+        # LMT Río = -43.1729° / 15 ≈ -2.878 h
+        "timezone_offset": -2.878,
+        "source": "Campion #53",
+    },
+    "india": {
+        "name": "India",
+        "location": "Nueva Delhi, India",
+        "birth_date": "1947-08-15",
+        # Independencia a medianoche IST: 00:00 IST = 1947-08-14 18:30 UT.
+        # Campion #178, pp. 191-196. La carta más usada: 00:00 IST.
+        "birth_time": "00:00",
+        "latitude": 28.6139,
+        "longitude": 77.2090,
+        "timezone_offset": 5.5,  # IST
+        "source": "Campion #178",
+    },
+    "japan": {
+        "name": "Japón",
+        "location": "Tokio, Japón",
+        "birth_date": "1947-05-03",
+        # Entrada en vigor de la Constitución de posguerra: 00:00 JST.
+        # Campion #199.
+        "birth_time": "00:00",
+        "latitude": 35.6762,
+        "longitude": 139.6503,
+        "timezone_offset": 9.0,  # JST
+        "source": "Campion #199",
+    },
+    "spain": {
+        "name": "España",
+        "location": "Madrid, España",
+        "birth_date": "1978-12-29",
+        # Promulgación de la Constitución Española de 1978: 12:00 CET.
+        # Campion #358.
+        "birth_time": "12:00",
+        "latitude": 40.4168,
+        "longitude": -3.7038,
+        "timezone_offset": 1.0,  # CET
+        "source": "Campion #358",
+    },
+    "ukraine": {
+        "name": "Ucrania",
+        "location": "Kiev, Ucrania",
+        "birth_date": "1991-08-24",
+        # Declaración de Independencia: ≈18:00 local (EEST).
+        # Campion (ed. actualizada).
+        "birth_time": "18:00",
+        "latitude": 50.4501,
+        "longitude": 30.5234,
+        "timezone_offset": 3.0,  # EEST
+        "source": "Campion (Ucrania #402)",
+    },
+    "israel": {
+        "name": "Israel",
+        "location": "Tel Aviv, Israel",
+        "birth_date": "1948-05-14",
+        # Proclamación del Estado: 16:00 local (EET). Campion #192.
+        "birth_time": "16:00",
+        "latitude": 32.0853,
+        "longitude": 34.7818,
+        "timezone_offset": 2.0,  # EET (sin horario de verano activo aún)
+        "source": "Campion #192",
+    },
 }
 
 COUNTRY_KEYS = list(NATIONAL_CHARTS.keys())

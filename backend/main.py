@@ -6,8 +6,8 @@ FastAPI + pyswisseph
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, MundaneRequest, MundaneResponse
-from astro.chart import calculate_natal_chart
+from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, MundaneRequest, MundaneResponse, SolarReturnRequest
+from astro.chart import calculate_natal_chart, calculate_solar_return
 from astro.transits import calculate_transit_timeline
 from astro.mundane import calculate_mundane_response
 
@@ -67,6 +67,26 @@ def get_transits(body: TransitRequest):
         return result
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error en cálculo de tránsitos: {str(exc)}")
+
+
+@app.post("/api/solar-return", response_model=ChartResponse)
+def get_solar_return(body: SolarReturnRequest):
+    """
+    Calcula la carta de retorno solar para el año dado.
+    Encuentra el momento exacto en que el Sol regresa a su posición natal.
+    """
+    try:
+        result = calculate_solar_return(
+            natal_sun_lon=body.natal_sun_longitude,
+            year=body.year,
+            lat=body.latitude,
+            lon=body.longitude,
+            tz_offset=body.timezone_offset,
+            name=body.name,
+        )
+        return result
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error en retorno solar: {str(exc)}")
 
 
 @app.post("/api/mundane", response_model=MundaneResponse)

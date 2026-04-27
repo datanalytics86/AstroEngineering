@@ -134,3 +134,82 @@ def calculate_natal_chart(birth_data: dict) -> dict:
         "midheaven": house_data["midheaven"],
         "aspects": aspects,
     }
+
+
+def calculate_solar_return(natal_sun_lon: float, year: int, lat: float, lon: float, tz_offset: float, name: str = "") -> dict:
+    """
+    Calculate the solar return chart for the given year.
+    Finds the exact JD when the Sun returns to natal_sun_lon in `year`,
+    then computes a full natal chart for that moment at the birth location.
+    """
+    # Step 1: find rough crossing with 5-day scan
+    jd_start = swe.julday(year, 1, 1, 0.0)
+    jd_end   = swe.julday(year + 1, 3, 1, 0.0)
+
+    def sun_lon(jd: float) -> float:
+        for flags in (swe.FLG_SWIEPH | swe.FLG_SPEED, swe.FLG_MOSEPH | swe.FLG_SPEED):
+            try:
+                res, _ = swe.calc_ut(jd, swe.SUN, flags)
+                return res[0]
+            except Exception:
+                continue
+        raise RuntimeError("Cannot calculate sun position")
+
+    def circ_diff(jd: float) -> float:
+        d = (sun_lon(jd) - natal_sun_lon + 360) % 360
+        return d - 360 if d > 180 else d
+
+    # 5-day step scan to find the crossing window
+    prev_jd, prev_d = jd_start, circ_diff(jd_start)
+    window_a, window_b = jd_start, jd_start + 6
+    t = jd_start + 5.0
+    while t < jd_end:
+        d = circ_diff(t)
+        if prev_d * d <= 0:
+            window_a = max(jd_start, prev_jd - 1)
+            window_b = min(jd_end, t + 1)
+            break
+        prev_jd, prev_d = t, d
+        t += 5.0
+
+    # Step 2: binary search within window
+    a, b = window_a, window_b
+    for _ in range(60):
+        mid = (a + b) / 2
+        d   = circ_diff(mid)
+        if abs(d) < 1e-7:
+            break
+        if d < 0:
+            a = mid
+        else:
+            b = mid
+    sr_jd = (a + b) / 2
+
+    # Step 3: convert JD to calendar date/time (UT)
+    y_out, mo, day, h_frac = swe.jdut1_to_utc(sr_jd, 1)
+    h_ut  = int(h_frac)
+    m_ut  = int(round((h_frac - h_ut) * 60))
+    if m_ut >= 60:
+        h_ut += 1
+        m_ut -= 60
+
+    # Step 4: convert UT → local
+    h_loc_frac = h_frac + tz_offset
+    # handle day rollover simply (just display)
+    h_loc = int(h_loc_frac) % 24
+    m_loc = int(round((h_loc_frac - int(h_loc_frac)) * 60)) % 60
+
+    birth_data = {
+        "name": name or f"Retorno Solar {year}",
+        "birth_date": f"{int(y_out)}-{int(mo):02d}-{int(day):02d}",
+        "birth_time": f"{h_ut:02d}:{m_ut:02d}",
+        "latitude":   lat,
+        "longitude":  lon,
+        "timezone_offset": 0,  # already in UT
+    }
+    result = calculate_natal_chart(birth_data)
+    # Add metadata for display
+    result["sr_year"] = year
+    result["sr_local_time"] = f"{h_loc:02d}:{m_loc:02d}"
+    result["sr_ut_time"] = f"{h_ut:02d}:{m_ut:02d}"
+    return result

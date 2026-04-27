@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import type { ChartResponse, BirthData, ClickTarget } from "@/lib/types";
-import { loadChart, saveTransits } from "@/lib/storage";
+import { loadChart, saveTransits, saveSolarReturn } from "@/lib/storage";
 import ChartWheel from "@/components/ChartWheel";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
@@ -21,6 +21,8 @@ export default function CartaPage() {
   const [highlighted, setHighlighted] = useState<string | undefined>(undefined);
   const [loadingTransits, setLoadingTransits] = useState(false);
   const [transitError, setTransitError] = useState<string | null>(null);
+  const [loadingSR, setLoadingSR]   = useState(false);
+  const [srError, setSrError]       = useState<string | null>(null);
   const [modalTarget, setModalTarget] = useState<ClickTarget | null>(null);
   const [showSummary, setShowSummary] = useState(false);
 
@@ -69,6 +71,40 @@ export default function CartaPage() {
     }
   }
 
+  async function handleSolarReturn() {
+    if (!chart || !birthData) return;
+    setLoadingSR(true);
+    setSrError(null);
+    const sunPlanet = chart.planets.find((p) => p.name === "Sol");
+    if (!sunPlanet) { setLoadingSR(false); return; }
+    try {
+      const year = new Date().getFullYear();
+      const res = await fetch("/api/solar-return", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          natal_sun_longitude: sunPlanet.longitude,
+          year,
+          latitude: birthData.latitude,
+          longitude: birthData.longitude,
+          timezone_offset: birthData.timezone_offset,
+          name: `Retorno Solar ${year} — ${chart.name}`,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Error" }));
+        throw new Error(err.detail ?? `HTTP ${res.status}`);
+      }
+      const srChart = await res.json();
+      saveSolarReturn(id, srChart);
+      router.push(`/retorno/${id}`);
+    } catch (e) {
+      setSrError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setLoadingSR(false);
+    }
+  }
+
   if (!chart) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -112,6 +148,16 @@ export default function CartaPage() {
             ✦ Resumen ejecutivo
           </button>
           <button
+            onClick={handleSolarReturn}
+            disabled={loadingSR}
+            className="border border-amber-300 text-amber-600 px-4 py-2 rounded-lg text-sm hover:bg-amber-50 transition-colors font-mono flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {loadingSR ? (
+              <span className="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            ) : "☉"}
+            Retorno Solar {new Date().getFullYear()}
+          </button>
+          <button
             onClick={handleCalcTransits}
             disabled={loadingTransits}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 font-mono flex items-center gap-2"
@@ -131,6 +177,12 @@ export default function CartaPage() {
       {transitError && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600 font-mono">
           Error: {transitError}
+        </div>
+      )}
+
+      {srError && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-700 font-mono">
+          Error retorno solar: {srError}
         </div>
       )}
 

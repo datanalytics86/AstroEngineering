@@ -117,6 +117,15 @@ class TransitResponse(BaseModel):
 
 # ── Mundane Models ─────────────────────────────────────────────────────────────
 
+class SolarReturnRequest(BaseModel):
+    natal_sun_longitude: float
+    year: int
+    latitude: float
+    longitude: float
+    timezone_offset: float
+    name: str = ""
+
+
 class MundaneRequest(BaseModel):
     country: str = Field(..., description="País: usa | chile | uk | eu | germany | france | china | russia")
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
