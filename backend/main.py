@@ -3,6 +3,7 @@ AstroEngine Pro — Backend API
 FastAPI + pyswisseph
 """
 
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -17,10 +18,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# Base origins: localhost + any extra domains set via env var
+_extra = os.environ.get("ALLOWED_ORIGINS", "")
+_base_origins = ["http://localhost:3000", "http://localhost:3001"]
+allow_origins = _base_origins + [o.strip() for o in _extra.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
-    # Vercel previews + GitHub Codespaces (*.app.github.dev / *.github.dev)
+    allow_origins=allow_origins,
+    # Vercel previews + GitHub Codespaces
     allow_origin_regex=r"https://(.*\.vercel\.app|.*\.app\.github\.dev|.*\.github\.dev)",
     allow_credentials=True,
     allow_methods=["*"],
