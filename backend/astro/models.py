@@ -1,24 +1,49 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
+from datetime import date
 
 
 # ── Input Models ──────────────────────────────────────────────────────────────
 
 class BirthData(BaseModel):
-    name: str
+    name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
     birth_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="YYYY-MM-DD")
     birth_time: str = Field(..., pattern=r"^\d{2}:\d{2}$", description="HH:MM (hora local)")
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
     timezone_offset: float = Field(..., ge=-14, le=14, description="UTC offset en horas, ej: -4 para Chile")
 
+    @field_validator("birth_date")
+    @classmethod
+    def validate_birth_date(cls, v: str) -> str:
+        try:
+            d = date.fromisoformat(v)
+            if not (1800 <= d.year <= 2200):
+                raise ValueError("Año fuera del rango soportado (1800-2200)")
+        except ValueError as e:
+            raise ValueError(f"Fecha inválida: {e}")
+        return v
+
 
 class TransitRequest(BaseModel):
     natal_planets: list[dict]
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
-    latitude: float
-    longitude: float
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+
+    @model_validator(mode="after")
+    def validate_date_range(self) -> "TransitRequest":
+        try:
+            start = date.fromisoformat(self.start_date)
+            end   = date.fromisoformat(self.end_date)
+        except ValueError as e:
+            raise ValueError(f"Formato de fecha inválido: {e}")
+        if end <= start:
+            raise ValueError("end_date debe ser posterior a start_date")
+        if (end - start).days > 366:
+            raise ValueError("Rango máximo de tránsitos: 366 días (12 meses)")
+        return self
 
 
 # ── Output Models ─────────────────────────────────────────────────────────────
@@ -118,18 +143,31 @@ class TransitResponse(BaseModel):
 # ── Mundane Models ─────────────────────────────────────────────────────────────
 
 class SolarReturnRequest(BaseModel):
-    natal_sun_longitude: float
-    year: int
-    latitude: float
-    longitude: float
-    timezone_offset: float
-    name: str = ""
+    natal_sun_longitude: float = Field(..., ge=0, lt=360)
+    year: int = Field(..., ge=1900, le=2100)
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    timezone_offset: float = Field(..., ge=-14, le=14)
+    name: str = Field(default="", max_length=100)
 
 
 class MundaneRequest(BaseModel):
-    country: str = Field(..., description="País: usa | chile | uk | eu | germany | france | china | russia")
+    country: str = Field(..., description="País soportado")
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+    @model_validator(mode="after")
+    def validate_date_range(self) -> "MundaneRequest":
+        try:
+            start = date.fromisoformat(self.start_date)
+            end   = date.fromisoformat(self.end_date)
+        except ValueError as e:
+            raise ValueError(f"Formato de fecha inválido: {e}")
+        if end <= start:
+            raise ValueError("end_date debe ser posterior a start_date")
+        if (end - start).days > 366:
+            raise ValueError("Rango máximo: 366 días")
+        return self
 
 
 class IngressEvent(BaseModel):

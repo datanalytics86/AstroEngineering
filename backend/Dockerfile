@@ -14,6 +14,10 @@ RUN mkdir -p /usr/share/swisseph/ephe
 
 COPY . .
 
+# Create non-root user for security
+RUN useradd -m -u 1000 astro && chown -R astro:astro /app /usr/share/swisseph
+USER astro
+
 ENV EPHE_PATH=/usr/share/swisseph/ephe
 
 EXPOSE 8000
