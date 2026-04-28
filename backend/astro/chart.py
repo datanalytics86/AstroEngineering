@@ -186,16 +186,16 @@ def calculate_solar_return(natal_sun_lon: float, year: int, lat: float, lon: flo
     sr_jd = (a + b) / 2
 
     # Step 3: convert JD to calendar date/time (UT)
-    y_out, mo, day, h_frac = swe.jdut1_to_utc(sr_jd, 1)
-    h_ut  = int(h_frac)
-    m_ut  = int(round((h_frac - h_ut) * 60))
+    # swe.jdut1_to_utc returns (year, month, day, hour, minute, second)
+    y_out, mo, day, h_ut, m_ut, s_ut = swe.jdut1_to_utc(sr_jd, 1)
+    h_ut = int(h_ut)
+    m_ut = int(round(float(m_ut) + float(s_ut) / 60))
     if m_ut >= 60:
         h_ut += 1
         m_ut -= 60
 
     # Step 4: convert UT → local
-    h_loc_frac = h_frac + tz_offset
-    # handle day rollover simply (just display)
+    h_loc_frac = h_ut + m_ut / 60.0 + tz_offset
     h_loc = int(h_loc_frac) % 24
     m_loc = int(round((h_loc_frac - int(h_loc_frac)) * 60)) % 60
 
