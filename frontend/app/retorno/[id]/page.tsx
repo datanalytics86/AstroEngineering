@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import type { ChartResponse, BirthData } from "@/lib/types";
 import { loadSolarReturn, loadChart } from "@/lib/storage";
 import ChartWheel from "@/components/ChartWheel";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
+import SolarReturnSummaryPanel from "@/components/SolarReturnSummaryPanel";
+import { generateSolarReturnSummary } from "@/lib/solar-return-summary";
 
 export default function RetornoPage() {
   const router = useRouter();
@@ -39,6 +41,11 @@ export default function RetornoPage() {
 
   const year = (srChart as any).sr_year ?? new Date().getFullYear();
   const localTime = (srChart as any).sr_local_time ?? srChart.birth_time;
+
+  const summary = useMemo(
+    () => (srChart ? generateSolarReturnSummary(srChart) : null),
+    [srChart],
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
@@ -80,23 +87,26 @@ export default function RetornoPage() {
         (especialmente el ASC del retorno) revelan el tono predominante del período.
       </div>
 
-      {/* Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <h2 className="font-semibold text-lg text-slate-700">Rueda del Retorno Solar</h2>
-          <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
-            <ChartWheel
-              planets={srChart.planets}
-              houses={srChart.houses}
-              ascendant={srChart.ascendant}
-              midheaven={srChart.midheaven}
-              aspects={srChart.aspects}
-              highlightedPlanet={highlighted}
-              onPlanetClick={(name) => setHighlighted((p) => (p === name ? undefined : name))}
-            />
+      {/* Layout: main content + sticky summary */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-8 xl:items-start">
+
+        {/* Left column */}
+        <div className="space-y-8">
+          <div className="space-y-4">
+            <h2 className="font-semibold text-lg text-slate-700">Rueda del Retorno Solar</h2>
+            <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
+              <ChartWheel
+                planets={srChart.planets}
+                houses={srChart.houses}
+                ascendant={srChart.ascendant}
+                midheaven={srChart.midheaven}
+                aspects={srChart.aspects}
+                highlightedPlanet={highlighted}
+                onPlanetClick={(name) => setHighlighted((p) => (p === name ? undefined : name))}
+              />
+            </div>
           </div>
-        </div>
-        <div className="space-y-6">
+
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white border border-border rounded-xl p-4 shadow-card">
               <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">ASC Retorno</div>
@@ -109,6 +119,7 @@ export default function RetornoPage() {
               <div className="text-slate-500 font-mono text-sm">{srChart.midheaven.degree_display}</div>
             </div>
           </div>
+
           <PlanetPositions
             planets={srChart.planets}
             highlightedPlanet={highlighted}
@@ -116,6 +127,18 @@ export default function RetornoPage() {
           />
           <AspectTable aspects={srChart.aspects} highlightedPlanet={highlighted} />
         </div>
+
+        {/* Right column — sticky summary */}
+        {summary && (
+          <div className="hidden xl:block xl:sticky xl:top-6">
+            <SolarReturnSummaryPanel
+              summary={summary}
+              name={natal.name}
+              year={year}
+              ascSign={srChart.ascendant.sign}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
