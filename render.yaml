@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: astroengine-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENV
+        value: production
+      - key: EPHE_PATH
+        value: /usr/share/swisseph/ephe
+      - key: FRONTEND_URL
+        sync: false

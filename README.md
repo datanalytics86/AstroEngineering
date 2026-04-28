@@ -1,52 +1,63 @@
 # AstroEngine Pro
 
-Aplicación web de ingeniería astrológica profesional. Calcula cartas natales con precisión astronómica real (Swiss Ephemeris), detecta aspectos entre planetas, y genera pronósticos de tránsitos planetarios a futuro (1–12 meses).
+Aplicación web de ingeniería astrológica profesional. Calcula cartas natales con precisión astronómica real (Swiss Ephemeris), detecta aspectos entre planetas, genera pronósticos de tránsitos planetarios (1–12 meses), retornos solares y astrología mundial por país.
 
 ## Stack
 
-| Capa      | Tecnología                                      |
-|-----------|-------------------------------------------------|
-| Backend   | Python 3.11 · FastAPI · pyswisseph              |
-| Frontend  | Next.js 14 · TypeScript · Tailwind · D3.js      |
-| Deploy    | Docker Compose (local) · Vercel + Railway (prod)|
+| Capa      | Tecnología                                        |
+|-----------|---------------------------------------------------|
+| Backend   | Python 3.11 · FastAPI · pyswisseph · slowapi      |
+| Frontend  | Next.js 14 · TypeScript · Tailwind · SVG puro     |
+| Deploy    | Docker (local) · Vercel (frontend) · Render (backend) |
 
-## Inicio rápido
+## Inicio rápido (Docker)
 
 ```bash
-# Requiere Docker y Docker Compose
 docker-compose up --build
-
 # Frontend: http://localhost:3000
 # Backend:  http://localhost:8000
-# API docs: http://localhost:8000/docs
+# API docs: http://localhost:8000/docs (solo en desarrollo)
 ```
 
 ### Sin Docker
 
 ```bash
-# Backend
+# Terminal 1
 cd backend && pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 
-# Frontend (otra terminal)
+# Terminal 2
 cd frontend && npm install && npm run dev
 ```
 
 ## Endpoints
 
-| Método | Ruta          | Descripción                        |
-|--------|---------------|------------------------------------|
-| GET    | /health       | Health check                       |
-| POST   | /api/chart    | Calcula carta natal completa       |
-| POST   | /api/transits | Calcula tránsitos futuros (1-12 m) |
+| Método | Ruta              | Rate limit | Descripción                     |
+|--------|-------------------|------------|---------------------------------|
+| GET    | /health           | 10/min     | Health check                    |
+| POST   | /api/chart        | 20/min     | Carta natal                     |
+| POST   | /api/transits     | 5/min      | Tránsitos 12 meses              |
+| POST   | /api/solar-return | 10/min     | Retorno solar                   |
+| POST   | /api/mundane      | 3/min      | Astrología mundial (17 países)  |
 
-Ver `CLAUDE.md` para documentación completa del proyecto.
+## Deployment a producción
+
+### Backend en Render (gratuito)
+
+1. Conectar el repo a Render → autoselecciona `render.yaml`
+2. Configurar manualmente la env var `FRONTEND_URL` con la URL de Vercel
+
+### Frontend en Vercel (gratuito)
+
+1. New Project → Root Dir: `frontend`
+2. Env var: `NEXT_PUBLIC_API_URL=https://tu-backend.onrender.com`
+
+Ver `CLAUDE.md` para documentación completa del proyecto y `GAP_ANALYSIS_DEPLOY.md` para el roadmap de seguridad.
 
 ## Validación de precisión
 
-Las posiciones planetarias se validan contra [astro.com](https://astro.com) con tolerancia ±0.05° (3 arcominutos).
+Posiciones planetarias validadas contra [astro.com](https://astro.com) con tolerancia ±0.05° (3 arcominutos):
 
-Cartas de prueba:
 - 15 May 1990 · 14:30 · Santiago, Chile
 - 01 Ene 2000 · 00:00 · Londres
 - 21 Jun 1985 · 08:15 · Ciudad de México

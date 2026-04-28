@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from datetime import date
+from astro.mundane_charts import COUNTRY_KEYS
 
 
 # ── Input Models ──────────────────────────────────────────────────────────────
@@ -155,6 +156,13 @@ class MundaneRequest(BaseModel):
     country: str = Field(..., description="País soportado")
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+    @field_validator("country")
+    @classmethod
+    def validate_country(cls, v: str) -> str:
+        if v not in COUNTRY_KEYS:
+            raise ValueError(f"País no soportado: {v}. Opciones: {', '.join(COUNTRY_KEYS)}")
+        return v
 
     @model_validator(mode="after")
     def validate_date_range(self) -> "MundaneRequest":
