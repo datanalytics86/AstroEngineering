@@ -28,6 +28,11 @@ export default function RetornoPage() {
     setNatal(n.chart);
   }, [id, router]);
 
+  const summary = useMemo(
+    () => (srChart ? generateSolarReturnSummary(srChart) : null),
+    [srChart],
+  );
+
   if (!srChart || !natal) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -41,11 +46,6 @@ export default function RetornoPage() {
 
   const year = (srChart as any).sr_year ?? new Date().getFullYear();
   const localTime = (srChart as any).sr_local_time ?? srChart.birth_time;
-
-  const summary = useMemo(
-    () => (srChart ? generateSolarReturnSummary(srChart) : null),
-    [srChart],
-  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
