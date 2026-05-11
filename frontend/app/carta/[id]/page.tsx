@@ -125,7 +125,7 @@ export default function CartaPage() {
           latitude: birthData.latitude,
           longitude: birthData.longitude,
           timezone_offset: birthData.timezone_offset,
-          gender: (birthData as any).gender ?? "male",
+          gender: birthData.gender ?? "male",
         }),
       });
       if (!res.ok) throw new Error("Error en cálculo");
