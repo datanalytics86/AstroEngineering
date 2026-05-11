@@ -393,6 +393,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
     longitude:       "",
     timezone_offset: "-4",
     city_search:     "",
+    gender:          "male" as "male" | "female",
   });
   const [ianaZone, setIanaZone]     = useState<string | null>(null);
   const [tzLabel, setTzLabel]       = useState<string | null>(null);
@@ -558,6 +559,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
       longitude:       DEMO_DATA.longitude,
       timezone_offset: DEMO_DATA.timezone_offset,
       city_search:     DEMO_DATA.city_search,
+      gender:          "male",
     });
     setIanaZone(DEMO_DATA.ianaZone);
     const offset = getHistoricalOffset(DEMO_DATA.ianaZone, DEMO_DATA.birth_date);
@@ -580,6 +582,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
       latitude:        parseFloat(form.latitude),
       longitude:       parseFloat(form.longitude),
       timezone_offset: parseFloat(form.timezone_offset),
+      gender:          form.gender,
     });
   }
 
@@ -652,6 +655,28 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
           Sin hora exacta el Ascendente y las Casas serán imprecisos.
         </p>
       )}
+
+      {/* Género — necesario para dirección de ciclos BaZi */}
+      <div>
+        <label className={labelClass}>Género natal</label>
+        <div className="flex gap-2">
+          {(["male", "female"] as const).map((g) => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setForm((prev) => ({ ...prev, gender: g }))}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors ${
+                form.gender === g
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-slate-600 border-border hover:border-slate-300"
+              }`}
+            >
+              {g === "male" ? "♂ Masculino" : "♀ Femenino"}
+            </button>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-slate-400">Usado para la dirección de los Ciclos de Suerte BaZi</p>
+      </div>
 
       {/* Ciudad */}
       <div className="relative" ref={dropdownRef}>

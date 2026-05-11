@@ -207,3 +207,14 @@ class MundaneResponse(BaseModel):
     current_transits: list[TransitEvent]
     timeline: list[MonthlyForecast]
     ingresses: list[IngressEvent]
+
+
+# ── BaZi Models ────────────────────────────────────────────────────────────────
+
+class BaZiRequest(BaseModel):
+    birth_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    birth_time: str = Field(..., pattern=r"^\d{2}:\d{2}$")
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    timezone_offset: float = Field(..., ge=-14, le=14)
+    gender: str = Field(..., pattern=r"^(male|female|masculino|femenino|m|f)$")

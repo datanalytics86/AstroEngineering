@@ -10,6 +10,8 @@ import AspectTable from "@/components/AspectTable";
 import InterpretationModal from "@/components/InterpretationModal";
 import ChartSummaryModal from "@/components/ChartSummary";
 import { generateChartSummary } from "@/lib/chart-summary";
+import BaZiPanel from "@/components/bazi/BaZiPanel";
+import type { BaZiResponse } from "@/lib/bazi-types";
 
 export default function CartaPage() {
   const router = useRouter();
@@ -25,6 +27,10 @@ export default function CartaPage() {
   const [srError, setSrError]       = useState<string | null>(null);
   const [modalTarget, setModalTarget] = useState<ClickTarget | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [activeMainTab, setActiveMainTab] = useState<"occidental" | "bazi">("occidental");
+  const [baziData, setBaziData] = useState<BaZiResponse | null>(null);
+  const [loadingBazi, setLoadingBazi] = useState(false);
+  const [baziError, setBaziError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) { router.push("/"); return; }
@@ -102,6 +108,34 @@ export default function CartaPage() {
       setSrError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
       setLoadingSR(false);
+    }
+  }
+
+  async function handleCalcBazi() {
+    if (!birthData) return;
+    setLoadingBazi(true);
+    setBaziError(null);
+    try {
+      const res = await fetch("/api/bazi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          birth_date: birthData.birth_date,
+          birth_time: birthData.birth_time,
+          latitude: birthData.latitude,
+          longitude: birthData.longitude,
+          timezone_offset: birthData.timezone_offset,
+          gender: birthData.gender ?? "male",
+        }),
+      });
+      if (!res.ok) throw new Error("Error en cálculo");
+      const data: BaZiResponse = await res.json();
+      setBaziData(data);
+      setActiveMainTab("bazi");
+    } catch (e) {
+      setBaziError("No se pudo calcular BaZi.");
+    } finally {
+      setLoadingBazi(false);
     }
   }
 
@@ -197,59 +231,96 @@ export default function CartaPage() {
         </div>
       )}
 
-      {/* Layout principal */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Rueda zodiacal */}
-        <div className="space-y-4">
-          <h2 className="font-semibold text-lg text-slate-700">Rueda Natal</h2>
-          <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
-            <ChartWheel
-              planets={chart.planets}
-              houses={chart.houses}
-              ascendant={chart.ascendant}
-              midheaven={chart.midheaven}
-              aspects={chart.aspects}
-              highlightedPlanet={highlighted}
-              onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}
-              onElementClick={(target) => setModalTarget(target)}
-            />
-          </div>
-          {highlighted ? (
-            <p className="text-xs text-center text-blue-600 font-mono">
-              {highlighted} — click de nuevo para deseleccionar
-            </p>
-          ) : (
-            <p className="text-xs text-slate-400 text-center font-mono">
-              Click en planeta, aspecto, casa o ángulo para ver interpretación
-            </p>
-          )}
-        </div>
-
-        {/* Tablas */}
-        <div className="space-y-6">
-          {/* Ángulos */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white border border-border rounded-xl p-4 shadow-card">
-              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Ascendente</div>
-              <div className="text-blue-600 font-mono text-lg font-semibold">{chart.ascendant.sign}</div>
-              <div className="text-slate-500 font-mono text-sm">{chart.ascendant.degree_display}</div>
-            </div>
-            <div className="bg-white border border-border rounded-xl p-4 shadow-card">
-              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Medio Cielo</div>
-              <div className="text-sky-500 font-mono text-lg font-semibold">{chart.midheaven.sign}</div>
-              <div className="text-slate-500 font-mono text-sm">{chart.midheaven.degree_display}</div>
-            </div>
-          </div>
-
-          <PlanetPositions
-            planets={chart.planets}
-            highlightedPlanet={highlighted}
-            onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}
-          />
-
-          <AspectTable aspects={chart.aspects} highlightedPlanet={highlighted} />
-        </div>
+      {/* Tab switcher */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setActiveMainTab("occidental")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeMainTab === "occidental"
+              ? "bg-blue-600 text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          Carta Natal Occidental
+        </button>
+        <button
+          onClick={() => {
+            if (!baziData) handleCalcBazi();
+            else setActiveMainTab("bazi");
+          }}
+          disabled={loadingBazi}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            activeMainTab === "bazi"
+              ? "bg-[#C9A84C] text-[#0A0E1A]"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          } disabled:opacity-50`}
+        >
+          {loadingBazi ? "Calculando..." : "四柱 Cuatro Pilares del Destino"}
+        </button>
       </div>
+      {baziError && <p className="text-red-500 text-sm mb-4">{baziError}</p>}
+
+      {activeMainTab === "occidental" && (
+        <>
+          {/* Layout principal */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Rueda zodiacal */}
+            <div className="space-y-4">
+              <h2 className="font-semibold text-lg text-slate-700">Rueda Natal</h2>
+              <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
+                <ChartWheel
+                  planets={chart.planets}
+                  houses={chart.houses}
+                  ascendant={chart.ascendant}
+                  midheaven={chart.midheaven}
+                  aspects={chart.aspects}
+                  highlightedPlanet={highlighted}
+                  onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}
+                  onElementClick={(target) => setModalTarget(target)}
+                />
+              </div>
+              {highlighted ? (
+                <p className="text-xs text-center text-blue-600 font-mono">
+                  {highlighted} — click de nuevo para deseleccionar
+                </p>
+              ) : (
+                <p className="text-xs text-slate-400 text-center font-mono">
+                  Click en planeta, aspecto, casa o ángulo para ver interpretación
+                </p>
+              )}
+            </div>
+
+            {/* Tablas */}
+            <div className="space-y-6">
+              {/* Ángulos */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white border border-border rounded-xl p-4 shadow-card">
+                  <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Ascendente</div>
+                  <div className="text-blue-600 font-mono text-lg font-semibold">{chart.ascendant.sign}</div>
+                  <div className="text-slate-500 font-mono text-sm">{chart.ascendant.degree_display}</div>
+                </div>
+                <div className="bg-white border border-border rounded-xl p-4 shadow-card">
+                  <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Medio Cielo</div>
+                  <div className="text-sky-500 font-mono text-lg font-semibold">{chart.midheaven.sign}</div>
+                  <div className="text-slate-500 font-mono text-sm">{chart.midheaven.degree_display}</div>
+                </div>
+              </div>
+
+              <PlanetPositions
+                planets={chart.planets}
+                highlightedPlanet={highlighted}
+                onPlanetClick={(name) => setHighlighted((prev) => (prev === name ? undefined : name))}
+              />
+
+              <AspectTable aspects={chart.aspects} highlightedPlanet={highlighted} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeMainTab === "bazi" && baziData && (
+        <BaZiPanel data={baziData} />
+      )}
 
       <InterpretationModal
         target={modalTarget}

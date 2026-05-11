@@ -7,6 +7,7 @@ export interface BirthData {
   latitude: number;
   longitude: number;
   timezone_offset: number;  // UTC offset en horas, ej: -4
+  gender: "male" | "female";
 }
 
 export interface TransitRequest {
