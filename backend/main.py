@@ -13,10 +13,11 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, MundaneRequest, MundaneResponse, SolarReturnRequest
+from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, MundaneRequest, MundaneResponse, SolarReturnRequest, BaZiRequest
 from astro.chart import calculate_natal_chart, calculate_solar_return
 from astro.transits import calculate_transit_timeline
 from astro.mundane import calculate_mundane_response
+from astro.bazi.calculator import calculate_bazi
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -163,3 +164,21 @@ async def get_mundane(request: Request, body: MundaneRequest):
     except Exception as exc:
         logger.error("Mundane calculation error: %s", exc)
         raise HTTPException(status_code=500, detail="Error en cálculo mundano")
+
+
+@app.post("/api/bazi")
+@limiter.limit("10/minute")
+async def get_bazi(request: Request, body: BaZiRequest):
+    try:
+        result = calculate_bazi(
+            birth_date=body.birth_date,
+            birth_time=body.birth_time,
+            latitude=body.latitude,
+            longitude=body.longitude,
+            timezone_offset=body.timezone_offset,
+            gender=body.gender,
+        )
+        return result
+    except Exception as exc:
+        logger.error("BaZi calculation error: %s", exc)
+        raise HTTPException(status_code=500, detail="Error en cálculo BaZi")
