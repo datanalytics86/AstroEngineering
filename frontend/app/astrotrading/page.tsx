@@ -2,23 +2,25 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import type { AstroTradingResponse, AstroTradingRequest, MonthlySignal, TransitEvent } from "@/lib/types";
+import type { AstroTradingResponse, AstroTradingRequest, MonthlySignal, TransitEvent, ExactAspectEvent } from "@/lib/types";
 import SignalGauge from "@/components/SignalGauge";
 import CosmicWeatherStrip from "@/components/CosmicWeatherStrip";
+import ForecastRibbon from "@/components/ForecastRibbon";
+import LunarPhase from "@/components/LunarPhase";
 import { getTradingInterpretation } from "@/lib/trading-interpretations";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 // ── Market config ─────────────────────────────────────────────────────────────
 const MARKETS = [
-  { key: "sp500",  ticker: "SPX",    name: "S&P 500",               asset: "índice"       },
-  { key: "nasdaq", ticker: "COMP",   name: "NASDAQ",                asset: "índice"       },
-  { key: "dow",    ticker: "DJIA",   name: "Dow Jones",             asset: "índice"       },
-  { key: "nyse",   ticker: "NYSE",   name: "NYSE",                  asset: "índice"       },
-  { key: "bitcoin",ticker: "BTC",    name: "Bitcoin",               asset: "cripto"       },
-  { key: "gold",   ticker: "XAU",    name: "Oro",                   asset: "materia prima"},
-  { key: "crude",  ticker: "CL",     name: "Petróleo WTI",          asset: "materia prima"},
-  { key: "eurusd", ticker: "EURUSD", name: "EUR/USD",               asset: "divisa"       },
+  { key: "sp500",   ticker: "SPX",    name: "S&P 500",      asset: "índice"        },
+  { key: "nasdaq",  ticker: "COMP",   name: "NASDAQ",       asset: "índice"        },
+  { key: "dow",     ticker: "DJIA",   name: "Dow Jones",    asset: "índice"        },
+  { key: "nyse",    ticker: "NYSE",   name: "NYSE",         asset: "índice"        },
+  { key: "bitcoin", ticker: "BTC",    name: "Bitcoin",      asset: "cripto"        },
+  { key: "gold",    ticker: "XAU",    name: "Oro",          asset: "materia prima" },
+  { key: "crude",   ticker: "CL",     name: "Petróleo WTI", asset: "materia prima" },
+  { key: "eurusd",  ticker: "EURUSD", name: "EUR/USD",      asset: "divisa"        },
 ];
 
 const PLANET_SYMBOLS: Record<string, string> = {
@@ -28,9 +30,9 @@ const PLANET_SYMBOLS: Record<string, string> = {
 };
 
 const SIGNAL_CONFIG = {
-  LONG:    { label: "LONG",    color: "#22C55E", bg: "rgba(34,197,94,0.15)",   border: "rgba(34,197,94,0.35)",   glow: "0 0 16px rgba(34,197,94,0.25)"   },
-  SHORT:   { label: "SHORT",   color: "#EF4444", bg: "rgba(239,68,68,0.15)",   border: "rgba(239,68,68,0.35)",   glow: "0 0 16px rgba(239,68,68,0.25)"   },
-  NEUTRAL: { label: "HOLD",    color: "#F59E0B", bg: "rgba(245,158,11,0.15)",  border: "rgba(245,158,11,0.35)",  glow: "0 0 16px rgba(245,158,11,0.25)"  },
+  LONG:    { label: "LONG",  color: "#22C55E", bg: "rgba(34,197,94,0.15)",  border: "rgba(34,197,94,0.35)",  glow: "0 0 20px rgba(34,197,94,0.2)"   },
+  SHORT:   { label: "SHORT", color: "#EF4444", bg: "rgba(239,68,68,0.15)",  border: "rgba(239,68,68,0.35)",  glow: "0 0 20px rgba(239,68,68,0.2)"   },
+  NEUTRAL: { label: "HOLD",  color: "#F59E0B", bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.35)", glow: "0 0 20px rgba(245,158,11,0.2)"  },
 };
 
 const ASSET_COLORS: Record<string, string> = {
@@ -40,7 +42,7 @@ const ASSET_COLORS: Record<string, string> = {
   "divisa":        "#06B6D4",
 };
 
-// ── Starfield background (static dots) ────────────────────────────────────────
+// ── Starfield background ───────────────────────────────────────────────────────
 const STARS = Array.from({ length: 80 }, (_, i) => ({
   id: i,
   x: (i * 137.508) % 100,
@@ -48,6 +50,62 @@ const STARS = Array.from({ length: 80 }, (_, i) => ({
   r: i % 7 === 0 ? 1.2 : i % 3 === 0 ? 0.8 : 0.5,
   opacity: 0.15 + (i % 5) * 0.07,
 }));
+
+// ── Skeleton placeholder ───────────────────────────────────────────────────────
+function Skeleton({ w = "100%", h = "1rem", className = "" }: { w?: string; h?: string; className?: string }) {
+  return (
+    <div
+      className={`rounded-lg ${className}`}
+      style={{
+        width: w,
+        height: h,
+        background: "rgba(255,255,255,0.04)",
+        animation: "shimmer 1.6s infinite linear",
+        backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 100%)",
+        backgroundSize: "400px 100%",
+      }}
+    />
+  );
+}
+
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <style>{`
+        @keyframes shimmer {
+          from { background-position: -400px 0; }
+          to   { background-position:  400px 0; }
+        }
+      `}</style>
+      {/* Hero skeleton */}
+      <div className="rounded-2xl p-6 space-y-4" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="flex flex-col items-center gap-4">
+            <Skeleton w="220px" h="160px" className="rounded-full" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton h="1rem" w="60%" />
+            <div className="grid grid-cols-3 gap-3">
+              <Skeleton h="70px" />
+              <Skeleton h="70px" />
+              <Skeleton h="70px" />
+            </div>
+            <Skeleton h="40px" />
+          </div>
+        </div>
+      </div>
+      {/* Ribbon skeleton */}
+      <Skeleton h="180px" />
+      {/* Cards skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Skeleton h="100px" />
+        <Skeleton h="100px" />
+        <Skeleton h="100px" />
+        <Skeleton h="100px" />
+      </div>
+    </div>
+  );
+}
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function AstroTradingPage() {
@@ -58,7 +116,11 @@ export default function AstroTradingPage() {
   const [error, setError]     = useState<string | null>(null);
 
   const today   = new Date().toISOString().slice(0, 10);
-  const endDate = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0, 10); })();
+  const endDate = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  })();
 
   const fetchTrading = useCallback(async (marketKey: string) => {
     setLoading(true);
@@ -94,9 +156,13 @@ export default function AstroTradingPage() {
     fetchTrading(key);
   }
 
-  const sig = data?.signal;
-  const sigConf = sig ? SIGNAL_CONFIG[sig.direction] : null;
-  const selMeta = MARKETS.find((m) => m.key === selectedMarket);
+  const sigTrend = data?.signal_trend ?? data?.signal;
+  const sigShort = data?.signal_short_term;
+  const selMeta  = MARKETS.find((m) => m.key === selectedMarket);
+
+  // Hero signal = short_term (accionable hoy); macro = trend
+  const heroSig   = sigShort ?? sigTrend;
+  const heroConf  = heroSig ? SIGNAL_CONFIG[heroSig.direction] : null;
 
   return (
     <div
@@ -106,6 +172,15 @@ export default function AstroTradingPage() {
         color: "#E2E8F0",
       }}
     >
+      {/* Subtle nebula */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at 20% 60%, rgba(99,102,241,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 30%, rgba(34,197,94,0.03) 0%, transparent 50%)",
+        }}
+        aria-hidden="true"
+      />
+
       {/* Starfield */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none"
@@ -113,14 +188,7 @@ export default function AstroTradingPage() {
         preserveAspectRatio="none"
       >
         {STARS.map((s) => (
-          <circle
-            key={s.id}
-            cx={`${s.x}%`}
-            cy={`${s.y}%`}
-            r={s.r}
-            fill="white"
-            opacity={s.opacity}
-          />
+          <circle key={s.id} cx={`${s.x}%`} cy={`${s.y}%`} r={s.r} fill="white" opacity={s.opacity} />
         ))}
       </svg>
 
@@ -184,11 +252,11 @@ export default function AstroTradingPage() {
                 disabled={loading}
                 className="px-4 py-2 rounded-lg text-sm font-mono border transition-all"
                 style={{
-                  borderColor:  isActive ? assetColor           : "rgba(255,255,255,0.08)",
-                  background:   isActive ? `${assetColor}18`    : "rgba(255,255,255,0.03)",
-                  color:        isActive ? assetColor            : "rgba(148,163,184,0.8)",
-                  boxShadow:    isActive ? `0 0 12px ${assetColor}30` : "none",
-                  fontWeight:   isActive ? "700" : "400",
+                  borderColor: isActive ? assetColor          : "rgba(255,255,255,0.08)",
+                  background:  isActive ? `${assetColor}18`   : "rgba(255,255,255,0.03)",
+                  color:       isActive ? assetColor           : "rgba(148,163,184,0.8)",
+                  boxShadow:   isActive ? `0 0 12px ${assetColor}30` : "none",
+                  fontWeight:  isActive ? "700" : "400",
                 }}
               >
                 <span style={{ opacity: 0.6, fontSize: "0.7rem" }}>{ticker}</span>
@@ -198,23 +266,8 @@ export default function AstroTradingPage() {
           })}
         </div>
 
-        {/* ── Loading ── */}
-        {loading && (
-          <div className="flex items-center justify-center py-24">
-            <div className="text-center">
-              <div
-                className="w-10 h-10 rounded-full mx-auto mb-4 animate-spin"
-                style={{ border: "2px solid rgba(99,102,241,0.2)", borderTopColor: "#818CF8" }}
-              />
-              <p className="font-mono text-sm" style={{ color: "rgba(148,163,184,0.7)" }}>
-                Calculando señal astrológica de {selMeta?.name}…
-              </p>
-              <p className="font-mono text-xs mt-1" style={{ color: "rgba(148,163,184,0.4)" }}>
-                Esto puede tardar 30–60 segundos
-              </p>
-            </div>
-          </div>
-        )}
+        {/* ── Loading skeleton ── */}
+        {loading && <LoadingSkeleton />}
 
         {/* ── Error ── */}
         {error && !loading && (
@@ -237,10 +290,7 @@ export default function AstroTradingPage() {
         {!loading && !error && !data && (
           <div
             className="rounded-2xl p-12 text-center"
-            style={{
-              background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.06)",
-            }}
+            style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}
           >
             <p className="text-4xl mb-4">🔭</p>
             <p className="font-mono text-sm mb-2" style={{ color: "rgba(148,163,184,0.7)" }}>
@@ -260,55 +310,105 @@ export default function AstroTradingPage() {
         )}
 
         {/* ── Data loaded ── */}
-        {data && !loading && sig && sigConf && (
+        {data && !loading && heroSig && heroConf && sigTrend && (
           <div className="space-y-8">
 
-            {/* ── HERO: Signal gauge + scores ── */}
+            {/* ── HERO: Doble lectura — timing hoy + tendencia macro ── */}
             <div
               className="rounded-2xl p-6"
               style={{
                 background: "rgba(255,255,255,0.02)",
-                border: `1px solid ${sigConf.border}`,
-                boxShadow: sigConf.glow,
+                border: `1px solid ${heroConf.border}`,
+                boxShadow: heroConf.glow,
               }}
             >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
-                {/* Gauge */}
+                {/* Gauge corto plazo (accionable hoy) */}
                 <div className="flex flex-col items-center">
+                  <p className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: "rgba(148,163,184,0.45)" }}>
+                    Timing accionable hoy
+                  </p>
                   <SignalGauge
-                    direction={sig.direction}
-                    confidence={sig.confidence}
-                    netScore={sig.net_score}
+                    direction={heroSig.direction}
+                    confidence={heroSig.confidence}
+                    consensus={heroSig.consensus ?? 0}
+                    size="lg"
                   />
                 </div>
 
-                {/* Scores */}
+                {/* Scores + tendencia macro */}
                 <div className="space-y-5">
                   <div>
                     <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: "rgba(148,163,184,0.5)" }}>
-                      Señal global — {data.market_name} ({data.ticker})
+                      {data.market_name} ({data.ticker}) · {data.asset_class}
                     </p>
                     <p className="text-xs font-mono" style={{ color: "rgba(148,163,184,0.4)" }}>
-                      Tránsitos activos: {data.current_transits.length}
+                      Tránsitos lentos activos: {data.current_transits.length}
                     </p>
                   </div>
 
+                  {/* Tendencia macro 12 meses */}
+                  {(() => {
+                    const mc = SIGNAL_CONFIG[sigTrend.direction];
+                    const confPct = Math.round(sigTrend.confidence * 100);
+                    const cons = sigTrend.consensus ?? 0;
+                    return (
+                      <div
+                        className="rounded-xl p-4 flex items-center gap-4 transition-all"
+                        style={{
+                          background: mc.bg,
+                          border: `1px solid ${mc.border}`,
+                        }}
+                      >
+                        <div className="text-center shrink-0">
+                          <div className="text-2xl font-bold font-mono tabular-nums" style={{ color: mc.color }}>
+                            {mc.label}
+                          </div>
+                          <div className="text-xs font-mono mt-0.5" style={{ color: "rgba(148,163,184,0.5)" }}>
+                            macro
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1 text-xs font-mono">
+                          <div style={{ color: "rgba(148,163,184,0.7)" }}>Tendencia 12 meses</div>
+                          <div style={{ color: "rgba(148,163,184,0.5)" }}>
+                            Confianza {confPct}% · consenso {cons >= 0 ? "+" : ""}{(cons * 100).toFixed(0)}%
+                          </div>
+                          {sigTrend.rationale[0] && (
+                            <div className="truncate" style={{ color: "rgba(148,163,184,0.4)" }}>
+                              {sigTrend.rationale[0]}
+                            </div>
+                          )}
+                        </div>
+                        {/* Mini gauge */}
+                        <SignalGauge
+                          direction={sigTrend.direction}
+                          confidence={sigTrend.confidence}
+                          consensus={sigTrend.consensus ?? 0}
+                          size="sm"
+                        />
+                      </div>
+                    );
+                  })()}
+
+                  {/* Numeric scores */}
                   <div className="grid grid-cols-3 gap-3">
                     {[
-                      { label: "Alcista",  value: sig.bullish_score.toFixed(2), color: "#22C55E" },
-                      { label: "Bajista",  value: sig.bearish_score.toFixed(2), color: "#EF4444" },
-                      { label: "Neto",     value: sig.net_score > 0 ? `+${sig.net_score.toFixed(2)}` : sig.net_score.toFixed(2), color: sigConf.color },
+                      { label: "Alcista",  value: heroSig.bullish_score.toFixed(2), color: "#22C55E" },
+                      { label: "Bajista",  value: heroSig.bearish_score.toFixed(2), color: "#EF4444" },
+                      { label: "Consenso", value: ((heroSig.consensus ?? 0) >= 0 ? "+" : "") + ((heroSig.consensus ?? 0) * 100).toFixed(0) + "%", color: heroConf.color },
                     ].map((item) => (
                       <div
                         key={item.label}
-                        className="rounded-xl p-3 text-center"
-                        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+                        className="rounded-xl p-3 text-center transition-all"
+                        style={{
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.08)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
                       >
-                        <div
-                          className="text-xl font-bold font-mono tabular-nums"
-                          style={{ color: item.color }}
-                        >
+                        <div className="text-xl font-bold font-mono tabular-nums" style={{ color: item.color }}>
                           {item.value}
                         </div>
                         <div className="text-xs font-mono mt-0.5" style={{ color: "rgba(148,163,184,0.5)" }}>
@@ -319,15 +419,27 @@ export default function AstroTradingPage() {
                   </div>
 
                   <CosmicWeatherStrip
-                    cautionFlags={sig.caution_flags}
-                    volatility={sig.volatility}
+                    cautionFlags={heroSig.caution_flags}
+                    volatility={heroSig.volatility}
                   />
                 </div>
               </div>
+
+              {/* Lunar phase strip inside hero */}
+              {data.lunar && (
+                <div className="mt-5 pt-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                  <LunarPhase lunar={data.lunar} />
+                </div>
+              )}
             </div>
 
+            {/* ── Forecast Ribbon ── */}
+            {data.monthly_signals.length > 0 && (
+              <ForecastRibbon monthly_signals={data.monthly_signals} />
+            )}
+
             {/* ── Rationale cards ── */}
-            {sig.rationale.length > 0 && (
+            {heroSig.rationale.length > 0 && (
               <section className="space-y-3">
                 <h2 className="text-sm font-mono uppercase tracking-widest" style={{ color: "rgba(148,163,184,0.5)" }}>
                   Fundamentos de la señal
@@ -338,7 +450,7 @@ export default function AstroTradingPage() {
                     .slice(0, 6)
                     .map((t: TransitEvent, i: number) => {
                       const interp = getTradingInterpretation(t.transit_planet, t.aspect_name, t.natal_planet);
-                      const sConf = interp ? SIGNAL_CONFIG[interp.signal] : SIGNAL_CONFIG.NEUTRAL;
+                      const sConf  = interp ? SIGNAL_CONFIG[interp.signal] : SIGNAL_CONFIG.NEUTRAL;
                       const exactStr = t.exact_date
                         ? format(new Date(t.exact_date.slice(0, 10)), "d MMM yy", { locale: es })
                         : null;
@@ -351,12 +463,8 @@ export default function AstroTradingPage() {
                             border: `1px solid ${interp ? sConf.border : "rgba(255,255,255,0.07)"}`,
                             backdropFilter: "blur(8px)",
                           }}
-                          onMouseEnter={(e) => {
-                            (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
-                          }}
-                          onMouseLeave={(e) => {
-                            (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)";
-                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)"; (e.currentTarget as HTMLDivElement).style.transform = "none"; }}
                         >
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-base" style={{ color: "#94A3B8" }}>
@@ -400,11 +508,61 @@ export default function AstroTradingPage() {
               </section>
             )}
 
-            {/* ── Monthly signal strip ── */}
+            {/* ── Fechas clave (P2) ── */}
+            {data.exact_aspects_calendar && data.exact_aspects_calendar.length > 0 && (
+              <section className="space-y-3">
+                <h2 className="text-sm font-mono uppercase tracking-widest" style={{ color: "rgba(148,163,184,0.5)" }}>
+                  Fechas clave — posibles puntos de giro
+                </h2>
+                <div
+                  className="rounded-2xl p-4 space-y-2 overflow-x-auto"
+                  style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
+                >
+                  {data.exact_aspects_calendar.slice(0, 10).map((ev: ExactAspectEvent, i: number) => {
+                    const interp = getTradingInterpretation(ev.transit_planet, ev.aspect, ev.natal_planet);
+                    const sc = interp ? SIGNAL_CONFIG[interp.signal] : SIGNAL_CONFIG.NEUTRAL;
+                    const dateStr = format(new Date(ev.date.slice(0, 10)), "d MMM yyyy", { locale: es });
+                    return (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 py-2 px-3 rounded-lg transition-all"
+                        style={{
+                          borderLeft: `3px solid ${sc.color}`,
+                          background: "rgba(255,255,255,0.01)",
+                        }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.01)"; }}
+                      >
+                        <span className="text-sm shrink-0">{PLANET_SYMBOLS[ev.transit_planet] ?? "★"}</span>
+                        <span className="font-mono text-xs font-semibold shrink-0" style={{ color: "#CBD5E1", minWidth: "120px" }}>
+                          {ev.transit_planet} {ev.aspect} {ev.natal_planet}
+                        </span>
+                        <span className="font-mono text-xs shrink-0" style={{ color: "rgba(148,163,184,0.6)", minWidth: "90px" }}>
+                          {dateStr}
+                        </span>
+                        <span
+                          className="text-xs font-mono font-bold px-1.5 py-0.5 rounded shrink-0"
+                          style={{ color: sc.color, background: sc.bg }}
+                        >
+                          {sc.label}
+                        </span>
+                        {interp && (
+                          <span className="text-xs font-mono truncate" style={{ color: "rgba(148,163,184,0.4)" }}>
+                            {interp.market_meaning}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* ── Monthly signal strip (P3 — complementary view) ── */}
             {data.monthly_signals.length > 0 && (
               <section className="space-y-3">
                 <h2 className="text-sm font-mono uppercase tracking-widest" style={{ color: "rgba(148,163,184,0.5)" }}>
-                  Señales mensuales — próximos 12 meses
+                  Veredicto mensual
                 </h2>
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                   {data.monthly_signals.map((ms: MonthlySignal) => {
@@ -416,19 +574,15 @@ export default function AstroTradingPage() {
                       <div
                         key={ms.month}
                         className="rounded-xl p-3 text-center transition-all cursor-default"
-                        style={{
-                          background: mc.bg,
-                          border: `1px solid ${mc.border}`,
-                        }}
-                        title={`${ms.dominant_theme} · confianza ${confPct}%`}
+                        style={{ background: mc.bg, border: `1px solid ${mc.border}` }}
+                        title={`${ms.dominant_theme} · confianza ${confPct}% · consenso ${((ms.consensus ?? 0) * 100).toFixed(0)}%`}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "scale(1.04)"; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = "none"; }}
                       >
                         <div className="text-xs font-mono mb-1" style={{ color: "rgba(148,163,184,0.5)" }}>
                           {monthLabel}
                         </div>
-                        <div
-                          className="text-sm font-bold font-mono"
-                          style={{ color: mc.color }}
-                        >
+                        <div className="text-sm font-bold font-mono" style={{ color: mc.color }}>
                           {mc.label}
                         </div>
                         <div className="text-xs font-mono mt-1" style={{ color: "rgba(148,163,184,0.4)" }}>
@@ -447,17 +601,17 @@ export default function AstroTradingPage() {
                 Carta de inicio (inception chart)
               </h2>
               <div
-                className="rounded-xl p-4"
-                style={{
-                  background: "rgba(255,255,255,0.02)",
-                  border: "1px solid rgba(255,255,255,0.07)",
-                }}
+                className="rounded-xl p-4 transition-all"
+                style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.02)"; }}
               >
                 <div className="flex flex-wrap items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="font-mono font-semibold" style={{ color: "#CBD5E1" }}>
                       {data.market_name}
-                      <span className="ml-2 text-xs px-2 py-0.5 rounded font-normal" style={{ color: ASSET_COLORS[data.asset_class] ?? "#94A3B8", background: `${ASSET_COLORS[data.asset_class] ?? "#94A3B8"}18`, border: `1px solid ${ASSET_COLORS[data.asset_class] ?? "#94A3B8"}30` }}>
+                      <span className="ml-2 text-xs px-2 py-0.5 rounded font-normal"
+                        style={{ color: ASSET_COLORS[data.asset_class] ?? "#94A3B8", background: `${ASSET_COLORS[data.asset_class] ?? "#94A3B8"}18`, border: `1px solid ${ASSET_COLORS[data.asset_class] ?? "#94A3B8"}30` }}>
                         {data.asset_class}
                       </span>
                     </p>
