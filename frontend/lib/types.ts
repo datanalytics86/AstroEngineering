@@ -263,6 +263,7 @@ export interface TradingSignal {
   bullish_score: number;
   bearish_score: number;
   net_score: number;
+  consensus: number;          // -1..+1 (normalized directional bias)
   volatility: "alta" | "media" | "baja";
   rationale: string[];
   caution_flags: string[];
@@ -273,7 +274,16 @@ export interface MonthlySignal {
   direction: "LONG" | "SHORT" | "NEUTRAL";
   confidence: number;
   net_score: number;
+  consensus: number;          // -1..+1
   dominant_theme: string;
+}
+
+export interface LunarInfo {
+  phase_name: string;
+  phase_angle: number;        // 0-360 (separación Sol-Luna)
+  illumination: number;       // 0-1
+  mercury_retrograde: boolean;
+  note: string;
 }
 
 /** Reutiliza la estructura de NationalChartData para la inception chart */
@@ -287,7 +297,11 @@ export interface AstroTradingResponse {
   inception_chart: MarketChartData;
   current_sky: PlanetPosition[];
   current_transits: TransitEvent[];
-  signal: TradingSignal;
+  signal: TradingSignal;           // = signal_trend (compat)
+  signal_trend: TradingSignal;
+  signal_short_term: TradingSignal;
   monthly_signals: MonthlySignal[];
   timeline: MonthlyForecast[];
+  exact_aspects_calendar: ExactAspectEvent[];
+  lunar: LunarInfo;
 }

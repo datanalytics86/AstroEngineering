@@ -244,6 +244,7 @@ class TradingSignal(BaseModel):
     bullish_score: float
     bearish_score: float
     net_score: float
+    consensus: float = 0.0
     volatility: str
     rationale: list[str]
     caution_flags: list[str] = []
@@ -254,7 +255,16 @@ class MonthlySignal(BaseModel):
     direction: str
     confidence: float
     net_score: float
+    consensus: float = 0.0
     dominant_theme: str
+
+
+class LunarInfo(BaseModel):
+    phase_name: str
+    phase_angle: float
+    illumination: float
+    mercury_retrograde: bool
+    note: str = ""
 
 
 class AstroTradingResponse(BaseModel):
@@ -266,5 +276,9 @@ class AstroTradingResponse(BaseModel):
     current_sky: list[PlanetPosition]
     current_transits: list[TransitEvent]
     signal: TradingSignal
+    signal_trend: TradingSignal
+    signal_short_term: TradingSignal
     monthly_signals: list[MonthlySignal]
     timeline: list[MonthlyForecast]
+    exact_aspects_calendar: list[ExactAspectEvent] = []
+    lunar: LunarInfo
