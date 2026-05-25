@@ -248,3 +248,46 @@ export interface MundaneResponse {
   timeline: MonthlyForecast[];
   ingresses: IngressEvent[];
 }
+
+// ── AstroTrading Types ─────────────────────────────────────────────────────────
+
+export interface AstroTradingRequest {
+  market_key: string;
+  start_date: string;  // "YYYY-MM-DD"
+  end_date: string;    // "YYYY-MM-DD"
+}
+
+export interface TradingSignal {
+  direction: "LONG" | "SHORT" | "NEUTRAL";
+  confidence: number;         // 0-1
+  bullish_score: number;
+  bearish_score: number;
+  net_score: number;
+  volatility: "alta" | "media" | "baja";
+  rationale: string[];
+  caution_flags: string[];
+}
+
+export interface MonthlySignal {
+  month: string;              // "YYYY-MM"
+  direction: "LONG" | "SHORT" | "NEUTRAL";
+  confidence: number;
+  net_score: number;
+  dominant_theme: string;
+}
+
+/** Reutiliza la estructura de NationalChartData para la inception chart */
+export type MarketChartData = NationalChartData;
+
+export interface AstroTradingResponse {
+  market_key: string;
+  market_name: string;
+  ticker: string;
+  asset_class: string;
+  inception_chart: MarketChartData;
+  current_sky: PlanetPosition[];
+  current_transits: TransitEvent[];
+  signal: TradingSignal;
+  monthly_signals: MonthlySignal[];
+  timeline: MonthlyForecast[];
+}

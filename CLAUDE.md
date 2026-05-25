@@ -13,7 +13,30 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 
 ## ESTADO ACTUAL DEL PROYECTO
 
-> Última actualización: 2026-04-28 — Sesión de seguridad + nuevas features
+> Última actualización: 2026-05-25 — Feature AstroTrading (señales LONG/SHORT)
+
+### AstroTrading (nuevo — 2026-05-25)
+- [x] `backend/astro/market_charts.py` — 8 cartas de inicio (NYSE, S&P500, NASDAQ, Dow, BTC, Oro, WTI, EURUSD)
+- [x] `backend/astro/astrotrading.py` — motor de señal LONG/SHORT/NEUTRAL + `derive_signal()` + `calculate_astrotrading_response()`
+- [x] `backend/astro/models.py` — modelos Pydantic v2: `AstroTradingRequest`, `TradingSignal`, `MonthlySignal`, `AstroTradingResponse`
+- [x] `backend/main.py` — endpoint `POST /api/astrotrading` (rate limit 3/min)
+- [x] `frontend/lib/types.ts` — interfaces TS: `AstroTradingRequest/Response`, `TradingSignal`, `MonthlySignal`, `MarketChartData`
+- [x] `frontend/lib/trading-interpretations.ts` — 25+ interpretaciones astro-financieras (Meridian/Merriman/Gann)
+- [x] `frontend/app/api/astrotrading/route.ts` — proxy Next.js (timeout 180s)
+- [x] `frontend/components/SignalGauge.tsx` — medidor SVG semicircular (aguja animada CSS, degradado rojo→ámbar→verde)
+- [x] `frontend/components/CosmicWeatherStrip.tsx` — badges de alertas planetarias y volatilidad
+- [x] `frontend/app/astrotrading/page.tsx` — página dark "terminal cósmica" (starfield, glassmorphism, disclaimer obligatorio)
+- [x] `frontend/app/page.tsx` — botón "📈 AstroTrading" en la home
+
+**Notas técnicas:**
+- Motor de señal determinista: DIRECTIONAL_BIAS × (score/10) por tránsito; LONG si net > +1, SHORT si net < −1, NEUTRAL en medio
+- Urano → flag volatilidad alta; Neptuno → flag especulación; Mercurio Rx → caution flag (−15% confianza c/u)
+- Cartas de inicio según tradición astro-financiera (horarios debatidos; fuente documentada en cada entrada)
+- Disclaimer visible (banner + footer) en la página; no es asesoría financiera
+
+---
+
+> Sesión anterior: 2026-04-28 — Sesión de seguridad + nuevas features
 
 ### Core
 - [x] CLAUDE.md creado y actualizado

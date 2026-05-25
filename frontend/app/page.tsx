@@ -77,13 +77,19 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Mundane link */}
-        <div className="mt-4 text-center">
+        {/* Navigation links */}
+        <div className="mt-4 flex flex-col items-center gap-2">
           <button
             onClick={() => router.push("/mundial")}
             className="text-xs font-mono text-slate-400 hover:text-blue-500 transition-colors underline underline-offset-2"
           >
             🌍 Astrología Mundial → tránsitos sobre cartas nacionales
+          </button>
+          <button
+            onClick={() => router.push("/astrotrading")}
+            className="text-xs font-mono font-semibold px-4 py-2 rounded-lg border border-indigo-200 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 hover:border-indigo-400 transition-colors"
+          >
+            📈 AstroTrading → señales long/short según los astros
           </button>
         </div>
 
