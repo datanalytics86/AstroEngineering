@@ -15,23 +15,27 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 
 > Última actualización: 2026-05-25 — Feature AstroTrading (señales LONG/SHORT)
 
-### AstroTrading (nuevo — 2026-05-25)
+### AstroTrading (actualizado — 2026-05-25 sesión tier-1)
 - [x] `backend/astro/market_charts.py` — 8 cartas de inicio (NYSE, S&P500, NASDAQ, Dow, BTC, Oro, WTI, EURUSD)
-- [x] `backend/astro/astrotrading.py` — motor de señal LONG/SHORT/NEUTRAL + `derive_signal()` + `calculate_astrotrading_response()`
-- [x] `backend/astro/models.py` — modelos Pydantic v2: `AstroTradingRequest`, `TradingSignal`, `MonthlySignal`, `AstroTradingResponse`
+- [x] `backend/astro/astrotrading.py` — motor consenso normalizado + doble horizonte + fase lunar
+- [x] `backend/astro/models.py` — `TradingSignal.consensus`, `LunarInfo`, `signal_trend/short_term`, `exact_aspects_calendar`
 - [x] `backend/main.py` — endpoint `POST /api/astrotrading` (rate limit 3/min)
-- [x] `frontend/lib/types.ts` — interfaces TS: `AstroTradingRequest/Response`, `TradingSignal`, `MonthlySignal`, `MarketChartData`
-- [x] `frontend/lib/trading-interpretations.ts` — 25+ interpretaciones astro-financieras (Meridian/Merriman/Gann)
+- [x] `frontend/lib/types.ts` — `TradingSignal.consensus`, `LunarInfo`, `signal_trend/short_term`, `exact_aspects_calendar`
+- [x] `frontend/lib/trading-interpretations.ts` — 25+ interpretaciones astro-financieras
 - [x] `frontend/app/api/astrotrading/route.ts` — proxy Next.js (timeout 180s)
-- [x] `frontend/components/SignalGauge.tsx` — medidor SVG semicircular (aguja animada CSS, degradado rojo→ámbar→verde)
+- [x] `frontend/components/SignalGauge.tsx` — input cambiado a `consensus` (−1..+1); ticks graduados; prop `size` sm/lg
+- [x] `frontend/components/ForecastRibbon.tsx` — curva SVG área consenso (verde/rojo) 12 meses; hover tooltip (NUEVO)
+- [x] `frontend/components/LunarPhase.tsx` — disco lunar SVG con terminador; badge posible giro; Mercurio Rx (NUEVO)
 - [x] `frontend/components/CosmicWeatherStrip.tsx` — badges de alertas planetarias y volatilidad
-- [x] `frontend/app/astrotrading/page.tsx` — página dark "terminal cósmica" (starfield, glassmorphism, disclaimer obligatorio)
-- [x] `frontend/app/page.tsx` — botón "📈 AstroTrading" en la home
+- [x] `frontend/app/astrotrading/page.tsx` — hero doble lectura, lunar widget, ribbon, fechas clave, skeleton loading
 
-**Notas técnicas:**
-- Motor de señal determinista: DIRECTIONAL_BIAS × (score/10) por tránsito; LONG si net > +1, SHORT si net < −1, NEUTRAL en medio
-- Urano → flag volatilidad alta; Neptuno → flag especulación; Mercurio Rx → caution flag (−15% confianza c/u)
-- Cartas de inicio según tradición astro-financiera (horarios debatidos; fuente documentada en cada entrada)
+**Notas técnicas (motor actualizado):**
+- Consenso normalizado: `consensus = net/gross ∈ [-1,+1]`; `activity = 1−exp(−gross/5)`; NEUTRAL alcanzable con umbral ±0.15
+- Ponderación por casa natal: casas 2/8 ×1.4 (dinero), 5/11 ×1.25 (especulación); filtro ruido score<2 / nature=="menor"
+- Doble horizonte: `signal_trend` (planetas lentos, macro 12m) + `signal_short_term` (planetas rápidos, accionable hoy)
+- Planetas rápidos: Sol/Luna/Mercurio/Venus/Marte vs carta de inicio; orbe estricto ≤3° (Luna ≤5°)
+- Fase lunar: octantes (nueva/llena = posible giro), iluminación, Mercurio Rx; campo `lunar` en respuesta
+- `exact_aspects_calendar` propagado desde transit_result al response final
 - Disclaimer visible (banner + footer) en la página; no es asesoría financiera
 
 ---
