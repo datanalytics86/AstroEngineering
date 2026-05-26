@@ -1,16 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-
-// Server-only: use BACKEND_URL (no NEXT_PUBLIC_ prefix) so it resolves at runtime
-const BACKEND = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { NextRequest } from "next/server";
+import { proxyFetch } from "@/lib/proxy-fetch";
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const upstream = await fetch(`${BACKEND}/api/chart`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  const data = await upstream.json();
-  return NextResponse.json(data, { status: upstream.status });
+  return proxyFetch("/api/chart", body);
 }

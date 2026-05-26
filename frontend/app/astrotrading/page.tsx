@@ -11,6 +11,11 @@ import { getTradingInterpretation } from "@/lib/trading-interpretations";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+function safeFormat(input: Date | string, fmt: string): string | null {
+  const d = input instanceof Date ? input : new Date(input);
+  return isNaN(d.getTime()) ? null : format(d, fmt, { locale: es });
+}
+
 // ── Market config ─────────────────────────────────────────────────────────────
 const MARKETS = [
   { key: "sp500",   ticker: "SPX",    name: "S&P 500",      asset: "índice"        },
@@ -77,6 +82,9 @@ function LoadingSkeleton() {
           to   { background-position:  400px 0; }
         }
       `}</style>
+      <p className="text-center text-xs font-mono" style={{ color: "rgba(148,163,184,0.5)" }}>
+        Calculando tránsitos… el servidor puede tardar hasta 60s la primera vez.
+      </p>
       {/* Hero skeleton */}
       <div className="rounded-2xl p-6 space-y-4" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -452,7 +460,7 @@ export default function AstroTradingPage() {
                       const interp = getTradingInterpretation(t.transit_planet, t.aspect_name, t.natal_planet);
                       const sConf  = interp ? SIGNAL_CONFIG[interp.signal] : SIGNAL_CONFIG.NEUTRAL;
                       const exactStr = t.exact_date
-                        ? format(new Date(t.exact_date.slice(0, 10)), "d MMM yy", { locale: es })
+                        ? safeFormat(t.exact_date.slice(0, 10), "d MMM yy")
                         : null;
                       return (
                         <div
@@ -521,7 +529,7 @@ export default function AstroTradingPage() {
                   {data.exact_aspects_calendar.slice(0, 10).map((ev: ExactAspectEvent, i: number) => {
                     const interp = getTradingInterpretation(ev.transit_planet, ev.aspect, ev.natal_planet);
                     const sc = interp ? SIGNAL_CONFIG[interp.signal] : SIGNAL_CONFIG.NEUTRAL;
-                    const dateStr = format(new Date(ev.date.slice(0, 10)), "d MMM yyyy", { locale: es });
+                    const dateStr = safeFormat(ev.date.slice(0, 10), "d MMM yyyy");
                     return (
                       <div
                         key={i}
@@ -537,9 +545,11 @@ export default function AstroTradingPage() {
                         <span className="font-mono text-xs font-semibold shrink-0" style={{ color: "#CBD5E1", minWidth: "120px" }}>
                           {ev.transit_planet} {ev.aspect} {ev.natal_planet}
                         </span>
-                        <span className="font-mono text-xs shrink-0" style={{ color: "rgba(148,163,184,0.6)", minWidth: "90px" }}>
-                          {dateStr}
-                        </span>
+                        {dateStr && (
+                          <span className="font-mono text-xs shrink-0" style={{ color: "rgba(148,163,184,0.6)", minWidth: "90px" }}>
+                            {dateStr}
+                          </span>
+                        )}
                         <span
                           className="text-xs font-mono font-bold px-1.5 py-0.5 rounded shrink-0"
                           style={{ color: sc.color, background: sc.bg }}
@@ -569,7 +579,7 @@ export default function AstroTradingPage() {
                     const mc = SIGNAL_CONFIG[ms.direction];
                     const confPct = Math.round(ms.confidence * 100);
                     const [year, month] = ms.month.split("-");
-                    const monthLabel = format(new Date(+year, +month - 1, 1), "MMM yy", { locale: es });
+                    const monthLabel = safeFormat(new Date(+year, +month - 1, 1), "MMM yy") ?? ms.month;
                     return (
                       <div
                         key={ms.month}
