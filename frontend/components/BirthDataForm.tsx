@@ -739,6 +739,11 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
         )}
       </div>
 
+      {/* Aviso de privacidad */}
+      <p className="text-xs text-slate-400 leading-snug">
+        🔒 Tus datos de nacimiento se usan solo para el cálculo y no se guardan en nuestros servidores. Se almacenan localmente en tu navegador para que puedas volver a tus cartas.
+      </p>
+
       {/* Submit */}
       <button
         type="submit" disabled={loading || !allValid}
