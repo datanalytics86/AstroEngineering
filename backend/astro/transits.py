@@ -385,25 +385,30 @@ def build_monthly_timeline(
             })
             continue
 
-        # Clasificar por fase
-        exact_this = [t for t in month_transits
-                      if t.get("exact_date") and t["exact_date"][:7] == month_key]
-        entering_this = [t for t in month_transits
-                         if t["enters_orb"][:7] == month_key and t not in exact_this]
-        leaving_this = [t for t in month_transits
-                        if t["leaves_orb"][:7] == month_key
-                        and t not in exact_this and t not in entering_this]
-        ongoing = [t for t in month_transits
-                   if t not in exact_this and t not in entering_this and t not in leaving_this]
+        # Clasificar la fase de cada tránsito UNA vez (evita comparar dicts por valor)
+        for t in month_transits:
+            if t.get("exact_date") and t["exact_date"][:7] == month_key:
+                t["_phase"] = "exact"
+            elif t["enters_orb"][:7] == month_key:
+                t["_phase"] = "entering"
+            elif t["leaves_orb"][:7] == month_key:
+                t["_phase"] = "leaving"
+            else:
+                t["_phase"] = "ongoing"
+
+        exact_this    = [t for t in month_transits if t["_phase"] == "exact"]
+        entering_this = [t for t in month_transits if t["_phase"] == "entering"]
+        leaving_this  = [t for t in month_transits if t["_phase"] == "leaving"]
+        ongoing       = [t for t in month_transits if t["_phase"] == "ongoing"]
 
         # Intensidad ponderada por fase + orbe
         weighted_total = 0.0
         for t in month_transits:
-            if t in exact_this:
+            if t["_phase"] == "exact":
                 phase_mult = 1.8
-            elif t in entering_this:
+            elif t["_phase"] == "entering":
                 phase_mult = 1.4
-            elif t in leaving_this:
+            elif t["_phase"] == "leaving":
                 phase_mult = 0.8
             else:
                 phase_mult = 0.4  # Continuos de larga duración: bajo impacto mensual
@@ -417,9 +422,9 @@ def build_monthly_timeline(
         # los planetas lentos. Marte sólo debe dominar si no hay nada más activo.
         def theme_score(t: dict) -> float:
             phase_mult = (
-                1.8 if t in exact_this else
-                1.4 if t in entering_this else
-                0.8 if t in leaving_this else
+                1.8 if t["_phase"] == "exact" else
+                1.4 if t["_phase"] == "entering" else
+                0.8 if t["_phase"] == "leaving" else
                 0.6  # ongoing sigue siendo relevante para el tema, aunque no exacto
             )
             tw = THEME_WEIGHT.get(t["transit_planet"], 1.0)

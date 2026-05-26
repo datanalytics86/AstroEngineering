@@ -13,7 +13,34 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 
 ## ESTADO ACTUAL DEL PROYECTO
 
-> Última actualización: 2026-04-28 — Sesión de seguridad + nuevas features
+> Última actualización: 2026-05-25 — Feature AstroTrading (señales LONG/SHORT)
+
+### AstroTrading (actualizado — 2026-05-25 sesión tier-1)
+- [x] `backend/astro/market_charts.py` — 8 cartas de inicio (NYSE, S&P500, NASDAQ, Dow, BTC, Oro, WTI, EURUSD)
+- [x] `backend/astro/astrotrading.py` — motor consenso normalizado + doble horizonte + fase lunar
+- [x] `backend/astro/models.py` — `TradingSignal.consensus`, `LunarInfo`, `signal_trend/short_term`, `exact_aspects_calendar`
+- [x] `backend/main.py` — endpoint `POST /api/astrotrading` (rate limit 3/min)
+- [x] `frontend/lib/types.ts` — `TradingSignal.consensus`, `LunarInfo`, `signal_trend/short_term`, `exact_aspects_calendar`
+- [x] `frontend/lib/trading-interpretations.ts` — 25+ interpretaciones astro-financieras
+- [x] `frontend/app/api/astrotrading/route.ts` — proxy Next.js (timeout 180s)
+- [x] `frontend/components/SignalGauge.tsx` — input cambiado a `consensus` (−1..+1); ticks graduados; prop `size` sm/lg
+- [x] `frontend/components/ForecastRibbon.tsx` — curva SVG área consenso (verde/rojo) 12 meses; hover tooltip (NUEVO)
+- [x] `frontend/components/LunarPhase.tsx` — disco lunar SVG con terminador; badge posible giro; Mercurio Rx (NUEVO)
+- [x] `frontend/components/CosmicWeatherStrip.tsx` — badges de alertas planetarias y volatilidad
+- [x] `frontend/app/astrotrading/page.tsx` — hero doble lectura, lunar widget, ribbon, fechas clave, skeleton loading
+
+**Notas técnicas (motor actualizado):**
+- Consenso normalizado: `consensus = net/gross ∈ [-1,+1]`; `activity = 1−exp(−gross/5)`; NEUTRAL alcanzable con umbral ±0.15
+- Ponderación por casa natal: casas 2/8 ×1.4 (dinero), 5/11 ×1.25 (especulación); filtro ruido score<2 / nature=="menor"
+- Doble horizonte: `signal_trend` (planetas lentos, macro 12m) + `signal_short_term` (planetas rápidos, accionable hoy)
+- Planetas rápidos: Sol/Luna/Mercurio/Venus/Marte vs carta de inicio; orbe estricto ≤3° (Luna ≤5°)
+- Fase lunar: octantes (nueva/llena = posible giro), iluminación, Mercurio Rx; campo `lunar` en respuesta
+- `exact_aspects_calendar` propagado desde transit_result al response final
+- Disclaimer visible (banner + footer) en la página; no es asesoría financiera
+
+---
+
+> Sesión anterior: 2026-04-28 — Sesión de seguridad + nuevas features
 
 ### Core
 - [x] CLAUDE.md creado y actualizado

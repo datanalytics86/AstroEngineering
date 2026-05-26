@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from datetime import date
 from astro.mundane_charts import COUNTRY_KEYS
+from astro.market_charts import MARKET_KEYS
 
 
 # ── Input Models ──────────────────────────────────────────────────────────────
@@ -207,3 +208,77 @@ class MundaneResponse(BaseModel):
     current_transits: list[TransitEvent]
     timeline: list[MonthlyForecast]
     ingresses: list[IngressEvent]
+
+
+# ── AstroTrading Models ────────────────────────────────────────────────────────
+
+class AstroTradingRequest(BaseModel):
+    market_key: str = Field(..., description="Mercado soportado")
+    start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+    @field_validator("market_key")
+    @classmethod
+    def validate_market_key(cls, v: str) -> str:
+        if v not in MARKET_KEYS:
+            raise ValueError(f"Mercado no soportado: {v}. Opciones: {', '.join(MARKET_KEYS)}")
+        return v
+
+    @model_validator(mode="after")
+    def validate_date_range(self) -> "AstroTradingRequest":
+        try:
+            start = date.fromisoformat(self.start_date)
+            end   = date.fromisoformat(self.end_date)
+        except ValueError as e:
+            raise ValueError(f"Formato de fecha inválido: {e}")
+        if end <= start:
+            raise ValueError("end_date debe ser posterior a start_date")
+        if (end - start).days > 366:
+            raise ValueError("Rango máximo: 366 días")
+        return self
+
+
+class TradingSignal(BaseModel):
+    direction: str
+    confidence: float
+    bullish_score: float
+    bearish_score: float
+    net_score: float
+    consensus: float = 0.0
+    volatility: str
+    rationale: list[str]
+    caution_flags: list[str] = []
+
+
+class MonthlySignal(BaseModel):
+    month: str
+    direction: str
+    confidence: float
+    net_score: float
+    consensus: float = 0.0
+    dominant_theme: str
+
+
+class LunarInfo(BaseModel):
+    phase_name: str
+    phase_angle: float
+    illumination: float
+    mercury_retrograde: bool
+    note: str = ""
+
+
+class AstroTradingResponse(BaseModel):
+    market_key: str
+    market_name: str
+    ticker: str
+    asset_class: str
+    inception_chart: NationalChartData
+    current_sky: list[PlanetPosition]
+    current_transits: list[TransitEvent]
+    signal: TradingSignal
+    signal_trend: TradingSignal
+    signal_short_term: TradingSignal
+    monthly_signals: list[MonthlySignal]
+    timeline: list[MonthlyForecast]
+    exact_aspects_calendar: list[ExactAspectEvent] = []
+    lunar: LunarInfo

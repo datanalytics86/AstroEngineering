@@ -3,9 +3,13 @@ Cálculo de carta natal con Swiss Ephemeris (pyswisseph).
 """
 
 import os
+import logging
 import swisseph as swe
+from datetime import datetime, timedelta
 from .houses import calc_houses, get_planet_house, longitude_to_sign, degrees_to_dms
 from .aspects import find_aspects
+
+logger = logging.getLogger(__name__)
 
 # Configurar path de efemérides (usa Moshier si no existen los .se1)
 EPHE_PATH = os.environ.get("EPHE_PATH", "/usr/share/swisseph/ephe")
@@ -48,6 +52,7 @@ def calc_planet_position(jd: float, planet_id: int) -> dict | None:
     Intenta Swiss Ephemeris primero; si falta el archivo .se1, usa Moshier.
     Retorna None si el planeta no está soportado sin efemérides (ej: Quirón).
     """
+    last_err = None
     for flags in (swe.FLG_SWIEPH | swe.FLG_SPEED, swe.FLG_MOSEPH | swe.FLG_SPEED):
         try:
             result, _ = swe.calc_ut(jd, planet_id, flags)
@@ -57,8 +62,10 @@ def calc_planet_position(jd: float, planet_id: int) -> dict | None:
                 "speed": result[3],
                 "retrograde": result[3] < 0,
             }
-        except Exception:
+        except Exception as e:
+            last_err = e
             continue
+    logger.warning("calc_planet_position falló para planet_id=%s: %s", planet_id, last_err)
     return None
 
 
@@ -73,7 +80,6 @@ def calculate_natal_chart(birth_data: dict) -> dict:
         dict con planets, houses, ascendant, midheaven, aspects
     """
     # Parsear fecha y hora
-    from datetime import datetime as _dt, timedelta as _td
     year, month, day = map(int, birth_data["birth_date"].split("-"))
     hh, mm = map(int, birth_data["birth_time"].split(":"))
     hour_local = hh + mm / 60.0
@@ -83,9 +89,8 @@ def calculate_natal_chart(birth_data: dict) -> dict:
 
     # Ajustar día si la hora UT cruza medianoche (usa datetime para rollover correcto)
     if hour_ut < 0 or hour_ut >= 24:
-        base = _dt(year, month, day)
-        delta_hours = hour_ut
-        adjusted = base + _td(hours=delta_hours)
+        base = datetime(year, month, day)
+        adjusted = base + timedelta(hours=hour_ut)
         year, month, day = adjusted.year, adjusted.month, adjusted.day
         hour_ut = adjusted.hour + adjusted.minute / 60.0 + adjusted.second / 3600.0
 
@@ -101,6 +106,7 @@ def calculate_natal_chart(birth_data: dict) -> dict:
         pos = calc_planet_position(jd, planet_id)
         if pos is None:
             # Planeta no calculable sin archivo de efemérides (ej: Quirón sin seas_18.se1)
+            logger.info("Planeta %s no calculable (sin efemérides); se omite", planet_name)
             continue
         sign_info = longitude_to_sign(pos["longitude"])
         house_num = get_planet_house(pos["longitude"], house_cusps)
@@ -185,24 +191,20 @@ def calculate_solar_return(natal_sun_lon: float, year: int, lat: float, lon: flo
             b = mid
     sr_jd = (a + b) / 2
 
-    # Step 3: convert JD to calendar date/time (UT)
-    # swe.jdut1_to_utc returns (year, month, day, hour, minute, second)
-    y_out, mo, day, h_ut, m_ut, s_ut = swe.jdut1_to_utc(sr_jd, 1)
-    h_ut = int(h_ut)
-    m_ut = int(round(float(m_ut) + float(s_ut) / 60))
-    if m_ut >= 60:
-        h_ut += 1
-        m_ut -= 60
+    # Step 3: JD → fecha/hora UT, redondeada al minuto con acarreo correcto
+    y_out, mo, day, h_ut0, m_ut0, s_ut0 = swe.jdut1_to_utc(sr_jd, 1)
+    ut_dt = datetime(int(y_out), int(mo), int(day)) + timedelta(
+        hours=float(h_ut0), minutes=float(m_ut0), seconds=float(s_ut0)
+    )
+    ut_dt = (ut_dt + timedelta(seconds=30)).replace(second=0, microsecond=0)  # redondeo al minuto
 
-    # Step 4: convert UT → local
-    h_loc_frac = h_ut + m_ut / 60.0 + tz_offset
-    h_loc = int(h_loc_frac) % 24
-    m_loc = int(round((h_loc_frac - int(h_loc_frac)) * 60)) % 60
+    # Step 4: UT → hora local
+    local_dt = ut_dt + timedelta(hours=tz_offset)
 
     birth_data = {
         "name": name or f"Retorno Solar {year}",
-        "birth_date": f"{int(y_out)}-{int(mo):02d}-{int(day):02d}",
-        "birth_time": f"{h_ut:02d}:{m_ut:02d}",
+        "birth_date": ut_dt.strftime("%Y-%m-%d"),
+        "birth_time": ut_dt.strftime("%H:%M"),
         "latitude":   lat,
         "longitude":  lon,
         "timezone_offset": 0,  # already in UT
@@ -210,6 +212,6 @@ def calculate_solar_return(natal_sun_lon: float, year: int, lat: float, lon: flo
     result = calculate_natal_chart(birth_data)
     # Add metadata for display
     result["sr_year"] = year
-    result["sr_local_time"] = f"{h_loc:02d}:{m_loc:02d}"
-    result["sr_ut_time"] = f"{h_ut:02d}:{m_ut:02d}"
+    result["sr_local_time"] = local_dt.strftime("%H:%M")
+    result["sr_ut_time"] = ut_dt.strftime("%H:%M")
     return result

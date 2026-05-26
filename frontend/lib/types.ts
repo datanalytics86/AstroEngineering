@@ -248,3 +248,60 @@ export interface MundaneResponse {
   timeline: MonthlyForecast[];
   ingresses: IngressEvent[];
 }
+
+// ── AstroTrading Types ─────────────────────────────────────────────────────────
+
+export interface AstroTradingRequest {
+  market_key: string;
+  start_date: string;  // "YYYY-MM-DD"
+  end_date: string;    // "YYYY-MM-DD"
+}
+
+export interface TradingSignal {
+  direction: "LONG" | "SHORT" | "NEUTRAL";
+  confidence: number;         // 0-1
+  bullish_score: number;
+  bearish_score: number;
+  net_score: number;
+  consensus: number;          // -1..+1 (normalized directional bias)
+  volatility: "alta" | "media" | "baja";
+  rationale: string[];
+  caution_flags: string[];
+}
+
+export interface MonthlySignal {
+  month: string;              // "YYYY-MM"
+  direction: "LONG" | "SHORT" | "NEUTRAL";
+  confidence: number;
+  net_score: number;
+  consensus: number;          // -1..+1
+  dominant_theme: string;
+}
+
+export interface LunarInfo {
+  phase_name: string;
+  phase_angle: number;        // 0-360 (separación Sol-Luna)
+  illumination: number;       // 0-1
+  mercury_retrograde: boolean;
+  note: string;
+}
+
+/** Reutiliza la estructura de NationalChartData para la inception chart */
+export type MarketChartData = NationalChartData;
+
+export interface AstroTradingResponse {
+  market_key: string;
+  market_name: string;
+  ticker: string;
+  asset_class: string;
+  inception_chart: MarketChartData;
+  current_sky: PlanetPosition[];
+  current_transits: TransitEvent[];
+  signal: TradingSignal;           // = signal_trend (compat)
+  signal_trend: TradingSignal;
+  signal_short_term: TradingSignal;
+  monthly_signals: MonthlySignal[];
+  timeline: MonthlyForecast[];
+  exact_aspects_calendar: ExactAspectEvent[];
+  lunar: LunarInfo;
+}

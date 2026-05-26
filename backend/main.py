@@ -13,10 +13,11 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, MundaneRequest, MundaneResponse, SolarReturnRequest
+from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, MundaneRequest, MundaneResponse, SolarReturnRequest, AstroTradingRequest, AstroTradingResponse
 from astro.chart import calculate_natal_chart, calculate_solar_return
 from astro.transits import calculate_transit_timeline
 from astro.mundane import calculate_mundane_response
+from astro.astrotrading import calculate_astrotrading_response
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -133,6 +134,30 @@ async def get_solar_return(request: Request, body: SolarReturnRequest):
     except Exception as exc:
         logger.error("Solar return calculation error: %s", exc)
         raise HTTPException(status_code=500, detail="Error en retorno solar")
+
+
+@app.post("/api/astrotrading", response_model=AstroTradingResponse)
+@limiter.limit("3/minute")
+async def get_astrotrading(request: Request, body: AstroTradingRequest):
+    """
+    Calcula señal astrológica LONG/SHORT/NEUTRAL para un mercado financiero.
+    ⚠️ Solo entretenimiento. No constituye asesoría financiera.
+
+    Mercados: nyse, sp500, nasdaq, dow, bitcoin, gold, crude, eurusd
+    """
+    try:
+        result = calculate_astrotrading_response(
+            market_key=body.market_key,
+            start_date_str=body.start_date,
+            end_date_str=body.end_date,
+        )
+        return result
+    except ValueError as exc:
+        logger.warning("Invalid astrotrading request: %s", exc)
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.error("AstroTrading calculation error: %s", exc)
+        raise HTTPException(status_code=500, detail="Error en cálculo de AstroTrading")
 
 
 @app.post("/api/mundane", response_model=MundaneResponse)
