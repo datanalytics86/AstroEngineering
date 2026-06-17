@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import type { ChartResponse, BirthData, ClickTarget } from "@/lib/types";
-import { loadChart, saveTransits, saveSolarReturn } from "@/lib/storage";
+import { loadChart, saveYearTransits, saveSolarReturn } from "@/lib/storage";
 import ChartWheel from "@/components/ChartWheel";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
@@ -39,14 +39,11 @@ export default function CartaPage() {
     setLoadingTransits(true);
     setTransitError(null);
 
-    const today = new Date();
-    const nextYear = new Date();
-    nextYear.setFullYear(today.getFullYear() + 1);
-
+    const year = new Date().getFullYear();
     const req = {
       natal_planets: chart.planets,
-      start_date: today.toISOString().slice(0, 10),
-      end_date: nextYear.toISOString().slice(0, 10),
+      start_date: `${year}-01-01`,
+      end_date: `${year}-12-31`,
       latitude: birthData.latitude,
       longitude: birthData.longitude,
     };
@@ -62,7 +59,7 @@ export default function CartaPage() {
         throw new Error(err.detail ?? `HTTP ${res.status}`);
       }
       const data = await res.json();
-      saveTransits(id, data);
+      saveYearTransits(id, year, data);
       router.push(`/transitos/${id}`);
     } catch (e) {
       setTransitError(e instanceof Error ? e.message : "Error desconocido");
@@ -134,12 +131,6 @@ export default function CartaPage() {
             className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
           >
             ← Nueva carta
-          </button>
-          <button
-            onClick={() => router.push("/mundial")}
-            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
-          >
-            🌍 Mundial
           </button>
           <button
             onClick={() => setShowSummary(true)}

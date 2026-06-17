@@ -77,16 +77,6 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Mundane link */}
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => router.push("/mundial")}
-            className="text-xs font-mono text-slate-400 hover:text-blue-500 transition-colors underline underline-offset-2"
-          >
-            🌍 Astrología Mundial → tránsitos sobre cartas nacionales
-          </button>
-        </div>
-
         {/* ── Cartas guardadas ── */}
         {saved.length > 0 && (
           <div className="mt-8">

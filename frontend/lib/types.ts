@@ -90,6 +90,7 @@ export interface TransitEvent {
   transit_planet: string;
   transit_longitude: number;
   transit_sign: string;
+  transit_retrograde?: boolean;
   natal_planet: string;
   natal_longitude: number;
   aspect_name: string;
@@ -103,6 +104,18 @@ export interface TransitEvent {
   score: number;
 }
 
+export interface SkyPlanet {
+  name: string;
+  symbol: string;
+  longitude: number;          // 0-360, eclíptica
+  sign: string;
+  sign_symbol: string;
+  degree_in_sign: number;
+  degree_display: string;
+  retrograde: boolean;
+  speed: number;              // °/día — negativo = retrógrado
+}
+
 export interface MonthlyForecast {
   month: string;              // "YYYY-MM"
   transits_active: TransitEvent[];
@@ -110,6 +123,7 @@ export interface MonthlyForecast {
   dominant_theme: string;
   theme_summary: string;
   life_areas_affected: string[];
+  sky?: SkyPlanet[];          // posiciones planetarias a mitad de mes (día 15)
 }
 
 export interface ChartSummary {
@@ -209,42 +223,3 @@ export type ClickTarget =
   | { type: "aspect"; aspect: Aspect }
   | { type: "house"; house: HouseCusp }
   | { type: "angle"; name: "ASC" | "DSC" | "MC" | "IC"; longitude: number; sign: string; degree_display: string }
-
-// ── Mundane Astrology Types ────────────────────────────────────────────────────
-
-export interface MundaneRequest {
-  country: string;    // "usa" | "chile" | "uk" | "eu" | "germany" | "france" | "china" | "russia"
-  start_date: string; // "YYYY-MM-DD"
-  end_date: string;   // "YYYY-MM-DD"
-}
-
-export interface NationalChartData {
-  country_key: string;
-  country_name: string;
-  founding_date: string;
-  founding_time: string;
-  location: string;
-  source: string;
-  planets: PlanetPosition[];
-  ascendant?: AnglePoint;
-  midheaven?: AnglePoint;
-  houses?: HouseCusp[];
-  aspects?: Aspect[];
-}
-
-export interface IngressEvent {
-  date: string;
-  planet: string;
-  sign: string;
-  retrograde: boolean;
-}
-
-export interface MundaneResponse {
-  country_key: string;
-  country_name: string;
-  national_chart: NationalChartData;
-  current_sky: PlanetPosition[];   // today's planetary positions
-  current_transits: TransitEvent[];
-  timeline: MonthlyForecast[];
-  ingresses: IngressEvent[];
-}

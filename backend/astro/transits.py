@@ -5,8 +5,8 @@ Incluye escaneo adaptativo (paso variable por planeta) y refinamiento binario.
 
 import swisseph as swe
 from datetime import datetime, timedelta
-from .chart import to_julian_day, calc_planet_position, PLANET_IDS
-from .houses import longitude_to_sign
+from .chart import to_julian_day, calc_planet_position, PLANET_IDS, PLANET_SYMBOLS
+from .houses import longitude_to_sign, degrees_to_dms
 from .aspects import ASPECTS, TRANSIT_ORBS, score_transit, importance_label, angular_distance
 
 # Solo planetas lentos con impacto real en pronósticos
@@ -98,6 +98,44 @@ THEME_WEIGHT: dict[str, float] = {
     "Júpiter": 5.0,
     "Marte":   2.0,  # Solo domina si no hay nada más grande activo
 }
+
+# Planetas que se dibujan en la rueda de tránsitos (snapshot del cielo por mes).
+# Los 10 cuerpos clásicos — Sol → Plutón — tomados a mitad de mes (día 15, 12:00 UT).
+SKY_PLANETS = [
+    "Sol", "Luna", "Mercurio", "Venus", "Marte",
+    "Júpiter", "Saturno", "Urano", "Neptuno", "Plutón",
+]
+
+
+def compute_sky_snapshot(year: int, month: int) -> list[dict]:
+    """
+    Posiciones de los planetas transitantes a mitad de mes (día 15, 12:00 UT).
+    Alimenta la rueda interactiva: al seleccionar un mes se muestra dónde estaba
+    cada planeta y si iba retrógrado. La longitud eclíptica es geocéntrica, por lo
+    que no depende de lat/lon.
+    """
+    jd = to_julian_day(year, month, 15, 12.0)
+    sky: list[dict] = []
+    for name in SKY_PLANETS:
+        pid = PLANET_IDS.get(name)
+        if pid is None:
+            continue
+        pos = calc_planet_position(jd, pid)
+        if pos is None:
+            continue
+        si = longitude_to_sign(pos["longitude"])
+        sky.append({
+            "name": name,
+            "symbol": PLANET_SYMBOLS.get(name, ""),
+            "longitude": round(pos["longitude"], 4),
+            "sign": si["sign"],
+            "sign_symbol": si["sign_symbol"],
+            "degree_in_sign": round(si["degree_in_sign"], 4),
+            "degree_display": degrees_to_dms(si["degree_in_sign"]),
+            "retrograde": pos["retrograde"],
+            "speed": round(pos["speed"], 6),
+        })
+    return sky
 
 
 def find_exact_aspect_date(
@@ -195,6 +233,7 @@ def consolidate_transits(raw_transits: list[dict]) -> list[dict]:
                 if t["orb"] < current_group["orb"]:
                     current_group["orb"] = t["orb"]
                     current_group["transit_longitude"] = t["transit_longitude"]
+                    current_group["transit_retrograde"] = t.get("transit_retrograde", False)
             else:
                 consolidated.append(current_group)
                 current_group = {**t, "enters_orb": date, "leaves_orb": date}
@@ -259,6 +298,7 @@ def calculate_transit_timeline(
                             "transit_planet": tp_name,
                             "transit_longitude": round(tp["longitude"], 4),
                             "transit_sign": tp_sign["sign"],
+                            "transit_retrograde": tp["retrograde"],
                             "natal_planet": np["name"],
                             "natal_longitude": np.get("longitude", 0),
                             "aspect_name": asp["name"],
@@ -303,6 +343,7 @@ def calculate_transit_timeline(
             "transit_planet": t["transit_planet"],
             "transit_longitude": t["transit_longitude"],
             "transit_sign": t["transit_sign"],
+            "transit_retrograde": t.get("transit_retrograde", False),
             "natal_planet": t["natal_planet"],
             "natal_longitude": t["natal_longitude"],
             "aspect_name": t["aspect_name"],
@@ -374,6 +415,7 @@ def build_monthly_timeline(
 
     timeline = []
     for month_key, month_transits in sorted(months.items()):
+        sky_y, sky_m = map(int, month_key.split("-"))
         if not month_transits:
             timeline.append({
                 "month": month_key,
@@ -382,6 +424,7 @@ def build_monthly_timeline(
                 "dominant_theme": "período estable",
                 "theme_summary": "Mes de relativa calma astrológica. Buen momento para consolidar lo ganado.",
                 "life_areas_affected": [],
+                "sky": compute_sky_snapshot(sky_y, sky_m),
             })
             continue
 
@@ -486,6 +529,7 @@ def build_monthly_timeline(
             "dominant_theme": theme,
             "theme_summary": theme_summary,
             "life_areas_affected": life_areas,
+            "sky": compute_sky_snapshot(sky_y, sky_m),
         })
 
     return timeline
