@@ -1,6 +1,6 @@
 # AstroEngine Pro
 
-Aplicación web de ingeniería astrológica profesional. Calcula cartas natales con precisión astronómica real (Swiss Ephemeris), detecta aspectos entre planetas, genera pronósticos de tránsitos planetarios (1–12 meses), retornos solares y astrología mundial por país.
+Aplicación web de ingeniería astrológica profesional. Calcula cartas natales con precisión astronómica real (Swiss Ephemeris), detecta aspectos entre planetas, genera pronósticos de tránsitos planetarios y retornos solares.
 
 ## Stack
 
@@ -36,9 +36,8 @@ cd frontend && npm install && npm run dev
 |--------|-------------------|------------|---------------------------------|
 | GET    | /health           | 10/min     | Health check                    |
 | POST   | /api/chart        | 20/min     | Carta natal                     |
-| POST   | /api/transits     | 5/min      | Tránsitos 12 meses              |
+| POST   | /api/transits     | 5/min      | Tránsitos (año actual + 4 años) |
 | POST   | /api/solar-return | 10/min     | Retorno solar                   |
-| POST   | /api/mundane      | 3/min      | Astrología mundial (17 países)  |
 
 ## Deployment a producción
 

@@ -55,6 +55,26 @@ export function loadTransits(id: string): TransitResponse | null {
   }
 }
 
+// Tránsitos cacheados por año calendario — clave: astro_transit_{id}_{year}
+export function saveYearTransits(id: string, year: number, transits: TransitResponse): void {
+  const key = `${PREFIX_TRANSIT}${id}_${year}`;
+  try {
+    localStorage.setItem(key, JSON.stringify(transits));
+  } catch {
+    pruneStorage();
+    try { localStorage.setItem(key, JSON.stringify(transits)); } catch { /* sin espacio: se usará solo en memoria */ }
+  }
+}
+
+export function loadYearTransits(id: string, year: number): TransitResponse | null {
+  try {
+    const str = localStorage.getItem(`${PREFIX_TRANSIT}${id}_${year}`);
+    return str ? JSON.parse(str) : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Solar Return ──────────────────────────────────────────────────────────────
 
 const PREFIX_SR = "astro_sr_";
@@ -104,7 +124,7 @@ export function listCharts(): SavedChartMeta[] {
             birth_date: chart.birth_date,
             birth_time: chart.birth_time,
             ascendant: chart.ascendant.sign,
-            hasTransits: !!localStorage.getItem(PREFIX_TRANSIT + id),
+            hasTransits: Object.keys(localStorage).some((k) => k.startsWith(PREFIX_TRANSIT + id)),
           };
         } catch {
           return null;
@@ -119,7 +139,9 @@ export function listCharts(): SavedChartMeta[] {
 export function deleteChart(id: string): void {
   localStorage.removeItem(PREFIX_CHART + id);
   localStorage.removeItem(PREFIX_BIRTH + id);
-  localStorage.removeItem(PREFIX_TRANSIT + id);
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith(PREFIX_TRANSIT + id))
+    .forEach((k) => localStorage.removeItem(k));
 }
 
 // ── Housekeeping ──────────────────────────────────────────────────────────────

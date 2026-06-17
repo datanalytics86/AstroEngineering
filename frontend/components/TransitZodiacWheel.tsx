@@ -6,7 +6,7 @@
  * Capas (exterior → interior):
  *  1. Anillo zodiacal (30° × 12, colores de elemento)
  *  2. Marcas de grado (1°/5°/10°) sobre el anillo zodiacal
- *  3. Agujas + gliphs de planetas en TRÁNSITO (anillo exterior)
+ *  3. Agujas + esferas 3D de planetas en TRÁNSITO (anillo exterior)
  *  4. Separador grueso
  *  5. Agujas + gliphs de planetas NATALES (anillo interior)
  *  6. Líneas de cúspide de casa
@@ -24,7 +24,6 @@ import {
   SIGN_NAMES,
   SIGN_ELEMENT_COLOR,
   SIGN_ELEMENT_BG,
-  toRad,
   makeToAngle,
   polarXY,
   describeSector,
@@ -60,8 +59,8 @@ const R_ZODIAC_IN  = 222;
 // Anillo tránsito
 const R_TR_NEEDLE_OUT  = 220; // inicio de aguja (borde interno zodíaco)
 const R_TR_NEEDLE_IN   = 204; // fin de aguja
-const R_TR_GLYPH       = 195; // centro del glifo transitante
-const R_TR_DEGREE      = 183; // texto de grado transitante
+const R_TR_GLYPH       = 195; // centro de la esfera transitante
+const R_TR_DEGREE      = 181; // texto de grado transitante (empujado un poco más adentro)
 
 // Separador
 const R_SEP = 176;
@@ -78,6 +77,9 @@ const R_HOUSE_NUM  = 112;
 const R_CORE       = 94;
 const R_CENTER     = 26;
 
+// Radio de la esfera 3D de tránsito
+const R_SPHERE = 9;
+
 // ── Colores por planeta ────────────────────────────────────────────────────────
 const TRANSIT_COLORS: Record<string, string> = {
   Plutón: "#7C3AED", Neptuno: "#3B82F6", Urano: "#06B6D4",
@@ -93,18 +95,45 @@ const ASPECT_WIDTH: Record<string, number> = {
 
 const SHOW_ASPECTS = new Set(["Conjunción", "Oposición", "Cuadratura", "Trígono", "Sextil"]);
 
-// ── Colisiones ─────────────────────────────────────────────────────────────────
+// ── Colisiones mejoradas ───────────────────────────────────────────────────────
+// Distribuye clusters densos alternando offsets ±18/±14 para evitar solapamientos
+// con las esferas más grandes (R_SPHERE=9).
 function resolveCollisions<T extends { longitude: number }>(
   planets: T[],
-  minAngDeg = 6,
+  minAngDeg = 7,
 ): (T & { rOffset: number })[] {
   const sorted = [...planets].sort((a, b) => a.longitude - b.longitude);
-  return sorted.map((p, i) => {
-    const prev = sorted[i - 1];
-    const diff = prev ? ((p.longitude - prev.longitude + 360) % 360) : 999;
-    const rOffset = diff < minAngDeg && i % 2 === 1 ? -16 : 0;
-    return { ...p, rOffset };
-  });
+  const offsets: number[] = new Array(sorted.length).fill(0);
+
+  // Primera pasada: detectar grupos de planetas cercanos
+  for (let i = 0; i < sorted.length; i++) {
+    const next = sorted[(i + 1) % sorted.length];
+    const diff = ((next.longitude - sorted[i].longitude + 360) % 360);
+    if (diff < minAngDeg) {
+      // Alternar desplazamiento: par→+0, impar→-18
+      // Para clusters de 3+, también desplazamos el par hacia +14
+      const clusterPos = offsets[i] === 0 && offsets[(i + 1) % sorted.length] === 0;
+      if (clusterPos) {
+        offsets[i] = 0;
+        offsets[(i + 1) % sorted.length] = -18;
+      }
+    }
+  }
+
+  // Segunda pasada: si algún -18 está demasiado cerca de otro 0, separar más
+  for (let i = 0; i < sorted.length; i++) {
+    if (offsets[i] === -18) {
+      // Revisar si el planeta anterior también tiene offset 0 muy cerca
+      const prev = (i - 1 + sorted.length) % sorted.length;
+      const diffPrev = ((sorted[i].longitude - sorted[prev].longitude + 360) % 360);
+      if (diffPrev < minAngDeg && offsets[prev] === 0) {
+        // Separar más: anterior +14, actual -18
+        offsets[prev] = 14;
+      }
+    }
+  }
+
+  return sorted.map((p, i) => ({ ...p, rOffset: offsets[i] }));
 }
 
 // ── Tooltip ────────────────────────────────────────────────────────────────────
@@ -245,6 +274,18 @@ export default function TransitZodiacWheel({
         className="w-full max-w-[560px]"
         style={{ fontFamily: "monospace" }}
       >
+        {/* ── SVG Defs: gradiente esfera 3D + sombra ── */}
+        <defs>
+          <radialGradient id="tz-sphere" cx="0.35" cy="0.30" r="0.75">
+            <stop offset="0%"   stopColor="#ffffff" stopOpacity={0.85} />
+            <stop offset="38%"  stopColor="#ffffff" stopOpacity={0} />
+            <stop offset="100%" stopColor="#0b1220" stopOpacity={0.40} />
+          </radialGradient>
+          <filter id="tz-shadow" x="-60%" y="-60%" width="220%" height="220%">
+            <feDropShadow dx={0} dy={1.3} stdDeviation={1.5} floodColor="#0f172a" floodOpacity={0.35} />
+          </filter>
+        </defs>
+
         {/* ── White background ── */}
         <circle cx={cx} cy={cy} r={R_ZODIAC_OUT} fill="white" stroke="#E2E8F0" strokeWidth={1} />
 
@@ -291,17 +332,23 @@ export default function TransitZodiacWheel({
         {/* ── Inner zodiac boundary ── */}
         <circle cx={cx} cy={cy} r={R_ZODIAC_IN} fill="none" stroke="#CBD5E1" strokeWidth={1} />
 
-        {/* ── Transit planet needles + glyphs ── */}
+        {/* ── Transit planet spheres ── */}
         {transitDots.map((p) => {
-          const ang  = toAngle(p.longitude);
-          const col  = TRANSIT_COLORS[p.name] ?? "#3B82F6";
-          const rG   = R_TR_GLYPH + p.rOffset;
-          const rD   = R_TR_DEGREE + p.rOffset;
-          const nOut = polarXY(cx, cy, R_TR_NEEDLE_OUT, ang);
-          const nIn  = polarXY(cx, cy, R_TR_NEEDLE_IN, ang);
-          const gPos = polarXY(cx, cy, rG, ang);
-          const dPos = polarXY(cx, cy, rD, ang);
-          const degText = `${Math.floor(p.longitude % 30)}°`;
+          const ang    = toAngle(p.longitude);
+          const col    = TRANSIT_COLORS[p.name] ?? "#3B82F6";
+          const rG     = R_TR_GLYPH + p.rOffset;
+          const rD     = R_TR_DEGREE + p.rOffset;
+          const nOut   = polarXY(cx, cy, R_TR_NEEDLE_OUT, ang);
+          const nIn    = polarXY(cx, cy, R_TR_NEEDLE_IN, ang);
+          const gPos   = polarXY(cx, cy, rG, ang);
+          const dPos   = polarXY(cx, cy, rD, ang);
+          const degNum = Math.floor(p.longitude % 30);
+          const degText = `${degNum}°`;
+
+          // Posición del marcador de movimiento (top-right del sphere)
+          const markerX = gPos.x + R_SPHERE * 0.65;
+          const markerY = gPos.y - R_SPHERE * 0.85;
+
           return (
             <g key={`tr-${p.name}`}>
               {/* Dot en el borde interior del zodíaco */}
@@ -309,30 +356,81 @@ export default function TransitZodiacWheel({
               {/* Aguja */}
               <line x1={nOut.x} y1={nOut.y} x2={nIn.x} y2={nIn.y}
                 stroke={col} strokeWidth={0.7} opacity={0.6} />
-              {/* Glifo */}
+
+              {/* ── Esfera 3D: base sólida + overlay gradiente iluminado ── */}
+              <circle cx={gPos.x} cy={gPos.y} r={R_SPHERE} fill={col} filter="url(#tz-shadow)" />
+              <circle cx={gPos.x} cy={gPos.y} r={R_SPHERE} fill="url(#tz-sphere)" />
+
+              {/* Anillo rojo de retrógrado (alrededor de la esfera) */}
+              {p.retrograde && (
+                <circle
+                  cx={gPos.x} cy={gPos.y}
+                  r={R_SPHERE + 1.6}
+                  fill="none"
+                  stroke="#EF4444"
+                  strokeWidth={1.5}
+                />
+              )}
+
+              {/* Glifo del planeta (blanco, centrado en la esfera) */}
               <text
                 x={gPos.x} y={gPos.y}
                 textAnchor="middle" dominantBaseline="central"
-                fontSize={13} fill={col} fontWeight="700"
-                className="cursor-pointer select-none"
-                onMouseEnter={(e) => showTip(e, `${p.name} (tránsito)`, `${degText} ${p.retrograde ? "℞" : ""}`)}
-                onMouseLeave={() => setTooltip(null)}
+                fontSize={12} fill="#ffffff" fontWeight="700"
+                className="select-none pointer-events-none"
               >{p.symbol}</text>
-              {/* Grado */}
+
+              {/* ── Indicador de movimiento ── */}
+              {p.retrograde ? (
+                /* RETRÓGRADO: ℞ rojo llamativo + flecha curva hacia atrás */
+                <g className="select-none pointer-events-none">
+                  {/* "℞" en rojo bold, top-right de la esfera */}
+                  <text
+                    x={markerX} y={markerY}
+                    textAnchor="middle" dominantBaseline="central"
+                    fontSize={9} fill="#EF4444" fontWeight="700"
+                  >℞</text>
+                  {/* Flecha curva retrógrada (↺) justo debajo del ℞ */}
+                  <text
+                    x={markerX} y={markerY + 10}
+                    textAnchor="middle" dominantBaseline="central"
+                    fontSize={9} fill="#EF4444" fontWeight="700"
+                  >↺</text>
+                </g>
+              ) : (
+                /* DIRECTO: chevron › suave y apagado */
+                <text
+                  x={markerX} y={markerY}
+                  textAnchor="middle" dominantBaseline="central"
+                  fontSize={9} fill="#94A3B8" opacity={0.55}
+                  fontWeight="400"
+                  className="select-none pointer-events-none"
+                >›</text>
+              )}
+
+              {/* Etiqueta de grado (fuera/dentro de la esfera, no solapada) */}
               <text
                 x={dPos.x} y={dPos.y}
                 textAnchor="middle" dominantBaseline="central"
-                fontSize={7} fill={col} opacity={0.75}
+                fontSize={7} fill={col} opacity={0.80}
                 className="select-none pointer-events-none"
               >{degText}</text>
-              {/* Retrógrado */}
-              {p.retrograde && (
-                <text
-                  x={gPos.x + 10} y={gPos.y - 8}
-                  fontSize={7} fill="#EF4444"
-                  className="select-none pointer-events-none"
-                >℞</text>
-              )}
+
+              {/* Hit area transparente para tooltip */}
+              <circle
+                cx={gPos.x} cy={gPos.y}
+                r={R_SPHERE}
+                fill="transparent"
+                className="cursor-pointer"
+                onMouseEnter={(e) =>
+                  showTip(
+                    e,
+                    `${p.name} (tránsito)`,
+                    `${degNum}° ${p.retrograde ? "℞ retrógrado" : "directo"}`,
+                  )
+                }
+                onMouseLeave={() => setTooltip(null)}
+              />
             </g>
           );
         })}
@@ -376,7 +474,7 @@ export default function TransitZodiacWheel({
         {/* ── Core circle ── */}
         <circle cx={cx} cy={cy} r={R_CORE} fill="white" stroke="#E2E8F0" strokeWidth={1} />
 
-        {/* ── Natal planet needles + glyphs ── */}
+        {/* ── Natal planet needles + glyphs (flat, subordinate) ── */}
         {natalDots.map((p) => {
           const ang  = toAngle(p.longitude);
           const rG   = R_NA_GLYPH + p.rOffset;
@@ -409,7 +507,7 @@ export default function TransitZodiacWheel({
                 fontSize={6.5} fill="#94A3B8"
                 className="select-none pointer-events-none"
               >{degText}</text>
-              {/* Retrógrado */}
+              {/* Retrógrado natal: pequeño, discreto */}
               {p.retrograde && (
                 <text
                   x={gPos.x + 9} y={gPos.y - 8}
@@ -485,6 +583,32 @@ export default function TransitZodiacWheel({
               {p}
             </span>
           ))}
+        </div>
+        {/* Movimiento de tránsito */}
+        <div className="flex flex-wrap gap-x-5 gap-y-1 items-center">
+          <span className="text-slate-500 font-semibold">Movimiento:</span>
+          {/* Directo */}
+          <span className="flex items-center gap-1.5 text-slate-500">
+            <span
+              className="inline-flex items-center justify-center rounded-full w-4 h-4"
+              style={{ background: "#3B82F6" }}
+              aria-hidden="true"
+            >
+              <span style={{ color: "#ffffff", fontSize: 8, fontWeight: 700, lineHeight: 1 }}>♆</span>
+            </span>
+            <span className="text-slate-400">directo</span>
+          </span>
+          {/* Retrógrado */}
+          <span className="flex items-center gap-1.5 text-slate-500">
+            <span
+              className="inline-flex items-center justify-center rounded-full w-4 h-4"
+              style={{ background: "#7C3AED", outline: "2px solid #EF4444", outlineOffset: "1px" }}
+              aria-hidden="true"
+            >
+              <span style={{ color: "#ffffff", fontSize: 8, fontWeight: 700, lineHeight: 1 }}>♇</span>
+            </span>
+            <span className="text-red-500 font-semibold">℞ retrógrado</span>
+          </span>
         </div>
         {/* Aspectos */}
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-slate-400">
