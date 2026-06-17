@@ -1,5 +1,7 @@
 # AstroEngine Pro — Gap Analysis: Deploy 100% Seguro
 
+> ⚠️ Actualización 2026-06-17: La feature de astrología mundial (`/api/mundane`, cartas nacionales, `MundaneRequest`) fue ELIMINADA del proyecto. Por lo tanto, los hallazgos de este documento relativos a `mundane`/`country` (p. ej. A-4, M-4, B-2 y los tests del endpoint `/api/mundane`) ya no aplican.
+
 > Revisión: 2026-04-28  
 > Estado del proyecto: funcional en Codespace, listo para deploy pero con brechas de seguridad y producción
 

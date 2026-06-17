@@ -1,5 +1,7 @@
 # Audit: ¿Qué falta para deploy 100%?
 
+> ⚠️ Actualización 2026-06-17: La feature de astrología mundial (`/api/mundane`, cartas nacionales, `MundaneRequest`) fue ELIMINADA del proyecto. Por lo tanto, los hallazgos de este documento relativos a `mundane`/`country` (p. ej. A-4, M-4, B-2 y los tests del endpoint `/api/mundane`) ya no aplican.
+
 > Auditoría: 2026-04-28 · Post Sprint 0
 > Estado: **Sprint 0 implementado pero con 2 bugs runtime que bloquean producción**
 
