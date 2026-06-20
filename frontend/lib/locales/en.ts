@@ -1,0 +1,146 @@
+export const en = {
+  // ── Header / Layout ──
+  "nav.home": "Home",
+  "nav.new_chart": "New chart",
+  "nav.learn": "Learn",
+
+  // ── Footer ──
+  "footer.tagline": "AstroEngine Pro — Swiss Ephemeris · Precision ±0.05° · Calculations validated against astro.com",
+
+  // ── Portada / Landing ──
+  "landing.badge": "Swiss Ephemeris · Precision ±0.05°",
+  "landing.hero.title_line1": "A snapshot of the sky",
+  "landing.hero.title_line2": "at the moment of your birth",
+  "landing.hero.subtitle":
+    "AstroEngine Pro calculates natal charts with real astronomical precision, detects planetary aspects and generates month-by-month transit forecasts for the coming years.",
+  "landing.cta.primary": "Calculate natal chart →",
+  "landing.cta.secondary": "Learn the meanings",
+  "landing.what_is.title": "What is a natal chart?",
+  "landing.what_is.p1":
+    "A natal chart is a precise photograph of the sky at the exact moment of your birth: the position of each planet, the zodiac sign rising on the eastern horizon, and the twelve astrological houses dividing the sky from your birthplace.",
+  "landing.what_is.p2":
+    "This unique configuration reveals deep psychological archetypes: how you express your identity (Sun), how you process emotions (Moon), how you communicate (Mercury), and what transformative forces operate in your life (Saturn, Uranus, Neptune, Pluto).",
+  "landing.what_is.p3":
+    "Calculations use Swiss Ephemeris, the same astronomical library used by professional software Astro.com, with planetary position precision of ±0.05°.",
+  "landing.planets.title": "The main planets",
+  "landing.planets.subtitle": "Each planet governs a distinct psychological principle in your chart",
+  "landing.planets.more": "And much more…",
+  "landing.planets.more_desc":
+    "Aspects, dignities, houses, Uranus, Neptune, Pluto, North Node, Chiron, and retrogradation.",
+  "landing.planets.glossary_link": "View full glossary →",
+  "landing.features.natal.title": "Full natal chart",
+  "landing.features.natal.desc":
+    "12 planets, Placidus houses, exact aspects, and classical dignities with detailed interpretation.",
+  "landing.features.transits.title": "Year-by-year transits",
+  "landing.features.transits.desc":
+    "Daily scan of slow planets against your natal chart. Interactive monthly wheel and annual analysis.",
+  "landing.features.solar.title": "Solar Return",
+  "landing.features.solar.desc":
+    "The chart for the exact moment the Sun returns to its natal position: the yearly horoscope.",
+  "landing.bottom_cta.title": "Start with your natal chart",
+  "landing.bottom_cta.subtitle":
+    "You only need date, time, and place of birth. The calculation takes less than 5 seconds.",
+
+  // ── BirthDataForm ──
+  "form.name": "Name",
+  "form.name.placeholder": "Person's name",
+  "form.birth_date": "Date of birth",
+  "form.birth_time": "Time of birth",
+  "form.city": "City of birth",
+  "form.city.placeholder": "Type a city…",
+  "form.timezone": "Timezone (UTC)",
+  "form.dst_detected": "Daylight Saving Time detected (DST)",
+  "form.submit": "Calculate natal chart",
+  "form.calculating": "Calculating…",
+  "form.geocoding": "Looking up coordinates…",
+
+  // ── Nueva carta / Saved charts ──
+  "nueva.title": "Natal Chart",
+  "nueva.subtitle": "Astronomical precision with Swiss Ephemeris.\nTransits calculated day by day.",
+  "nueva.saved.title": "Saved charts",
+  "nueva.saved.view": "View chart",
+  "nueva.saved.transits": "✦ Transits",
+  "nueva.saved.confirm_delete": "Confirm",
+  "nueva.saved.cancel": "Cancel",
+  "nueva.features.ephemeris": "Swiss Ephemeris",
+  "nueva.features.ephemeris.sub": "±0.05° precision",
+  "nueva.features.planets": "12 planets",
+  "nueva.features.planets.sub": "Sun → Chiron",
+  "nueva.features.transits": "Transits",
+  "nueva.features.transits.sub": "1–12 months",
+
+  // ── Carta natal page ──
+  "chart.loading": "Loading natal chart…",
+  "chart.nav.home": "Home",
+  "chart.nav.new": "← New chart",
+  "chart.nav.summary": "✦ Executive summary",
+  "chart.nav.solar": "Solar Return",
+  "chart.nav.transits": "View 12-month Transits →",
+  "chart.nav.transits_loading": "Calculating transits…",
+  "chart.wheel.title": "Natal Wheel",
+  "chart.wheel.hint": "Click a planet, aspect, house, or angle to see interpretation",
+  "chart.wheel.deselect": "click again to deselect",
+  "chart.ascendant": "Ascendant",
+  "chart.mc": "Midheaven",
+  "chart.error.transit": "Error calculating transits",
+  "chart.error.solar": "Solar return error",
+
+  // ── Tránsitos page ──
+  "transits.loading": "Loading chart…",
+  "transits.calculating": "Calculating transits for",
+  "transits.title": "Your sky in motion",
+  "transits.nav.home": "Home",
+  "transits.nav.new": "New chart",
+  "transits.nav.natal": "← Natal chart",
+  "transits.current_year": "this year",
+  "transits.retry": "Retry",
+  "transits.error.rate_limit": "Too many requests — wait a minute and try again.",
+  "transits.error.generic": "Error loading transits.",
+  "transits.error.network": "Network error. Check your connection and try again.",
+  "transits.wheel.caption": "positions at mid-month",
+  "transits.wheel.midyear": "Sky at mid-",
+  "transits.wheel.midyear_caption": "Planetary positions at mid-year",
+  "transits.influences.title": "Active influences",
+  "transits.key_dates.title": "Key dates of the month",
+  "transits.peak_month": "Most intense month:",
+  "transits.intensity.stable": "stable",
+  "transits.intensity.moderate": "moderate",
+  "transits.intensity.intense": "intense",
+  "transits.cycles.title": "Main cycles",
+  "transits.opportunities.title": "Opportunities",
+  "transits.challenges.title": "Challenges",
+  "transits.corpus_note": "(interpretations in Spanish)",
+
+  // ── Retorno Solar page ──
+  "solar.loading": "Loading solar return…",
+  "solar.title": "Solar Return",
+  "solar.subtitle_year": "Chart for the year",
+  "solar.subtitle_time": "local time",
+  "solar.nav.home": "Home",
+  "solar.nav.natal": "← Natal Chart",
+  "solar.nav.transits": "View Transits →",
+  "solar.explanation":
+    "The Solar Return is the chart for the exact moment the Sun returns to its natal position — once per year. It acts as a yearly horoscope, with its angles (especially the Return ASC) revealing the dominant tone of the period.",
+  "solar.wheel.title": "Solar Return Wheel",
+  "solar.asc": "Return ASC",
+  "solar.mc": "Return MC",
+
+  // ── Glosario ──
+  "glossary.title": "Learn the meanings",
+  "glossary.subtitle": "Complete reference for planets, aspects, dignities, and angles in astrology.",
+  "glossary.index": "Index",
+  "glossary.aspects.title": "Aspects",
+  "glossary.aspects.subtitle": "Precise angles between planets describing the quality of their relationship",
+  "glossary.retro.title": "Retrogradation ℞",
+  "glossary.retro.subtitle": "Apparent backward movement of planets as seen from Earth",
+  "glossary.dignities.title": "Essential dignities",
+  "glossary.dignities.subtitle": "The quality of a planet's expression according to its sign",
+  "glossary.planets.title": "Planets",
+  "glossary.planets.subtitle": "Sun, Moon, and the eight planets plus North Node and Chiron",
+  "glossary.angles.title": "Angles",
+  "glossary.angles.subtitle": "The four cardinal points of the natal chart",
+  "glossary.orbs.title": "Orbs",
+  "glossary.orbs.subtitle": "Angular tolerance for considering an aspect active",
+  "glossary.back": "← Back",
+  "glossary.cta": "Calculate natal chart →",
+} as const;

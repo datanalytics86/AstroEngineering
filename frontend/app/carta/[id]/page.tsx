@@ -10,11 +10,13 @@ import AspectTable from "@/components/AspectTable";
 import InterpretationModal from "@/components/InterpretationModal";
 import ChartSummaryModal from "@/components/ChartSummary";
 import { generateChartSummary } from "@/lib/chart-summary";
+import { useT } from "@/lib/i18n";
 
 export default function CartaPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
+  const { t } = useT();
 
   const [chart, setChart] = useState<ChartResponse | null>(null);
   const [birthData, setBirthData] = useState<BirthData | null>(null);
@@ -27,9 +29,9 @@ export default function CartaPage() {
   const [showSummary, setShowSummary] = useState(false);
 
   useEffect(() => {
-    if (!id) { router.push("/"); return; }
+    if (!id) { router.push("/nueva"); return; }
     const data = loadChart(id);
-    if (!data) { router.push("/"); return; }
+    if (!data) { router.push("/nueva"); return; }
     setChart(data.chart);
     setBirthData(data.birthData);
   }, [id, router]);
@@ -107,7 +109,7 @@ export default function CartaPage() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-400 font-mono text-sm">Cargando carta natal…</p>
+          <p className="text-slate-400 font-mono text-sm">{t("chart.loading")}</p>
         </div>
       </div>
     );
@@ -121,22 +123,28 @@ export default function CartaPage() {
           <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{chart.name}</h1>
           <p className="text-slate-400 font-mono text-sm mt-1">
             {chart.birth_date} · {chart.birth_time} ·{" "}
-            <span className="text-blue-600 font-semibold">{chart.ascendant.sign}</span> Ascendente ·{" "}
-            <span className="text-sky-500">MC {chart.midheaven.sign}</span>
+            <span className="text-blue-600 font-semibold">{chart.ascendant.sign}</span> {t("chart.ascendant")} ·{" "}
+            <span className="text-sky-500">{t("chart.mc")} {chart.midheaven.sign}</span>
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <button
             onClick={() => router.push("/")}
+            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-300 hover:text-blue-600 transition-colors font-mono"
+          >
+            {t("chart.nav.home")}
+          </button>
+          <button
+            onClick={() => router.push("/nueva")}
             className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
           >
-            ← Nueva carta
+            {t("chart.nav.new")}
           </button>
           <button
             onClick={() => setShowSummary(true)}
             className="border border-blue-200 text-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors font-mono flex items-center gap-1.5"
           >
-            ✦ Resumen ejecutivo
+            {t("chart.nav.summary")}
           </button>
           <button
             onClick={handleSolarReturn}
@@ -146,7 +154,7 @@ export default function CartaPage() {
             {loadingSR ? (
               <span className="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
             ) : "☉"}
-            Retorno Solar {new Date().getFullYear()}
+            {t("chart.nav.solar")} {new Date().getFullYear()}
           </button>
           <button
             onClick={handleCalcTransits}
@@ -156,10 +164,10 @@ export default function CartaPage() {
             {loadingTransits ? (
               <>
                 <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Calculando tránsitos…
+                {t("chart.nav.transits_loading")}
               </>
             ) : (
-              "Ver Tránsitos 12 meses →"
+              t("chart.nav.transits")
             )}
           </button>
         </div>
@@ -192,7 +200,7 @@ export default function CartaPage() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Rueda zodiacal */}
         <div className="space-y-4">
-          <h2 className="font-semibold text-lg text-slate-700">Rueda Natal</h2>
+          <h2 className="font-semibold text-lg text-slate-700">{t("chart.wheel.title")}</h2>
           <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
             <ChartWheel
               planets={chart.planets}
@@ -207,11 +215,11 @@ export default function CartaPage() {
           </div>
           {highlighted ? (
             <p className="text-xs text-center text-blue-600 font-mono">
-              {highlighted} — click de nuevo para deseleccionar
+              {highlighted} — {t("chart.wheel.deselect")}
             </p>
           ) : (
             <p className="text-xs text-slate-400 text-center font-mono">
-              Click en planeta, aspecto, casa o ángulo para ver interpretación
+              {t("chart.wheel.hint")}
             </p>
           )}
         </div>
@@ -221,12 +229,12 @@ export default function CartaPage() {
           {/* Ángulos */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white border border-border rounded-xl p-4 shadow-card">
-              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Ascendente</div>
+              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">{t("chart.ascendant")}</div>
               <div className="text-blue-600 font-mono text-lg font-semibold">{chart.ascendant.sign}</div>
               <div className="text-slate-500 font-mono text-sm">{chart.ascendant.degree_display}</div>
             </div>
             <div className="bg-white border border-border rounded-xl p-4 shadow-card">
-              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">Medio Cielo</div>
+              <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">{t("chart.mc")}</div>
               <div className="text-sky-500 font-mono text-lg font-semibold">{chart.midheaven.sign}</div>
               <div className="text-slate-500 font-mono text-sm">{chart.midheaven.degree_display}</div>
             </div>
