@@ -57,7 +57,7 @@ export function loadTransits(id: string): TransitResponse | null {
 
 // Tránsitos cacheados por año calendario — clave: astro_transit_{id}_{year}
 export function saveYearTransits(id: string, year: number, transits: TransitResponse): void {
-  const key = `${PREFIX_TRANSIT}${id}_${year}`;
+  const key = `${PREFIX_TRANSIT}v2:${id}_${year}`;
   try {
     localStorage.setItem(key, JSON.stringify(transits));
   } catch {
@@ -68,7 +68,7 @@ export function saveYearTransits(id: string, year: number, transits: TransitResp
 
 export function loadYearTransits(id: string, year: number): TransitResponse | null {
   try {
-    const str = localStorage.getItem(`${PREFIX_TRANSIT}${id}_${year}`);
+    const str = localStorage.getItem(`${PREFIX_TRANSIT}v2:${id}_${year}`);
     return str ? JSON.parse(str) : null;
   } catch {
     return null;

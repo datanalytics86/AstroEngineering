@@ -18,6 +18,7 @@ export interface BriefInfluence {
   importance: string;
   retrograde: boolean;
   text: string;
+  narrative: string;
 }
 
 export interface MonthBrief {
@@ -76,17 +77,58 @@ function firstSentence(text: string): string {
 
 // ── generateMonthBrief ────────────────────────────────────────────────────────
 
-export function generateMonthBrief(month: MonthlyForecast): MonthBrief {
+export function generateMonthBrief(
+  month: MonthlyForecast,
+  exactCalendar?: { date: string; transit_planet: string; aspect: string; natal_planet: string }[]
+): MonthBrief {
   const intensityLabel: MonthBrief["intensityLabel"] =
     month.intensity_score >= 6 ? "intenso" :
     month.intensity_score >= 3 ? "moderado" : "estable";
 
   const monthLabel = format(new Date(`${month.month}-01`), "MMMM yyyy", { locale: es });
+  const monthName = format(new Date(`${month.month}-01`), "MMMM", { locale: es });
 
   const headline = firstSentence(month.theme_summary);
 
-  const influences: BriefInfluence[] = month.transits_active.slice(0, 3).map((t) => {
+  // Select top transits: crítica/alta first, then by score, max 4
+  const impOrder: Record<string, number> = { "crítica": 4, "alta": 3, "media": 2, "baja": 1 };
+  const topTransits = [...month.transits_active]
+    .sort((a, b) => {
+      return (impOrder[b.importance] ?? 0) - (impOrder[a.importance] ?? 0) || b.score - a.score;
+    })
+    .slice(0, 4);
+
+  const influences: BriefInfluence[] = topTransits.map((t) => {
     const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet);
+
+    // Find exact date from calendar or transit event
+    const exactEntry = exactCalendar?.find(
+      (e) =>
+        e.transit_planet === t.transit_planet &&
+        e.aspect === t.aspect_name &&
+        e.natal_planet === t.natal_planet &&
+        e.date.startsWith(month.month)
+    );
+    const exactDate = t.exact_date ?? exactEntry?.date ?? null;
+
+    let exactDateStr = "";
+    if (exactDate) {
+      try {
+        const day = new Date(exactDate).getUTCDate();
+        exactDateStr = ` (exacta el ${day})`;
+      } catch { /* ignore */ }
+    }
+
+    const retroNote = t.transit_retrograde ? `, en movimiento retrógrado (℞),` : "";
+
+    let narrative: string;
+    if (interp) {
+      const aspectLower = t.aspect_name.toLowerCase();
+      narrative = `En ${monthName}, ${t.transit_planet}${retroNote} forma una ${aspectLower} con tu ${t.natal_planet} natal${exactDateStr}: ${interp.detailed} Recomendación: ${interp.advice}`;
+    } else {
+      narrative = `En ${monthName}, ${t.transit_planet}${retroNote} forma una ${t.aspect_name.toLowerCase()} con tu ${t.natal_planet} natal${exactDateStr}.`;
+    }
+
     const rawText = interp?.summary ?? `${t.transit_planet} ${t.aspect_name.toLowerCase()} ${t.natal_planet} natal`;
     return {
       planet:     t.transit_planet,
@@ -95,7 +137,8 @@ export function generateMonthBrief(month: MonthlyForecast): MonthBrief {
       nature:     t.nature,
       importance: t.importance,
       retrograde: !!t.transit_retrograde,
-      text:       truncate(rawText, 110),
+      text:       rawText,
+      narrative,
     };
   });
 

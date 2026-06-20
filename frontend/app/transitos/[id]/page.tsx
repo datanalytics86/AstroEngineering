@@ -111,7 +111,7 @@ function InfluenceRow({ inf }: { inf: BriefInfluence }) {
           {inf.importance}
         </span>
       </div>
-      <p className="text-xs text-slate-600 leading-relaxed pl-4">{inf.text}</p>
+      <p className="text-xs text-slate-600 leading-relaxed pl-4">{inf.narrative || inf.text}</p>
     </div>
   );
 }
@@ -122,7 +122,7 @@ interface MonthBriefPanelProps {
 }
 
 function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
-  const brief = generateMonthBrief(month);
+  const brief = generateMonthBrief(month, exactCalendar);
   const keyDates = exactCalendar
     .filter((e) => e.date.startsWith(month.month))
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -374,8 +374,9 @@ export default function TransitosPage() {
     const data = cache[currentYear];
     if (!data || selectedMonthKey) return;
     const nowMonth = `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
-    const exists = data.timeline.some((m) => m.month === nowMonth);
-    setSelectedMonthKey(exists ? nowMonth : (data.timeline[0]?.month ?? ""));
+    const sorted = [...data.timeline].sort((a, b) => a.month.localeCompare(b.month));
+    const exists = sorted.some((m) => m.month === nowMonth);
+    setSelectedMonthKey(exists ? nowMonth : (sorted[0]?.month ?? ""));
   }, [cache, currentYear, selectedMonthKey]);
 
   // ── Render guards ────────────────────────────────────────────────────────────
@@ -385,20 +386,21 @@ export default function TransitosPage() {
   }
 
   const data = cache[selectedYear] ?? null;
+  const orderedTimeline = data ? [...data.timeline].sort((a, b) => a.month.localeCompare(b.month)) : [];
   const isLoading = loadingYear === selectedYear && !data;
   const yearError = errorByYear[selectedYear];
 
   // For current-year month selector
   const selectedMonth: MonthlyForecast | null =
     selectedYear === currentYear && data
-      ? data.timeline.find((m) => m.month === selectedMonthKey) ?? data.timeline[0] ?? null
+      ? orderedTimeline.find((m) => m.month === selectedMonthKey) ?? orderedTimeline[0] ?? null
       : null;
 
   // Mid-year snapshot for future years
   const midYearMonth =
     data
-      ? data.timeline.find((m) => m.month.endsWith("-07")) ??
-        data.timeline[Math.floor(data.timeline.length / 2)] ??
+      ? orderedTimeline.find((m) => m.month.endsWith("-07")) ??
+        orderedTimeline[Math.floor(orderedTimeline.length / 2)] ??
         null
       : null;
 
@@ -456,7 +458,7 @@ export default function TransitosPage() {
           <div className="space-y-6">
             {/* Month chips */}
             <div className="flex flex-wrap gap-2">
-              {data.timeline.map((m) => {
+              {orderedTimeline.map((m) => {
                 let label = m.month;
                 try {
                   label = capitalizeFirst(
