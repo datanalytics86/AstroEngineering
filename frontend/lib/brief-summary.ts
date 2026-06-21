@@ -1,12 +1,15 @@
 /**
  * Generadores de resúmenes breves y deterministas para tránsitos.
  * Sin rambling — brevedad es la clave.
+ * Bilingual: pass lang="en" for English output.
  */
 
-import type { TransitResponse, MonthlyForecast, TransitEvent } from "./types";
+import type { TransitResponse, MonthlyForecast } from "./types";
 import { getInterpretationByComponents } from "./interpretation-engine";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
+import type { Lang } from "./i18n";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,6 +21,7 @@ export interface BriefInfluence {
   importance: string;
   retrograde: boolean;
   text: string;
+  narrative: string;
 }
 
 export interface MonthBrief {
@@ -52,12 +56,20 @@ export interface YearBrief {
 
 const SLOW_PLANETS = ["Plutón", "Neptuno", "Urano", "Saturno", "Júpiter"];
 
-const PLANET_THEME: Record<string, string> = {
+const PLANET_THEME_ES: Record<string, string> = {
   "Plutón":  "transformación profunda",
   "Neptuno": "sensibilidad e inspiración",
   "Urano":   "cambios y libertad",
   "Saturno": "estructura y madurez",
   "Júpiter": "expansión y oportunidades",
+};
+
+const PLANET_THEME_EN: Record<string, string> = {
+  "Plutón":  "deep transformation",
+  "Neptuno": "sensitivity and inspiration",
+  "Urano":   "change and freedom",
+  "Saturno": "structure and maturity",
+  "Júpiter": "expansion and opportunity",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -76,17 +88,74 @@ function firstSentence(text: string): string {
 
 // ── generateMonthBrief ────────────────────────────────────────────────────────
 
-export function generateMonthBrief(month: MonthlyForecast): MonthBrief {
+export function generateMonthBrief(
+  month: MonthlyForecast,
+  exactCalendar?: { date: string; transit_planet: string; aspect: string; natal_planet: string }[],
+  lang: Lang = "es"
+): MonthBrief {
   const intensityLabel: MonthBrief["intensityLabel"] =
     month.intensity_score >= 6 ? "intenso" :
     month.intensity_score >= 3 ? "moderado" : "estable";
 
-  const monthLabel = format(new Date(`${month.month}-01`), "MMMM yyyy", { locale: es });
+  const locale = lang === "en" ? enUS : es;
+  const monthLabel = format(new Date(`${month.month}-01`), "MMMM yyyy", { locale });
+  const monthName = format(new Date(`${month.month}-01`), "MMMM", { locale });
 
   const headline = firstSentence(month.theme_summary);
 
-  const influences: BriefInfluence[] = month.transits_active.slice(0, 3).map((t) => {
-    const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet);
+  // Select top transits: crítica/alta first, then by score, max 4
+  const impOrder: Record<string, number> = { "crítica": 4, "alta": 3, "media": 2, "baja": 1 };
+  const topTransits = [...month.transits_active]
+    .sort((a, b) => {
+      return (impOrder[b.importance] ?? 0) - (impOrder[a.importance] ?? 0) || b.score - a.score;
+    })
+    .slice(0, 4);
+
+  const influences: BriefInfluence[] = topTransits.map((t) => {
+    const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet, lang);
+
+    // Find exact date from calendar or transit event
+    const exactEntry = exactCalendar?.find(
+      (e) =>
+        e.transit_planet === t.transit_planet &&
+        e.aspect === t.aspect_name &&
+        e.natal_planet === t.natal_planet &&
+        e.date.startsWith(month.month)
+    );
+    const exactDate = t.exact_date ?? exactEntry?.date ?? null;
+
+    let exactDateStr = "";
+    if (exactDate) {
+      try {
+        const day = new Date(exactDate).getUTCDate();
+        exactDateStr = lang === "en"
+          ? ` (exact on the ${day}th)`
+          : ` (exacta el ${day})`;
+      } catch { /* ignore */ }
+    }
+
+    const retroNote = t.transit_retrograde
+      ? lang === "en"
+        ? `, in retrograde motion (℞),`
+        : `, en movimiento retrógrado (℞),`
+      : "";
+
+    let narrative: string;
+    if (interp) {
+      const aspectLower = t.aspect_name.toLowerCase();
+      if (lang === "en") {
+        narrative = `In ${monthName}, ${t.transit_planet}${retroNote} forms a ${aspectLower} with your natal ${t.natal_planet}${exactDateStr}: ${interp.detailed} Recommendation: ${interp.advice}`;
+      } else {
+        narrative = `En ${monthName}, ${t.transit_planet}${retroNote} forma una ${aspectLower} con tu ${t.natal_planet} natal${exactDateStr}: ${interp.detailed} Recomendación: ${interp.advice}`;
+      }
+    } else {
+      if (lang === "en") {
+        narrative = `In ${monthName}, ${t.transit_planet}${retroNote} forms a ${t.aspect_name.toLowerCase()} with your natal ${t.natal_planet}${exactDateStr}.`;
+      } else {
+        narrative = `En ${monthName}, ${t.transit_planet}${retroNote} forma una ${t.aspect_name.toLowerCase()} con tu ${t.natal_planet} natal${exactDateStr}.`;
+      }
+    }
+
     const rawText = interp?.summary ?? `${t.transit_planet} ${t.aspect_name.toLowerCase()} ${t.natal_planet} natal`;
     return {
       planet:     t.transit_planet,
@@ -95,7 +164,8 @@ export function generateMonthBrief(month: MonthlyForecast): MonthBrief {
       nature:     t.nature,
       importance: t.importance,
       retrograde: !!t.transit_retrograde,
-      text:       truncate(rawText, 110),
+      text:       rawText,
+      narrative,
     };
   });
 
@@ -115,8 +185,11 @@ export function generateMonthBrief(month: MonthlyForecast): MonthBrief {
 
 // ── generateYearBrief ─────────────────────────────────────────────────────────
 
-export function generateYearBrief(transits: TransitResponse, year: number): YearBrief {
+export function generateYearBrief(transits: TransitResponse, year: number, lang: Lang = "es"): YearBrief {
   const { current_transits, timeline } = transits;
+
+  const PLANET_THEME = lang === "en" ? PLANET_THEME_EN : PLANET_THEME_ES;
+  const locale = lang === "en" ? enUS : es;
 
   // Dominant slow planet by summed score
   const planetScore: Record<string, number> = {};
@@ -131,7 +204,7 @@ export function generateYearBrief(transits: TransitResponse, year: number): Year
       return (planetScore[p] ?? 0) > (planetScore[best] ?? 0) ? p : best;
     }, null) ?? "Saturno";
 
-  const theme = PLANET_THEME[dominant] ?? "un año de transición";
+  const theme = PLANET_THEME[dominant] ?? (lang === "en" ? "a year of transition" : "un año de transición");
 
   // High-impact count
   const highCount = current_transits.filter(
@@ -141,8 +214,8 @@ export function generateYearBrief(transits: TransitResponse, year: number): Year
   // Peak month
   const peak = [...timeline].sort((a, b) => b.intensity_score - a.intensity_score)[0];
   const peakMonthLabel = peak
-    ? format(new Date(`${peak.month}-01`), "MMMM", { locale: es })
-    : "mitad de año";
+    ? format(new Date(`${peak.month}-01`), "MMMM", { locale })
+    : lang === "en" ? "mid-year" : "mitad de año";
 
   // Cycles: slow transits, dedup, top 3 by score
   const seen = new Set<string>();
@@ -158,8 +231,8 @@ export function generateYearBrief(transits: TransitResponse, year: number): Year
 
     let windowStr = "";
     try {
-      const enter = format(new Date(t.enters_orb), "MMM", { locale: es });
-      const leave = format(new Date(t.leaves_orb), "MMM", { locale: es });
+      const enter = format(new Date(t.enters_orb), "MMM", { locale });
+      const leave = format(new Date(t.leaves_orb), "MMM", { locale });
       windowStr = `${enter} — ${leave}`;
     } catch {
       windowStr = `${t.enters_orb} — ${t.leaves_orb}`;
@@ -182,7 +255,7 @@ export function generateYearBrief(transits: TransitResponse, year: number): Year
     .slice(0, 2);
 
   const opportunities = opportunityTransits.map((t) => {
-    const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet);
+    const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet, lang);
     const raw = interp?.summary ?? `${t.transit_planet} ${t.aspect_name} ${t.natal_planet} natal`;
     return truncate(raw, 100);
   });
@@ -194,15 +267,15 @@ export function generateYearBrief(transits: TransitResponse, year: number): Year
     .slice(0, 2);
 
   const challenges = challengeTransits.map((t) => {
-    const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet);
+    const interp = getInterpretationByComponents(t.transit_planet, t.aspect_name, t.natal_planet, lang);
     const raw = interp?.summary ?? `${t.transit_planet} ${t.aspect_name} ${t.natal_planet} natal`;
     return truncate(raw, 100);
   });
 
   // Paragraph
-  const paragraph =
-    `${year} se perfila como un año de ${theme}. ` +
-    `Con ${highCount} tránsito${highCount !== 1 ? "s" : ""} de alto impacto, el período más intenso llega alrededor de ${peakMonthLabel}.`;
+  const paragraph = lang === "en"
+    ? `${year} shapes up as a year of ${theme}. With ${highCount} high-impact transit${highCount !== 1 ? "s" : ""}, the most intense period arrives around ${peakMonthLabel}.`
+    : `${year} se perfila como un año de ${theme}. Con ${highCount} tránsito${highCount !== 1 ? "s" : ""} de alto impacto, el período más intenso llega alrededor de ${peakMonthLabel}.`;
 
   return {
     year,

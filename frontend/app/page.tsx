@@ -1,176 +1,221 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import BirthDataForm from "@/components/BirthDataForm";
-import type { BirthData, ChartResponse } from "@/lib/types";
-import { saveChart, listCharts, deleteChart, type SavedChartMeta } from "@/lib/storage";
+import { useT } from "@/lib/i18n";
 
-const SIGN_COLORS: Record<string, string> = {
-  Aries: "#EF4444", Tauro: "#16A34A", Géminis: "#EAB308", Cáncer: "#2563EB",
-  Leo: "#F97316", Virgo: "#65A30D", Libra: "#06B6D4", Escorpio: "#7C3AED",
-  Sagitario: "#DC2626", Capricornio: "#64748B", Acuario: "#0EA5E9", Piscis: "#8B5CF6",
-};
+const PLANET_CARDS = [
+  {
+    symbol: "☉",
+    name: "Sol",
+    roleKey: "tu identidad y voluntad",
+    color: "#F97316",
+    description:
+      "El Sol representa quién eres en esencia: tu propósito de vida, tu vitalidad y la expresión más auténtica de tu ego.",
+    descriptionEn:
+      "The Sun represents who you are at your core: your life purpose, vitality, and the most authentic expression of your ego.",
+  },
+  {
+    symbol: "☽",
+    name: "Luna",
+    roleKey: "tus emociones y hábitos",
+    color: "#6366F1",
+    description:
+      "La Luna rige el mundo interior: tus emociones, instintos, memoria y la forma en que te nutres y conectas con el hogar.",
+    descriptionEn:
+      "The Moon governs the inner world: your emotions, instincts, memory, and how you nourish yourself and connect with home.",
+  },
+  {
+    symbol: "☿",
+    name: "Mercurio",
+    roleKey: "tu mente y comunicación",
+    color: "#06B6D4",
+    description:
+      "Mercurio gobierna el pensamiento, el lenguaje y los vínculos intelectuales. Revela cómo procesas información y te comunicas.",
+    descriptionEn:
+      "Mercury governs thought, language, and intellectual connections. It reveals how you process information and communicate.",
+  },
+  {
+    symbol: "♀",
+    name: "Venus",
+    roleKey: "tus valores y relaciones",
+    color: "#EC4899",
+    description:
+      "Venus muestra qué aprecias en el amor, la belleza y el dinero. Define tu capacidad de atracción y los valores que guían tus elecciones.",
+    descriptionEn:
+      "Venus shows what you value in love, beauty, and money. It defines your capacity for attraction and the values guiding your choices.",
+  },
+  {
+    symbol: "♂",
+    name: "Marte",
+    roleKey: "tu energía y acción",
+    color: "#EF4444",
+    description:
+      "Marte es el impulso que te mueve a actuar: tu ambición, deseo, coraje y la forma en que enfrentas los conflictos.",
+    descriptionEn:
+      "Mars is the drive that moves you to act: your ambition, desire, courage, and how you face conflicts.",
+  },
+  {
+    symbol: "♃",
+    name: "Júpiter",
+    roleKey: "tu expansión y optimismo",
+    color: "#10B981",
+    description:
+      "Júpiter señala dónde encuentras abundancia, crecimiento y significado. Es el principio de expansión y búsqueda filosófica.",
+    descriptionEn:
+      "Jupiter shows where you find abundance, growth, and meaning. It is the principle of expansion and philosophical quest.",
+  },
+  {
+    symbol: "♄",
+    name: "Saturno",
+    roleKey: "tu estructura y limitaciones",
+    color: "#64748B",
+    description:
+      "Saturno representa las lecciones kármicas, la disciplina y las estructuras que te dan forma. Es donde maduras y construyes con solidez.",
+    descriptionEn:
+      "Saturn represents karmic lessons, discipline, and the structures that shape you. It is where you mature and build with solidity.",
+  },
+];
 
-export default function HomePage() {
+export default function PortadaPage() {
   const router = useRouter();
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState<string | null>(null);
-  const [saved, setSaved]           = useState<SavedChartMeta[]>([]);
-  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-
-  useEffect(() => {
-    setSaved(listCharts());
-  }, []);
-
-  async function handleSubmit(data: BirthData) {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/chart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Error desconocido" }));
-        throw new Error(err.detail ?? `HTTP ${res.status}`);
-      }
-      const chart: ChartResponse = await res.json();
-      const id = saveChart(chart, data);
-      router.push(`/carta/${id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al calcular la carta");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleDelete(id: string) {
-    deleteChart(id);
-    setSaved((prev) => prev.filter((c) => c.id !== id));
-    setDeleteTarget(null);
-  }
+  const { t, lang } = useT();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start p-6 bg-base pt-12">
-      <div className="w-full max-w-lg">
-        {/* Hero */}
-        <div className="text-center mb-8">
-          <h1 className="font-semibold text-3xl text-slate-900 tracking-tight mb-2">
-            Carta Natal
-          </h1>
+    <div className="min-h-screen bg-base">
+      {/* ── Hero ── */}
+      <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
+        <div className="inline-flex items-center gap-2 mb-6 bg-blue-50 border border-blue-100 rounded-full px-4 py-1.5 text-xs font-mono text-blue-600">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+          {t("landing.badge")}
+        </div>
+        <h1 className="text-5xl font-bold text-slate-900 tracking-tight leading-tight mb-4">
+          {t("landing.hero.title_line1")}<br />
+          <span className="text-blue-600">{t("landing.hero.title_line2")}</span>
+        </h1>
+        <p className="text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto mb-10">
+          {t("landing.hero.subtitle")}
+        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <button
+            onClick={() => router.push("/nueva")}
+            className="bg-blue-600 text-white px-8 py-3.5 rounded-xl text-base font-semibold hover:bg-blue-700 transition-colors shadow-card-md w-full sm:w-auto"
+          >
+            {t("landing.cta.primary")}
+          </button>
+          <button
+            onClick={() => router.push("/glosario")}
+            className="border border-border text-slate-600 px-8 py-3.5 rounded-xl text-base font-medium hover:border-blue-300 hover:text-blue-600 transition-colors w-full sm:w-auto"
+          >
+            {t("landing.cta.secondary")}
+          </button>
+        </div>
+      </section>
+
+      {/* ── ¿Qué es una carta natal? ── */}
+      <section className="bg-white border-y border-border py-16">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">{t("landing.what_is.title")}</h2>
+          <p className="text-slate-600 leading-relaxed text-base mb-4">{t("landing.what_is.p1")}</p>
+          <p className="text-slate-600 leading-relaxed text-base mb-4">{t("landing.what_is.p2")}</p>
           <p className="text-slate-500 leading-relaxed text-sm">
-            Precisión astronómica con Swiss Ephemeris.<br />
-            Tránsitos calculados día a día.
+            {lang === "es" ? (
+              <>Los cálculos utilizan <span className="font-semibold text-slate-700">Swiss Ephemeris</span>, la misma biblioteca astronómica usada por el software profesional Astro.com, con una precisión de ±0.05° en las posiciones planetarias.</>
+            ) : (
+              <>Calculations use <span className="font-semibold text-slate-700">Swiss Ephemeris</span>, the same astronomical library used by professional software Astro.com, with planetary position precision of ±0.05°.</>
+            )}
           </p>
         </div>
+      </section>
 
-        {/* Formulario */}
-        <div className="bg-white border border-border rounded-2xl p-6 shadow-card">
-          <BirthDataForm onSubmit={handleSubmit} loading={loading} />
+      {/* ── Planetas principales ── */}
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t("landing.planets.title")}</h2>
+          <p className="text-slate-500 text-sm font-mono">{t("landing.planets.subtitle")}</p>
         </div>
 
-        {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 font-mono">
-            {error}
-          </div>
-        )}
-
-        {/* ── Cartas guardadas ── */}
-        {saved.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest font-mono mb-3">
-              Cartas guardadas
-            </h2>
-            <div className="space-y-2">
-              {saved.map((c) => {
-                const asc = c.ascendant;
-                const color = SIGN_COLORS[asc] ?? "#6B7280";
-                const isConfirming = deleteTarget === c.id;
-                return (
-                  <div
-                    key={c.id}
-                    className="bg-white border border-border rounded-xl px-4 py-3 shadow-card flex items-center gap-3"
-                  >
-                    {/* Color dot */}
-                    <div
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: color }}
-                    />
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{c.name}</p>
-                      <p className="text-xs font-mono text-slate-400">
-                        {c.birth_date} · {c.birth_time} ·{" "}
-                        <span style={{ color }} className="font-semibold">{asc} ASC</span>
-                      </p>
-                    </div>
-
-                    {/* Acciones */}
-                    <div className="flex items-center gap-1 shrink-0">
-                      {c.hasTransits && (
-                        <button
-                          onClick={() => router.push(`/transitos/${c.id}`)}
-                          title="Ver tránsitos"
-                          className="text-xs font-mono px-2 py-1 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors"
-                        >
-                          ✦ Tránsitos
-                        </button>
-                      )}
-                      <button
-                        onClick={() => router.push(`/carta/${c.id}`)}
-                        className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-800 transition-colors"
-                      >
-                        Ver carta
-                      </button>
-                      {isConfirming ? (
-                        <>
-                          <button
-                            onClick={() => handleDelete(c.id)}
-                            className="text-xs font-mono px-2 py-1 rounded-lg bg-red-50 border border-red-300 text-red-600 hover:bg-red-100 transition-colors"
-                          >
-                            Confirmar
-                          </button>
-                          <button
-                            onClick={() => setDeleteTarget(null)}
-                            className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-400 hover:border-slate-400 transition-colors"
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => setDeleteTarget(c.id)}
-                          title="Eliminar"
-                          className="text-xs font-mono w-7 h-7 rounded-lg border border-slate-200 text-slate-300 hover:border-red-300 hover:text-red-400 transition-colors flex items-center justify-center"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Info técnica */}
-        <div className="mt-6 grid grid-cols-3 gap-3 text-center">
-          {[
-            { label: "Swiss Ephemeris", sub: "±0.05° precisión" },
-            { label: "12 planetas", sub: "Sol → Quirón" },
-            { label: "Tránsitos", sub: "1–12 meses" },
-          ].map((item) => (
-            <div key={item.label} className="bg-white border border-border rounded-xl p-3 shadow-card">
-              <div className="text-xs font-semibold text-slate-700">{item.label}</div>
-              <div className="text-xs text-slate-400 font-mono mt-0.5">{item.sub}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {PLANET_CARDS.map((p) => (
+            <div
+              key={p.name}
+              className="bg-white border border-border rounded-2xl p-5 shadow-card hover:border-blue-200 hover:shadow-card-md transition-all"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <span
+                  className="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-border font-mono"
+                  style={{ color: p.color }}
+                >
+                  {p.symbol}
+                </span>
+                <div>
+                  <p className="font-semibold text-slate-800 text-sm">{p.name}</p>
+                  <p className="text-xs text-slate-400 font-mono">{p.roleKey}</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed">
+                {lang === "en" ? p.descriptionEn : p.description}
+              </p>
             </div>
           ))}
+
+          {/* CTA card */}
+          <div
+            className="bg-blue-600 border border-blue-500 rounded-2xl p-5 shadow-card flex flex-col items-start justify-between cursor-pointer hover:bg-blue-700 transition-colors"
+            onClick={() => router.push("/glosario")}
+          >
+            <div>
+              <p className="font-semibold text-white text-sm mb-2">{t("landing.planets.more")}</p>
+              <p className="text-xs text-blue-100 leading-relaxed">{t("landing.planets.more_desc")}</p>
+            </div>
+            <span className="mt-4 text-xs font-mono text-blue-200 hover:text-white transition-colors">
+              {t("landing.planets.glossary_link")}
+            </span>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* ── Features grid ── */}
+      <section className="bg-white border-t border-border py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {[
+              {
+                icon: "⊕",
+                titleKey: "landing.features.natal.title" as const,
+                descKey: "landing.features.natal.desc" as const,
+              },
+              {
+                icon: "✦",
+                titleKey: "landing.features.transits.title" as const,
+                descKey: "landing.features.transits.desc" as const,
+              },
+              {
+                icon: "☉",
+                titleKey: "landing.features.solar.title" as const,
+                descKey: "landing.features.solar.desc" as const,
+              },
+            ].map((f) => (
+              <div key={f.titleKey} className="text-center">
+                <div className="text-3xl mb-3 font-mono text-blue-600">{f.icon}</div>
+                <h3 className="font-semibold text-slate-800 mb-2">{t(f.titleKey)}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{t(f.descKey)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Bottom CTA ── */}
+      <section className="max-w-xl mx-auto px-6 py-16 text-center">
+        <h2 className="text-2xl font-bold text-slate-900 mb-4">{t("landing.bottom_cta.title")}</h2>
+        <p className="text-slate-500 text-sm mb-8">{t("landing.bottom_cta.subtitle")}</p>
+        <button
+          onClick={() => router.push("/nueva")}
+          className="bg-blue-600 text-white px-10 py-4 rounded-xl text-base font-semibold hover:bg-blue-700 transition-colors shadow-card-md"
+        >
+          {t("landing.cta.primary")}
+        </button>
+      </section>
     </div>
   );
 }

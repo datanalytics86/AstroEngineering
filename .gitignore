@@ -24,3 +24,6 @@ next-env.d.ts
 *.log
 frontend/.env.local
 frontend/.env.production
+
+# Claude Code local scratch / agent worktrees
+.claude/
