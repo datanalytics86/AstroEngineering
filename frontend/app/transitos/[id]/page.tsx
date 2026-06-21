@@ -16,6 +16,7 @@ import { generateMonthBrief, generateYearBrief } from "@/lib/brief-summary";
 import type { BriefInfluence } from "@/lib/brief-summary";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import { useT } from "@/lib/i18n";
 
 const TransitZodiacWheel = dynamic(
@@ -129,8 +130,9 @@ interface MonthBriefPanelProps {
 }
 
 function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
-  const { t } = useT();
-  const brief = generateMonthBrief(month, exactCalendar);
+  const { t, lang } = useT();
+  const panelLocale = lang === "en" ? enUS : es;
+  const brief = generateMonthBrief(month, exactCalendar, lang);
   const keyDates = exactCalendar
     .filter((e) => e.date.startsWith(month.month))
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -184,7 +186,7 @@ function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
             {keyDates.map((ev, i) => {
               let dateStr = ev.date;
               try {
-                dateStr = format(new Date(ev.date), "d MMM", { locale: es });
+                dateStr = format(new Date(ev.date), "d MMM", { locale: panelLocale });
               } catch { /* keep raw */ }
               const sym = PLANET_SYMBOLS[ev.transit_planet] ?? "";
               const asp = ASPECT_SYMBOLS[ev.aspect] ?? ev.aspect;
@@ -208,8 +210,8 @@ interface YearBriefPanelProps {
 }
 
 function YearBriefPanel({ data, year }: YearBriefPanelProps) {
-  const { t } = useT();
-  const brief = generateYearBrief(data, year);
+  const { t, lang } = useT();
+  const brief = generateYearBrief(data, year, lang);
 
   return (
     <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-5">
@@ -287,7 +289,8 @@ export default function TransitosPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
-  const { t } = useT();
+  const { t, lang } = useT();
+  const dateLocale = lang === "en" ? enUS : es;
 
   const [chart, setChart]       = useState<ChartResponse | null>(null);
   const [birthData, setBirthData] = useState<BirthData | null>(null);
@@ -334,8 +337,8 @@ export default function TransitosPage() {
         if (!res.ok) {
           const msg =
             res.status === 429
-              ? "Demasiadas solicitudes — espera un minuto e inténtalo de nuevo."
-              : `Error ${res.status} al cargar los tránsitos.`;
+              ? t("transits.error.rate_limit")
+              : `${t("transits.error.generic")} (${res.status})`;
           setErrorByYear((prev) => ({ ...prev, [year]: msg }));
           return;
         }
@@ -345,7 +348,7 @@ export default function TransitosPage() {
       } catch {
         setErrorByYear((prev) => ({
           ...prev,
-          [year]: "Error de red. Verifica tu conexión e inténtalo de nuevo.",
+          [year]: t("transits.error.network"),
         }));
       } finally {
         setLoadingYear(null);
@@ -486,7 +489,7 @@ export default function TransitosPage() {
                 let label = m.month;
                 try {
                   label = capitalizeFirst(
-                    format(new Date(`${m.month}-01`), "MMM", { locale: es })
+                    format(new Date(`${m.month}-01`), "MMM", { locale: dateLocale })
                   );
                 } catch { /* keep raw */ }
                 return (
@@ -521,7 +524,7 @@ export default function TransitosPage() {
                   />
                   <p className="text-xs text-slate-400 font-mono text-center">
                     {capitalizeFirst(
-                      format(new Date(`${selectedMonth.month}-01`), "MMMM yyyy", { locale: es })
+                      format(new Date(`${selectedMonth.month}-01`), "MMMM yyyy", { locale: dateLocale })
                     )}{" "}
                     · {t("transits.wheel.caption")}
                   </p>

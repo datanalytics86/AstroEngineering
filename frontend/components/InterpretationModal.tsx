@@ -9,6 +9,7 @@ import {
   getHouseMeaning,
   getAngleMeaning,
 } from "@/lib/natal-interpretations";
+import { useT } from "@/lib/i18n";
 
 
 interface Props {
@@ -56,14 +57,18 @@ function getInterpretation(target: ClickTarget): NatalInterpretation | null {
   }
 }
 
-function getTitle(target: ClickTarget): { main: string; sub: string; icon: string } {
+function getTitle(
+  target: ClickTarget,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: (key: any) => string,
+): { main: string; sub: string; icon: string } {
   switch (target.type) {
     case "planet": {
       const sym = PLANET_SYMBOLS[target.planet.name] ?? "★";
       return {
         icon: sym,
-        main: `${target.planet.name} en ${target.planet.sign}`,
-        sub: `Casa ${target.planet.house} · ${target.planet.degree_display}${target.planet.retrograde ? " ℞" : ""}`,
+        main: `${target.planet.name} ${t("modal.in_sign")} ${target.planet.sign}`,
+        sub: `${t("modal.house_label")} ${target.planet.house} · ${target.planet.degree_display}${target.planet.retrograde ? " ℞" : ""}`,
       };
     }
     case "aspect": {
@@ -71,19 +76,19 @@ function getTitle(target: ClickTarget): { main: string; sub: string; icon: strin
       return {
         icon: sym,
         main: `${target.aspect.planet1} ${sym} ${target.aspect.planet2}`,
-        sub: `${target.aspect.aspect_name} · orbe ${target.aspect.orb.toFixed(2)}° · ${target.aspect.applying ? "aplicante" : "separante"}`,
+        sub: `${target.aspect.aspect_name} · ${t("modal.orb")} ${target.aspect.orb.toFixed(2)}° · ${target.aspect.applying ? t("modal.applying") : t("modal.separating")}`,
       };
     }
     case "house":
       return {
         icon: `${target.house.number}`,
-        main: `Casa ${target.house.number}`,
-        sub: `Cúspide en ${target.house.sign} · ${target.house.degree_display}`,
+        main: `${t("modal.house_label")} ${target.house.number}`,
+        sub: `${t("modal.cusp")} ${target.house.sign} · ${target.house.degree_display}`,
       };
     case "angle":
       return {
         icon: target.name,
-        main: `${target.name} en ${target.sign}`,
+        main: `${target.name} ${t("modal.in_sign")} ${target.sign}`,
         sub: target.degree_display,
       };
   }
@@ -91,6 +96,7 @@ function getTitle(target: ClickTarget): { main: string; sub: string; icon: strin
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useT();
   const handleCopy = () => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
@@ -102,12 +108,13 @@ function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
       className="text-xs font-mono px-3 py-1.5 rounded border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 transition-colors"
     >
-      {copied ? "✓ Copiado" : "Copiar"}
+      {copied ? t("modal.copied") : t("modal.copy")}
     </button>
   );
 }
 
 function AspectPills({ aspects, planetName }: { aspects: Aspect[]; planetName: string }) {
+  const { t } = useT();
   if (!aspects.length) return null;
   const related = aspects
     .filter((a) => a.planet1 === planetName || a.planet2 === planetName)
@@ -115,7 +122,7 @@ function AspectPills({ aspects, planetName }: { aspects: Aspect[]; planetName: s
   if (!related.length) return null;
   return (
     <div className="mt-4 pt-4 border-t border-slate-100">
-      <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">Aspectos activos</p>
+      <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">{t("modal.active_aspects")}</p>
       <div className="flex flex-wrap gap-2">
         {related.map((a, i) => {
           const other = a.planet1 === planetName ? a.planet2 : a.planet1;
@@ -139,6 +146,7 @@ function AspectPills({ aspects, planetName }: { aspects: Aspect[]; planetName: s
 export default function InterpretationModal({ target, allAspects = [], onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const { t } = useT();
 
   useEffect(() => {
     if (target) {
@@ -166,10 +174,10 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
   if (!target) return null;
 
   const interp = getInterpretation(target);
-  const { icon, main, sub } = getTitle(target);
+  const { icon, main, sub } = getTitle(target, t);
 
   const copyText = interp
-    ? `${main}\n\n${interp.principal}\n\nFortalezas:\n${interp.strengths.map((s) => `• ${s}`).join("\n")}\n\nDesafíos:\n${interp.challenges.map((c) => `• ${c}`).join("\n")}\n\nCrecimiento:\n${interp.growth}\n\nFrase clave: "${interp.keyphrase}"`
+    ? `${main}\n\n${interp.principal}\n\n${t("modal.strengths")}:\n${interp.strengths.map((s) => `• ${s}`).join("\n")}\n\n${t("modal.challenges")}:\n${interp.challenges.map((c) => `• ${c}`).join("\n")}\n\n${t("modal.growth")}:\n${interp.growth}\n\n"${interp.keyphrase}"`
     : main;
 
   const accentColor =
@@ -227,6 +235,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               <CopyButton text={copyText} />
               <button
                 onClick={onClose}
+                aria-label={t("modal.close")}
                 className="w-8 h-8 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
               >
                 ✕
@@ -264,7 +273,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               {/* Interpretación principal */}
               <section>
                 <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
-                  Interpretación
+                  {t("modal.interpretation")}
                 </h3>
                 <p className="text-sm text-slate-700 leading-relaxed">{interp.principal}</p>
               </section>
@@ -272,7 +281,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               {/* Fortalezas */}
               <section>
                 <h3 className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "#10B981" }}>
-                  Fortalezas
+                  {t("modal.strengths")}
                 </h3>
                 <ul className="space-y-2">
                   {interp.strengths.map((s, i) => (
@@ -287,7 +296,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               {/* Desafíos */}
               <section>
                 <h3 className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "#EF4444" }}>
-                  Desafíos
+                  {t("modal.challenges")}
                 </h3>
                 <ul className="space-y-2">
                   {interp.challenges.map((c, i) => (
@@ -302,7 +311,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               {/* Crecimiento */}
               <section className="bg-slate-50 rounded-xl p-4 border border-slate-100">
                 <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
-                  Potencial de crecimiento
+                  {t("modal.growth")}
                 </h3>
                 <p className="text-sm text-slate-700 leading-relaxed">{interp.growth}</p>
               </section>
@@ -311,7 +320,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               {target.type === "planet" && (
                 <section>
                   <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
-                    En casa {target.planet.house}
+                    {t("modal.in_house")} {target.planet.house}
                   </h3>
                   <p className="text-sm text-slate-500 leading-relaxed">
                     {getPlanetInHouseInterpretation(target.planet.name, target.planet.house).principal}
@@ -325,14 +334,14 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               )}
             </>
           ) : (
-            <p className="text-sm text-slate-400 italic">Interpretación no disponible para este elemento.</p>
+            <p className="text-sm text-slate-400 italic">{t("modal.no_interpretation")}</p>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-slate-100 flex-shrink-0">
           <p className="text-xs text-slate-400 font-mono text-center">
-            Basado en Steven Forrest · Sue Tompkins · Howard Sasportas · Stephen Arroyo
+            {t("modal.footer")}
           </p>
         </div>
       </div>

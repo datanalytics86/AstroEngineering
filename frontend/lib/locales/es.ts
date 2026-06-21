@@ -82,6 +82,7 @@ export const es = {
   "chart.wheel.deselect": "click de nuevo para deseleccionar",
   "chart.ascendant": "Ascendente",
   "chart.mc": "Medio Cielo",
+  "chart.loading_hint": "Este proceso tarda 15-30 segundos. No cierres la ventana.",
   "chart.error.transit": "Error al calcular tránsitos",
   "chart.error.solar": "Error retorno solar",
 
@@ -124,6 +125,25 @@ export const es = {
   "solar.wheel.title": "Rueda del Retorno Solar",
   "solar.asc": "ASC Retorno",
   "solar.mc": "MC Retorno",
+
+  // ── InterpretationModal ──
+  "modal.copy": "Copiar",
+  "modal.copied": "✓ Copiado",
+  "modal.close": "Cerrar",
+  "modal.active_aspects": "Aspectos activos",
+  "modal.interpretation": "Interpretación",
+  "modal.strengths": "Fortalezas",
+  "modal.challenges": "Desafíos",
+  "modal.growth": "Potencial de crecimiento",
+  "modal.in_house": "En casa",
+  "modal.no_interpretation": "Interpretación no disponible para este elemento.",
+  "modal.in_sign": "en",
+  "modal.house_label": "Casa",
+  "modal.cusp": "Cúspide en",
+  "modal.applying": "aplicante",
+  "modal.separating": "separante",
+  "modal.orb": "orbe",
+  "modal.footer": "Basado en Steven Forrest · Sue Tompkins · Howard Sasportas · Stephen Arroyo",
 
   // ── Glosario ──
   "glossary.title": "Aprende los significados",

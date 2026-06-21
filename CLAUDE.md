@@ -15,6 +15,8 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 
 > 2026-06-17 — Rediseño de tránsitos + eliminación de astrología mundial. Vista de tránsitos reemplazada por: selector de año (actual + 4), filtro por mes en el año actual con rueda interactiva (planetas como esferas 3D; retrógrados con anillo rojo + ℞ + ↺) y resumen breve; años futuros con análisis anual. Backend: `sky` por mes + `transit_retrograde`. Eliminada toda la feature mundial.
 
+> 2026-06-21 — i18n bilingual completado (ES/EN). Corpus de tránsitos/retorno solar 100% bilingüe. Página de tránsitos wireable: `generateMonthBrief` y `generateYearBrief` reciben `lang`. Rueda mes/año chips y fechas clave usan locale dinámico. Mensajes de error en tránsitos y carta natal usan `t()`. InterpretationModal: UI chrome 100% bilingüe (secciones, botones, footer). `transits.corpus_note` vaciado en EN (corpus ya renderiza EN). **Pendiente:** cuerpo de interpretaciones natales (click en rueda) sigue en español — es un corpus separado, fuera de scope.
+
 > Última actualización: 2026-04-28 — Sesión de seguridad + nuevas features
 
 ### Core
@@ -65,10 +67,13 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 - [x] `lib/types.ts` — interfaces TypeScript (incluye `SolarReturnRequest`, `SkyPlanet`, `transit_retrograde` en `TransitEvent`)
 - [x] `lib/storage.ts` — localStorage: `saveChart`, `loadChart`, `saveTransits`, `loadTransits`, `saveYearTransits`, `loadYearTransits`, `saveSolarReturn`, `loadSolarReturn`, `listCharts`, `deleteChart`
 - [x] `lib/zodiac-utils.ts` — helpers + **`getPlanetDignity()`** + `DIGNITY_SYMBOL/COLOR`
-- [x] `lib/interpretation-engine.ts` — ~270 interpretaciones de tránsitos
-- [x] `lib/brief-summary.ts` — `generateMonthBrief()` + `generateYearBrief()` (resúmenes breves por mes/año)
-- [x] `lib/solar-return-summary.ts` — **`generateSolarReturnSummary()`** (Forrest/Tyl/Sasportas/Rodden)
+- [x] `lib/interpretation-engine.ts` — ~270 interpretaciones de tránsitos; **bilingüe** (`lang` param → ES/EN)
+- [x] `lib/brief-summary.ts` — `generateMonthBrief(month, exactCalendar, lang)` + `generateYearBrief(data, year, lang)` (resúmenes breves bilingüe)
+- [x] `lib/solar-return-summary.ts` — **`generateSolarReturnSummary(srChart, lang)`** (Forrest/Tyl/Sasportas/Rodden) bilingüe
 - [x] `lib/wheel-geometry.ts` — helpers SVG: `polarXY`, `describeSector`, `makeToAngle`
+- [x] `lib/i18n.tsx` — `LanguageProvider` + `useT()` → `{ lang, setLang, t }`
+- [x] `lib/locales/es.ts` — diccionario español completo (incluyendo modal.* y chart.loading_hint)
+- [x] `lib/locales/en.ts` — diccionario inglés completo (incluyendo modal.* y chart.loading_hint)
 
 ### Documentación
 - [x] `GAP_ANALYSIS_DEPLOY.md` — análisis completo de seguridad para deploy a producción

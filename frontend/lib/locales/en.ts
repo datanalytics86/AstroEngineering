@@ -82,6 +82,7 @@ export const en = {
   "chart.wheel.deselect": "click again to deselect",
   "chart.ascendant": "Ascendant",
   "chart.mc": "Midheaven",
+  "chart.loading_hint": "This process takes 15–30 seconds. Do not close the window.",
   "chart.error.transit": "Error calculating transits",
   "chart.error.solar": "Solar return error",
 
@@ -109,7 +110,7 @@ export const en = {
   "transits.cycles.title": "Main cycles",
   "transits.opportunities.title": "Opportunities",
   "transits.challenges.title": "Challenges",
-  "transits.corpus_note": "(interpretations in Spanish)",
+  "transits.corpus_note": "",
 
   // ── Retorno Solar page ──
   "solar.loading": "Loading solar return…",
@@ -124,6 +125,25 @@ export const en = {
   "solar.wheel.title": "Solar Return Wheel",
   "solar.asc": "Return ASC",
   "solar.mc": "Return MC",
+
+  // ── InterpretationModal ──
+  "modal.copy": "Copy",
+  "modal.copied": "✓ Copied",
+  "modal.close": "Close",
+  "modal.active_aspects": "Active aspects",
+  "modal.interpretation": "Interpretation",
+  "modal.strengths": "Strengths",
+  "modal.challenges": "Challenges",
+  "modal.growth": "Growth potential",
+  "modal.in_house": "In house",
+  "modal.no_interpretation": "No interpretation available for this element.",
+  "modal.in_sign": "in",
+  "modal.house_label": "House",
+  "modal.cusp": "Cusp at",
+  "modal.applying": "applying",
+  "modal.separating": "separating",
+  "modal.orb": "orb",
+  "modal.footer": "Based on Steven Forrest · Sue Tompkins · Howard Sasportas · Stephen Arroyo",
 
   // ── Glosario ──
   "glossary.title": "Learn the meanings",

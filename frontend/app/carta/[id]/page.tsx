@@ -175,21 +175,21 @@ export default function CartaPage() {
 
       {transitError && (
         <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600 font-mono">
-          Error: {transitError}
+          {t("chart.error.transit")}: {transitError}
         </div>
       )}
 
       {srError && (
         <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-700 font-mono">
-          Error retorno solar: {srError}
+          {t("chart.error.solar")}: {srError}
         </div>
       )}
 
       {loadingTransits && (
         <div className="mb-6 bg-white border border-border rounded-xl p-5 text-center shadow-card">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-700 text-sm font-mono mb-1">Calculando tránsitos para los próximos 12 meses…</p>
-          <p className="text-slate-400 text-xs">Este proceso tarda 15-30 segundos. No cierres la ventana.</p>
+          <p className="text-slate-700 text-sm font-mono mb-1">{t("chart.nav.transits_loading")}</p>
+          <p className="text-slate-400 text-xs">{t("chart.loading_hint")}</p>
           <div className="mt-4 w-full bg-slate-100 rounded-full h-1 overflow-hidden">
             <div className="h-1 bg-blue-600 rounded-full animate-[loading_2s_ease-in-out_infinite]" style={{ width: "60%" }} />
           </div>
