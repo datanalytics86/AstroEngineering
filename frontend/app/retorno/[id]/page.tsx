@@ -15,7 +15,7 @@ export default function RetornoPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
-  const { t } = useT();
+  const { t, lang } = useT();
 
   const [srChart, setSrChart]   = useState<ChartResponse | null>(null);
   const [natal, setNatal]       = useState<ChartResponse | null>(null);
@@ -31,8 +31,8 @@ export default function RetornoPage() {
   }, [id, router]);
 
   const summary = useMemo(
-    () => (srChart ? generateSolarReturnSummary(srChart) : null),
-    [srChart],
+    () => (srChart ? generateSolarReturnSummary(srChart, lang) : null),
+    [srChart, lang],
   );
 
   if (!srChart || !natal) {

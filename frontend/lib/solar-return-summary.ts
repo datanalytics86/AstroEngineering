@@ -1,5 +1,6 @@
 import type { ChartResponse } from "./types";
 import { SIGN_ELEMENT } from "./zodiac-utils";
+import type { Lang } from "./i18n";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -19,7 +20,7 @@ export interface SolarReturnSummary {
 
 // ── ASC sign interpretations ──────────────────────────────────────────────────
 
-const ASC_THEME: Record<string, string> = {
+const ASC_THEME_ES: Record<string, string> = {
   Aries:       "Año de acción, nuevos comienzos y autonomía personal",
   Tauro:       "Año de consolidación, estabilidad material y disfrute sensorial",
   "Géminis":   "Año de comunicación, aprendizaje y versatilidad",
@@ -34,7 +35,22 @@ const ASC_THEME: Record<string, string> = {
   Piscis:      "Año de espiritualidad, creatividad e intuición elevada",
 };
 
-const ASC_DETAIL: Record<string, string> = {
+const ASC_THEME_EN: Record<string, string> = {
+  Aries:       "A year of action, new beginnings, and personal autonomy",
+  Tauro:       "A year of consolidation, material stability, and sensory pleasure",
+  "Géminis":   "A year of communication, learning, and versatility",
+  "Cáncer":    "A year centered on home, family, and emotional life",
+  Leo:         "A year of self-expression, creativity, and recognition",
+  Virgo:       "A year of focused work, health, and refinement",
+  Libra:       "A year of relationships, balance, and collaboration",
+  Escorpio:    "A year of deep transformation, power, and intimacy",
+  Sagitario:   "A year of expansion, travel, and philosophical horizons",
+  Capricornio: "A year of ambition, career, and long-term building",
+  Acuario:     "A year of innovation, collective projects, and freedom",
+  Piscis:      "A year of spirituality, creativity, and elevated intuition",
+};
+
+const ASC_DETAIL_ES: Record<string, string> = {
   Aries:
     "El Ascendente Aries en el Retorno Solar marca un año de iniciativa y determinación. Tendrás mayor impulso para comenzar proyectos, afirmar tu voluntad y actuar con rapidez. Marte rige este período: la energía es alta pero puede ser impaciente.",
   "Géminis":
@@ -61,9 +77,36 @@ const ASC_DETAIL: Record<string, string> = {
     "El Ascendente Tauro orienta el año hacia la seguridad material y el placer. Venus rige este período de consolidación: construir sobre bases sólidas, disfrutar lo que tienes y desarrollar la paciencia son los temas dominantes.",
 };
 
+const ASC_DETAIL_EN: Record<string, string> = {
+  Aries:
+    "Aries Rising on the Solar Return marks a year of initiative and determination. You will have greater drive to start projects, assert your will, and act quickly. Mars rules this period — energy is high but can be impatient.",
+  "Géminis":
+    "Gemini Rising signals a year of intense mental and social activity. Multiple projects, important conversations, and frequent movement. Mercury rules the year — words and thought are your primary tools.",
+  "Cáncer":
+    "Cancer Rising draws attention to home, family, and emotional roots. The Moon rules this period — sensitivity is at the forefront and personal well-being depends on emotional security.",
+  Leo:
+    "Leo Rising puts the spotlight on self-expression and recognition. The Sun rules this solar year — there is potential to stand out, lead, and create. Personal identity shines with greater force.",
+  Virgo:
+    "Virgo Rising orients the year toward analysis, health, and efficiency. Mercury rules this period with a more reflective tone — organization, method, and care for the body will be priorities.",
+  Libra:
+    "Libra Rising places relationships at the center of the year. Venus rules this period — personal and professional partnerships define the tone. You seek balance and harmony on all levels.",
+  Escorpio:
+    "Scorpio Rising indicates a year of deep transformations. Pluto and Mars rule this period of psychological intensity — what no longer serves you dissolves to make way for a more authentic version of yourself.",
+  Sagitario:
+    "Sagittarius Rising opens the year toward expansion and knowledge. Jupiter rules this optimistic period — travel, higher education, and the search for meaning broaden your horizons.",
+  Capricornio:
+    "Capricorn Rising orients the year toward concrete goals and responsibility. Saturn rules this disciplined period — achievements are possible but demand consistency and structure.",
+  Acuario:
+    "Aquarius Rising marks a year of originality, collective projects, and freedom. Uranus and Saturn rule this period — the conventional breaks down to make room for new ways of living and community.",
+  Piscis:
+    "Pisces Rising carries the year toward the subtle and spiritual dimension. Neptune rules this period of heightened sensitivity — intuition, creativity, and empathy are the most valuable resources.",
+  Tauro:
+    "Taurus Rising orients the year toward material security and pleasure. Venus rules this consolidation period — building on solid foundations, enjoying what you have, and developing patience are the dominant themes.",
+};
+
 // ── MC sign interpretations ───────────────────────────────────────────────────
 
-const MC_DETAIL: Record<string, string> = {
+const MC_DETAIL_ES: Record<string, string> = {
   Aries:       "El MC en Aries empuja a tomar iniciativa en la carrera. Año de lanzar proyectos profesionales propios.",
   Tauro:       "El MC en Tauro favorece la estabilidad y el reconocimiento material en tu área profesional.",
   "Géminis":   "El MC en Géminis abre puertas a través de la comunicación, la escritura y la red de contactos.",
@@ -78,9 +121,24 @@ const MC_DETAIL: Record<string, string> = {
   Piscis:      "El MC en Piscis orienta hacia vocaciones artísticas, terapéuticas o espirituales.",
 };
 
+const MC_DETAIL_EN: Record<string, string> = {
+  Aries:       "MC in Aries pushes you to take initiative in your career. A year for launching your own professional projects.",
+  Tauro:       "MC in Taurus favors stability and material recognition in your professional field.",
+  "Géminis":   "MC in Gemini opens doors through communication, writing, and networking.",
+  "Cáncer":    "MC in Cancer links professional achievements with emotional well-being and caring for others.",
+  Leo:         "MC in Leo brings a year of visibility, leadership, and outstanding public recognition.",
+  Virgo:       "MC in Virgo favors methodical work, technical specialization, and practical usefulness.",
+  Libra:       "MC in Libra paves the way through strategic partnerships and diplomatic skills.",
+  Escorpio:    "MC in Scorpio marks a professional direction of power, research, or transformation.",
+  Sagitario:   "MC in Sagittarius points toward professional expansion, teaching, or international work.",
+  Capricornio: "MC in Capricorn is one of the strongest for ambition: structure, authority, and clear goals.",
+  Acuario:     "MC in Aquarius drives innovative projects, technology, or network-based group work.",
+  Piscis:      "MC in Pisces points toward artistic, therapeutic, or spiritual vocations.",
+};
+
 // ── Angular planet interpretations ───────────────────────────────────────────
 
-const ANGULAR_PLANET: Record<string, Record<number, string>> = {
+const ANGULAR_PLANET_ES: Record<string, Record<number, string>> = {
   Sol: {
     1: "El Sol en Casa 1 del RS es extraordinariamente significativo: tu identidad y vitalidad están en primer plano todo el año.",
     4: "El Sol en Casa 4 centra el año en el hogar, la familia y las raíces. Puede haber cambios de residencia o trabajo desde casa.",
@@ -137,6 +195,63 @@ const ANGULAR_PLANET: Record<string, Record<number, string>> = {
   },
 };
 
+const ANGULAR_PLANET_EN: Record<string, Record<number, string>> = {
+  Sol: {
+    1: "The Sun in House 1 of the Solar Return is extraordinarily significant: your identity and vitality are front and center throughout the year.",
+    4: "The Sun in House 4 focuses the year on home, family, and roots. There may be changes of residence or working from home.",
+    7: "The Sun in House 7 places intimate relationships and partners at the center of the year.",
+    10: "The Sun in House 10 is one of the best indicators of professional recognition and career advancement.",
+  },
+  Luna: {
+    1: "The Moon in House 1 makes the year highly emotional and reactive. High sensitivity to the environment.",
+    4: "The Moon in House 4 deepens family and domestic life. Home as an emotional refuge.",
+    7: "The Moon in House 7 indicates very active affective relationships. Emotions are projected onto the partner.",
+    10: "The Moon in House 10 links career with the public or caring for others. Fluctuating public image.",
+  },
+  Saturno: {
+    1: "Saturn in House 1 demands maturity and self-discipline. A year for taking on important responsibilities.",
+    4: "Saturn in House 4 may bring restrictions at home or serious family responsibilities.",
+    7: "Saturn in House 7 tests relationships. Those without solid foundations consolidate or end.",
+    10: "Saturn in House 10 marks a year of hard work in the career, with tangible long-term results.",
+  },
+  Júpiter: {
+    1: "Jupiter in House 1 of the Solar Return is one of the best omens: personal expansion, optimism, and new opportunities.",
+    4: "Jupiter in House 4 brings growth in family life, a possible move to something better, or family reunion.",
+    7: "Jupiter in House 7 significantly expands relationships. Very favorable for marriage or partnership.",
+    10: "Jupiter in House 10 boosts the career with notable growth opportunities and recognition.",
+  },
+  Marte: {
+    1: "Mars in House 1 charges the year with energy, competitiveness, and potential conflict. High capacity for action.",
+    4: "Mars in House 4 may generate domestic tensions or intense activity at home and with family.",
+    7: "Mars in House 7 activates relationships, which can be passionate or conflictual depending on the context.",
+    10: "Mars in House 10 drives professional ambition and the capacity to fight for your goals.",
+  },
+  Venus: {
+    1: "Venus in House 1 beautifies the personality and the year: charm, relationships, and enjoyment are highlighted.",
+    4: "Venus in House 4 harmonizes domestic life. A good year to redecorate the home or improve cohabitation.",
+    7: "Venus in House 7 favors love, romance, and harmonious partnerships.",
+    10: "Venus in House 10 facilitates professional success through charm and diplomacy.",
+  },
+  Plutón: {
+    1: "Pluto in House 1 indicates a deep metamorphosis of identity. The year may feel intense and transformative.",
+    4: "Pluto in House 4 brings radical transformations in the home, family, or the unconscious.",
+    7: "Pluto in House 7 intensifies relationships to the maximum: they can be transformative or highly demanding.",
+    10: "Pluto in House 10 marks a deep reorientation of the career or of power in the public sphere.",
+  },
+  Urano: {
+    1: "Uranus in House 1 is disruptive on a personal level: sudden changes in identity, appearance, or lifestyle.",
+    4: "Uranus in House 4 may bring unexpected changes of residence or sudden family tensions.",
+    7: "Uranus in House 7 shakes up relationships: sudden arrivals or departures of important people.",
+    10: "Uranus in House 10 may bring unexpected changes in the career — radical shifts in direction.",
+  },
+  Neptuno: {
+    1: "Neptune in House 1 blurs the boundaries of the self. A year of high sensitivity, spirituality, and possible confusion.",
+    4: "Neptune in House 4 idealizes the home or dissolves its structures. Watch for domestic escapism.",
+    7: "Neptune in House 7 romanticizes relationships. Risk of idealization; potential for deep connection.",
+    10: "Neptune in House 10 may bring confusion in the career or an emerging spiritual/artistic vocation.",
+  },
+};
+
 // ── Aspect interpretations ────────────────────────────────────────────────────
 
 const ASPECT_NATURE: Record<string, "armonioso" | "tenso" | "neutro"> = {
@@ -150,7 +265,7 @@ const ASPECT_NATURE: Record<string, "armonioso" | "tenso" | "neutro"> = {
 
 // ── Stellium house meanings ───────────────────────────────────────────────────
 
-const HOUSE_FOCUS: Record<number, string> = {
+const HOUSE_FOCUS_ES: Record<number, string> = {
   1:  "identidad y presencia personal",
   2:  "recursos, finanzas y valores propios",
   3:  "comunicación, aprendizaje y entorno próximo",
@@ -165,20 +280,49 @@ const HOUSE_FOCUS: Record<number, string> = {
   12: "interioridad, espiritualidad y procesos ocultos",
 };
 
+const HOUSE_FOCUS_EN: Record<number, string> = {
+  1:  "identity and personal presence",
+  2:  "resources, finances, and personal values",
+  3:  "communication, learning, and immediate environment",
+  4:  "home, family, and emotional roots",
+  5:  "creativity, romance, and self-expression",
+  6:  "daily work, health, and routines",
+  7:  "intimate relationships and partnerships",
+  8:  "transformation, shared resources, and depth",
+  9:  "expansion, travel, and philosophy of life",
+  10: "career, vocation, and public recognition",
+  11: "friends, collective projects, and future goals",
+  12: "inner life, spirituality, and hidden processes",
+};
+
 // ── Main generator ────────────────────────────────────────────────────────────
 
-export function generateSolarReturnSummary(sr: ChartResponse): SolarReturnSummary {
+export function generateSolarReturnSummary(sr: ChartResponse, lang: Lang = "es"): SolarReturnSummary {
   const ascSign = sr.ascendant.sign;
   const mcSign  = sr.midheaven.sign;
 
+  const ASC_THEME  = lang === "en" ? ASC_THEME_EN  : ASC_THEME_ES;
+  const ASC_DETAIL = lang === "en" ? ASC_DETAIL_EN : ASC_DETAIL_ES;
+  const MC_DETAIL  = lang === "en" ? MC_DETAIL_EN  : MC_DETAIL_ES;
+  const ANGULAR_PLANET = lang === "en" ? ANGULAR_PLANET_EN : ANGULAR_PLANET_ES;
+  const HOUSE_FOCUS    = lang === "en" ? HOUSE_FOCUS_EN    : HOUSE_FOCUS_ES;
+
   // ── Year theme
-  const year_theme = ASC_THEME[ascSign] ?? `Año con ${ascSign} en el Ascendente`;
+  const year_theme = ASC_THEME[ascSign] ??
+    (lang === "en"
+      ? `A year with ${ascSign} on the Ascendant`
+      : `Año con ${ascSign} en el Ascendente`);
 
   // ── ASC / MC interpretations
   const asc_interpretation = ASC_DETAIL[ascSign] ??
-    `El Ascendente ${ascSign} en el Retorno Solar define el tono y la energía del año.`;
+    (lang === "en"
+      ? `${ascSign} Rising in the Solar Return defines the tone and energy of the year.`
+      : `El Ascendente ${ascSign} en el Retorno Solar define el tono y la energía del año.`);
+
   const mc_interpretation = MC_DETAIL[mcSign] ??
-    `El MC en ${mcSign} orienta la dirección profesional y pública del año.`;
+    (lang === "en"
+      ? `MC in ${mcSign} orients the professional and public direction of the year.`
+      : `El MC en ${mcSign} orienta la dirección profesional y pública del año.`);
 
   // ── Angular planets (houses 1, 4, 7, 10)
   const ANGULAR = new Set([1, 4, 7, 10]);
@@ -191,7 +335,9 @@ export function generateSolarReturnSummary(sr: ChartResponse): SolarReturnSummar
       house:  p.house,
       interpretation:
         ANGULAR_PLANET[p.name]?.[p.house] ??
-        `${p.name} en Casa ${p.house} del Retorno Solar activa este eje de vida durante el año.`,
+        (lang === "en"
+          ? `${p.name} in House ${p.house} of the Solar Return activates this life axis during the year.`
+          : `${p.name} en Casa ${p.house} del Retorno Solar activa este eje de vida durante el año.`),
     }));
 
   // ── Stelliums (3+ planets in same house)
@@ -206,7 +352,7 @@ export function generateSolarReturnSummary(sr: ChartResponse): SolarReturnSummar
       house:   Number(h),
       planets: ps.map((p) => p.name),
       symbols: ps.map((p) => p.symbol),
-      focus:   HOUSE_FOCUS[Number(h)] ?? `Casa ${h}`,
+      focus:   HOUSE_FOCUS[Number(h)] ?? (lang === "en" ? `House ${h}` : `Casa ${h}`),
     }));
 
   // ── Key aspects (tight orbs, major only)
@@ -235,44 +381,108 @@ export function generateSolarReturnSummary(sr: ChartResponse): SolarReturnSummar
   const harmonicAspects = sr.aspects.filter(
     (a) => (a.aspect_name === "Trígono" || a.aspect_name === "Sextil") && a.orb <= 3
   );
-  if (harmonicAspects.length > 3)
-    opportunities.push(`${harmonicAspects.length} trígonos y sextiles activos — flujo de energía constructiva`);
-  if (sr.planets.some((p) => p.name === "Júpiter" && ANGULAR.has(p.house)))
-    opportunities.push("Júpiter angular — expansión significativa en el área de Casa " + sr.planets.find((p) => p.name === "Júpiter")!.house);
-  if (sr.planets.some((p) => p.name === "Venus" && ANGULAR.has(p.house)))
-    opportunities.push("Venus angular — relaciones y placer destacados");
-  if (stelliums.length > 0)
-    opportunities.push(`Stellium en Casa ${stelliums[0].house} — concentración de energía en ${stelliums[0].focus}`);
-  if (dominant_element === "fuego")
-    opportunities.push("Predominio de fuego — motivación, entusiasmo y capacidad de acción elevados");
-  else if (dominant_element === "aire")
-    opportunities.push("Predominio de aire — comunicación, ideas y networking fluidos");
+  if (harmonicAspects.length > 3) {
+    opportunities.push(
+      lang === "en"
+        ? `${harmonicAspects.length} active trines and sextiles — constructive energy flow`
+        : `${harmonicAspects.length} trígonos y sextiles activos — flujo de energía constructiva`
+    );
+  }
+  if (sr.planets.some((p) => p.name === "Júpiter" && ANGULAR.has(p.house))) {
+    const jupHouse = sr.planets.find((p) => p.name === "Júpiter")!.house;
+    opportunities.push(
+      lang === "en"
+        ? `Angular Jupiter — significant expansion in the area of House ${jupHouse}`
+        : `Júpiter angular — expansión significativa en el área de Casa ${jupHouse}`
+    );
+  }
+  if (sr.planets.some((p) => p.name === "Venus" && ANGULAR.has(p.house))) {
+    opportunities.push(
+      lang === "en"
+        ? "Angular Venus — relationships and pleasure highlighted"
+        : "Venus angular — relaciones y placer destacados"
+    );
+  }
+  if (stelliums.length > 0) {
+    opportunities.push(
+      lang === "en"
+        ? `Stellium in House ${stelliums[0].house} — concentration of energy in ${stelliums[0].focus}`
+        : `Stellium en Casa ${stelliums[0].house} — concentración de energía en ${stelliums[0].focus}`
+    );
+  }
+  if (dominant_element === "fuego") {
+    opportunities.push(
+      lang === "en"
+        ? "Fire dominance — elevated motivation, enthusiasm, and capacity for action"
+        : "Predominio de fuego — motivación, entusiasmo y capacidad de acción elevados"
+    );
+  } else if (dominant_element === "aire") {
+    opportunities.push(
+      lang === "en"
+        ? "Air dominance — communication, ideas, and networking flow easily"
+        : "Predominio de aire — comunicación, ideas y networking fluidos"
+    );
+  }
 
   // ── Challenges (tense aspects + difficult angular planets)
   const challenges: string[] = [];
   const tenseAspects = sr.aspects.filter(
     (a) => (a.aspect_name === "Cuadratura" || a.aspect_name === "Oposición") && a.orb <= 2
   );
-  if (tenseAspects.length > 2)
-    challenges.push(`${tenseAspects.length} cuadraturas/oposiciones exactas — tensiones que impulsan el crecimiento`);
-  if (sr.planets.some((p) => p.name === "Saturno" && ANGULAR.has(p.house)))
-    challenges.push("Saturno angular — año de pruebas, responsabilidades y estructuración");
-  if (sr.planets.some((p) => p.name === "Plutón" && ANGULAR.has(p.house)))
-    challenges.push("Plutón angular — transformaciones intensas que no pueden evitarse");
-  if (sr.planets.some((p) => p.name === "Marte" && ANGULAR.has(p.house)))
-    challenges.push("Marte angular — energía elevada que requiere canalización consciente");
-  if (sr.planets.some((p) => p.retrograde && ANGULAR.has(p.house)))
-    challenges.push("Planeta retrógrado angular — temas del pasado resurgen para ser resueltos");
+  if (tenseAspects.length > 2) {
+    challenges.push(
+      lang === "en"
+        ? `${tenseAspects.length} exact squares/oppositions — tensions that drive growth`
+        : `${tenseAspects.length} cuadraturas/oposiciones exactas — tensiones que impulsan el crecimiento`
+    );
+  }
+  if (sr.planets.some((p) => p.name === "Saturno" && ANGULAR.has(p.house))) {
+    challenges.push(
+      lang === "en"
+        ? "Angular Saturn — a year of tests, responsibilities, and structuring"
+        : "Saturno angular — año de pruebas, responsabilidades y estructuración"
+    );
+  }
+  if (sr.planets.some((p) => p.name === "Plutón" && ANGULAR.has(p.house))) {
+    challenges.push(
+      lang === "en"
+        ? "Angular Pluto — intense transformations that cannot be avoided"
+        : "Plutón angular — transformaciones intensas que no pueden evitarse"
+    );
+  }
+  if (sr.planets.some((p) => p.name === "Marte" && ANGULAR.has(p.house))) {
+    challenges.push(
+      lang === "en"
+        ? "Angular Mars — elevated energy requiring conscious channeling"
+        : "Marte angular — energía elevada que requiere canalización consciente"
+    );
+  }
+  if (sr.planets.some((p) => p.retrograde && ANGULAR.has(p.house))) {
+    challenges.push(
+      lang === "en"
+        ? "Retrograde angular planet — past themes resurface to be resolved"
+        : "Planeta retrógrado angular — temas del pasado resurgen para ser resueltos"
+    );
+  }
 
   // ── Advice
-  const ELEMENT_ADVICE: Record<string, string> = {
+  const ELEMENT_ADVICE_ES: Record<string, string> = {
     fuego:  "Canaliza la energía de fuego en proyectos concretos. El impulso está disponible — la disciplina marcará la diferencia entre entusiasmo y resultados.",
     tierra: "La energía de tierra favorece la construcción paciente. Trabaja con los recursos disponibles y prioriza la solidez sobre la velocidad.",
     aire:   "Tu mejor herramienta este año es la mente y la palabra. Conecta, aprende y comunica — las ideas que siembres ahora tienen largo alcance.",
     agua:   "La sensibilidad es tu recurso más valioso. Confía en la intuición, honra las emociones y no descuides el cuidado propio y de quienes amas.",
   };
+  const ELEMENT_ADVICE_EN: Record<string, string> = {
+    fuego:  "Channel fire energy into concrete projects. The drive is available — discipline will make the difference between enthusiasm and results.",
+    tierra: "Earth energy favors patient building. Work with available resources and prioritize solidity over speed.",
+    aire:   "Your best tool this year is the mind and the word. Connect, learn, and communicate — the ideas you plant now have long reach.",
+    agua:   "Sensitivity is your most valuable resource. Trust your intuition, honor your emotions, and don't neglect self-care and those you love.",
+  };
+  const ELEMENT_ADVICE = lang === "en" ? ELEMENT_ADVICE_EN : ELEMENT_ADVICE_ES;
   const advice = ELEMENT_ADVICE[dominant_element] ??
-    `El Retorno Solar con ${ascSign} ascendente invita a enfocarte en lo que realmente importa este año.`;
+    (lang === "en"
+      ? `The Solar Return with ${ascSign} rising invites you to focus on what truly matters this year.`
+      : `El Retorno Solar con ${ascSign} ascendente invita a enfocarte en lo que realmente importa este año.`);
 
   return {
     year_theme,
