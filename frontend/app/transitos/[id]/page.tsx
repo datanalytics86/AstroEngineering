@@ -14,6 +14,9 @@ import { loadChart, loadYearTransits, saveYearTransits } from "@/lib/storage";
 import { ASPECT_COLORS, IMPORTANCE_COLORS } from "@/lib/zodiac-utils";
 import { generateMonthBrief, generateYearBrief } from "@/lib/brief-summary";
 import type { BriefInfluence } from "@/lib/brief-summary";
+import { generateTopicSummary } from "@/lib/topic-summary";
+import { TOPICS } from "@/lib/topics";
+import type { TopicId } from "@/lib/topics";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
@@ -21,6 +24,11 @@ import { useT } from "@/lib/i18n";
 
 const TransitZodiacWheel = dynamic(
   () => import("@/components/TransitZodiacWheel"),
+  { ssr: false }
+);
+
+const TransitTopicTimeline = dynamic(
+  () => import("@/components/TransitTopicTimeline"),
   { ssr: false }
 );
 
@@ -283,6 +291,82 @@ function YearBriefPanel({ data, year }: YearBriefPanelProps) {
   );
 }
 
+// ── Topic filter sub-components ─────────────────────────────────────────────────
+
+function OutlookBadge({ label, localizedLabel }: { label: string; localizedLabel: string }) {
+  const styles: Record<string, string> = {
+    favorable: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+    mixto:     "bg-amber-50 text-amber-700 border border-amber-200",
+    exigente:  "bg-red-50 text-red-700 border border-red-200",
+  };
+  return (
+    <span className={`text-xs font-mono px-2.5 py-1 rounded-full ${styles[label] ?? styles["mixto"]}`}>
+      {localizedLabel}
+    </span>
+  );
+}
+
+function TopicPanel({
+  data,
+  topicId,
+  year,
+}: {
+  data: TransitResponse;
+  topicId: TopicId;
+  year: number;
+}) {
+  const { t, lang } = useT();
+  const summary = generateTopicSummary(data.current_transits, topicId, year, lang);
+  const topic = TOPICS.find((tp) => tp.id === topicId);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="text-2xl" aria-hidden>{topic?.icon}</span>
+        <div>
+          <h2 className="font-semibold text-slate-900 text-lg">
+            {lang === "en" ? topic?.labelEn : topic?.labelEs}
+          </h2>
+          <p className="text-xs font-mono text-slate-400">
+            {year} · {t("topics.transit_analysis")}
+          </p>
+        </div>
+        {/* Outlook meter */}
+        <div className="ml-auto flex items-center gap-2">
+          <span className="text-xs font-mono uppercase tracking-wide text-slate-400">
+            {t("topics.outlook.label")}
+          </span>
+          <OutlookBadge label={summary.outlook} localizedLabel={summary.outlookLabel} />
+        </div>
+      </div>
+
+      {/* Bibliographic intro */}
+      <p
+        className="text-sm text-slate-600 leading-relaxed border-l-2 pl-4"
+        style={{ borderColor: topic?.color ?? "#E2E8F0" }}
+      >
+        {summary.intro}
+      </p>
+
+      {/* Timeline or empty state */}
+      {summary.isEmpty ? (
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-8 text-center space-y-2">
+          <p className="text-sm font-semibold text-slate-600">{t("topics.empty.heading")}</p>
+          <p className="text-sm text-slate-500">{summary.emptyMessage}</p>
+        </div>
+      ) : (
+        <TransitTopicTimeline
+          transits={summary.transits.map((i) => i.transit)}
+          startDate={`${year}-01-01`}
+          endDate={`${year}-12-31`}
+          lang={lang}
+        />
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function TransitosPage() {
@@ -303,6 +387,7 @@ export default function TransitosPage() {
   const [loadingYear, setLoadingYear]       = useState<number | null>(null);
   const [errorByYear, setErrorByYear]       = useState<Record<number, string>>({});
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>("");
+  const [selectedTopic, setSelectedTopic]   = useState<TopicId | null>(null);
 
   // Load chart on mount
   useEffect(() => {
@@ -466,6 +551,45 @@ export default function TransitosPage() {
         ))}
       </div>
 
+      {/* ── Topic filter chips ── */}
+      {data && (
+        <div className="mb-8">
+          <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">
+            {t("topics.filter_label")}
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-1 flex-nowrap">
+            <button
+              onClick={() => setSelectedTopic(null)}
+              className={`px-3 py-1.5 rounded-full text-sm font-mono whitespace-nowrap transition-colors shrink-0 ${
+                selectedTopic === null
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-500 hover:border-slate-400"
+              }`}
+            >
+              {t("topics.all")}
+            </button>
+            {TOPICS.map((topic) => {
+              const active = selectedTopic === topic.id;
+              return (
+                <button
+                  key={topic.id}
+                  onClick={() => setSelectedTopic(active ? null : topic.id)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-mono whitespace-nowrap transition-colors shrink-0 flex items-center gap-1.5 ${
+                    active
+                      ? "text-white shadow-sm"
+                      : "bg-white border border-slate-200 text-slate-600 hover:border-slate-400"
+                  }`}
+                  style={active ? { backgroundColor: topic.color } : {}}
+                >
+                  <span aria-hidden>{topic.icon}</span>
+                  <span>{lang === "en" ? topic.labelEn : topic.labelEs}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── Content area ── */}
       {isLoading ? (
         <Spinner label={`${t("transits.calculating")} ${selectedYear}…`} />
@@ -480,7 +604,10 @@ export default function TransitosPage() {
           </button>
         </div>
       ) : data ? (
-        selectedYear === currentYear ? (
+        selectedTopic !== null ? (
+          /* ── TOPIC FILTER VIEW (applies to both current and future years) ── */
+          <TopicPanel data={data} topicId={selectedTopic} year={selectedYear} />
+        ) : selectedYear === currentYear ? (
           /* ── CURRENT YEAR VIEW ── */
           <div className="space-y-6">
             {/* Month chips */}
