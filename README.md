@@ -1,6 +1,6 @@
 # AstroEngine Pro
 
-Aplicación web de ingeniería astrológica profesional. Calcula cartas natales con precisión astronómica real (Swiss Ephemeris), detecta aspectos entre planetas, genera pronósticos de tránsitos planetarios y retornos solares.
+Aplicación web de ingeniería astrológica profesional. Calcula cartas natales con precisión astronómica real (Swiss Ephemeris), detecta aspectos entre planetas, genera pronósticos de tránsitos planetarios y retornos solares. Incluye página de bienvenida, interfaz bilingüe ES/EN y glosario interactivo.
 
 ## Stack
 
