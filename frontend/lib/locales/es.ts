@@ -163,6 +163,19 @@ export const es = {
   "glossary.orbs.subtitle": "Tolerancia angular para considerar un aspecto activo",
   "glossary.back": "← Volver",
   "glossary.cta": "Realizar carta natal →",
+
+  // ── Tópicos (filtro por tópico en tránsitos) ──
+  "topics.filter_label": "Filtrar por tópico",
+  "topics.all": "Todos",
+  "topics.outlook.favorable": "favorable",
+  "topics.outlook.mixto": "mixto",
+  "topics.outlook.exigente": "exigente",
+  "topics.outlook.label": "Pronóstico",
+  "topics.empty.heading": "Período estable",
+  "topics.timeline.thickness": "Grosor = intensidad",
+  "topics.timeline.exact": "| = fecha exacta",
+  "topics.timeline.today": "Hoy = línea azul",
+  "topics.transit_analysis": "Análisis de tránsitos",
 } as const;
 
 export type TranslationKeys = keyof typeof es;

@@ -163,4 +163,17 @@ export const en = {
   "glossary.orbs.subtitle": "Angular tolerance for considering an aspect active",
   "glossary.back": "← Back",
   "glossary.cta": "Calculate natal chart →",
+
+  // ── Topics (topic filter in transits) ──
+  "topics.filter_label": "Filter by topic",
+  "topics.all": "All",
+  "topics.outlook.favorable": "favorable",
+  "topics.outlook.mixto": "mixed",
+  "topics.outlook.exigente": "demanding",
+  "topics.outlook.label": "Outlook",
+  "topics.empty.heading": "Stable period",
+  "topics.timeline.thickness": "Thickness = intensity",
+  "topics.timeline.exact": "| = exact date",
+  "topics.timeline.today": "Today = blue line",
+  "topics.transit_analysis": "Transit analysis",
 } as const;
