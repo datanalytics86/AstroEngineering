@@ -163,6 +163,34 @@ export const es = {
   "glossary.orbs.subtitle": "Tolerancia angular para considerar un aspecto activo",
   "glossary.back": "← Volver",
   "glossary.cta": "Realizar carta natal →",
+
+  // ── Navegación (extra) ──
+  "nav.geopolitics": "Geopolítica",
+
+  // ── Análisis Geopolítico (astrología mundial) ──
+  "geo.title": "Análisis Geopolítico",
+  "geo.subtitle": "Ciclos de planetas lentos y su eco histórico · 2026–2027",
+  "geo.disclaimer": "Astrología mundial analógica: los pronósticos son «temas probables» por recurrencia de ciclos planetarios, con bibliografía citada. Es interpretación astrológica, NO una predicción factual de hechos.",
+  "geo.mode.world": "Análisis mundial",
+  "geo.mode.natal": "Impacto en mi carta natal",
+  "geo.select_chart": "Selecciona una carta",
+  "geo.no_charts": "No tienes cartas guardadas todavía.",
+  "geo.no_charts_hint": "Crear una carta natal →",
+  "geo.calculating": "Calculando configuraciones",
+  "geo.error.generic": "Error al calcular el análisis mundial",
+  "geo.error.network": "Error de red. Revisa tu conexión e inténtalo de nuevo.",
+  "geo.error.rate_limit": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
+  "geo.retry": "Reintentar",
+  "geo.probable_themes": "Temas probables",
+  "geo.configs.title": "Configuraciones del año",
+  "geo.analogs.title": "Análogos históricos",
+  "geo.analogs.none": "Sin precedentes documentados para esta configuración en el corpus.",
+  "geo.compare": "Comparar época:",
+  "geo.wheel.caption_now": "configuración del período (cielo real)",
+  "geo.wheel.caption_era": "cielo del evento histórico",
+  "geo.natal_impacts.title": "Impacto en tu carta",
+  "geo.natal_impacts.none": "Esta configuración no forma aspectos estrechos con tus planetas natales.",
+  "geo.bibliography.title": "Bibliografía y método",
 } as const;
 
 export type TranslationKeys = keyof typeof es;

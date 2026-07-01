@@ -223,3 +223,55 @@ export type ClickTarget =
   | { type: "aspect"; aspect: Aspect }
   | { type: "house"; house: HouseCusp }
   | { type: "angle"; name: "ASC" | "DSC" | "MC" | "IC"; longitude: number; sign: string; degree_display: string }
+
+// ── Mundane (astrología mundial / geopolítica) ─────────────────────────────────
+
+export interface MundaneSkyBody {
+  name: string;
+  symbol: string;
+  longitude: number;          // 0-360, eclíptica
+  sign: string;
+  sign_symbol: string;
+  degree_in_sign: number;
+  degree_display: string;
+  retrograde: boolean;
+  speed: number;
+}
+
+export interface MundaneAnalog {
+  id: string;                 // enlaza con el corpus bilingüe (mundane-corpus.ts)
+  date: string;               // "YYYY-MM-DD"
+  region: string;
+  tags: string[];
+  sky: MundaneSkyBody[];
+}
+
+export interface NatalImpact {
+  config_id: string;
+  natal_planet: string;
+  body: string;
+  aspect: string;
+  orb: number;
+  importance: ImportanceLevel;
+}
+
+export interface MundaneConfiguration {
+  id: string;
+  exact_date: string;         // "YYYY-MM-DD"
+  kind: "aspect" | "ingress";
+  bodies: string[];
+  aspect: string | null;
+  sign: string | null;
+  longitudes: Record<string, number>;
+  signature: Record<string, unknown>;
+  sky: MundaneSkyBody[];
+  analogs: MundaneAnalog[];
+}
+
+export interface MundaneResponse {
+  start_date: string;
+  end_date: string;
+  configurations: MundaneConfiguration[];
+  probable_themes: string[];
+  natal_impacts: NatalImpact[];
+}

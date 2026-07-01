@@ -13,9 +13,13 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from astro.models import BirthData, TransitRequest, ChartResponse, TransitResponse, SolarReturnRequest
+from astro.models import (
+    BirthData, TransitRequest, ChartResponse, TransitResponse, SolarReturnRequest,
+    MundaneRequest, MundaneResponse,
+)
 from astro.chart import calculate_natal_chart, calculate_solar_return
 from astro.transits import calculate_transit_timeline
+from astro.mundane import build_mundane_forecast
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -132,3 +136,25 @@ async def get_solar_return(request: Request, body: SolarReturnRequest):
     except Exception as exc:
         logger.error("Solar return calculation error: %s", exc)
         raise HTTPException(status_code=500, detail="Error en retorno solar")
+
+
+@app.post("/api/mundane", response_model=MundaneResponse)
+@limiter.limit("5/minute")
+async def get_mundane(request: Request, body: MundaneRequest):
+    """
+    Análisis de astrología mundial (geopolítica): configuraciones de cuerpos
+    lentos (aspectos e ingresos de signo) en el rango dado, análogos históricos
+    por firma astrológica, síntesis temática e impactos sobre una carta natal
+    si se proveen natal_planets. Interpretación analógica cíclica, no predicción
+    de hechos futuros.
+    """
+    try:
+        result = build_mundane_forecast(
+            start_date_str=body.start_date,
+            end_date_str=body.end_date,
+            natal_planets=body.natal_planets or None,
+        )
+        return result
+    except Exception as exc:
+        logger.error("Mundane calculation error: %s", exc)
+        raise HTTPException(status_code=500, detail="Error en análisis mundial")

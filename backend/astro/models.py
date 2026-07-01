@@ -46,6 +46,25 @@ class TransitRequest(BaseModel):
         return self
 
 
+class MundaneRequest(BaseModel):
+    start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
+    natal_planets: list[dict] = []
+
+    @model_validator(mode="after")
+    def validate_date_range(self) -> "MundaneRequest":
+        try:
+            start = date.fromisoformat(self.start_date)
+            end   = date.fromisoformat(self.end_date)
+        except ValueError as e:
+            raise ValueError(f"Formato de fecha inválido: {e}")
+        if end <= start:
+            raise ValueError("end_date debe ser posterior a start_date")
+        if (end - start).days > 1100:
+            raise ValueError("Rango máximo de análisis mundial: ~3 años (1100 días)")
+        return self
+
+
 # ── Output Models ─────────────────────────────────────────────────────────────
 
 class PlanetPosition(BaseModel):
@@ -163,3 +182,55 @@ class SolarReturnRequest(BaseModel):
     longitude: float = Field(..., ge=-180, le=180)
     timezone_offset: float = Field(..., ge=-14, le=14)
     name: str = Field(default="", max_length=100)
+
+
+# ── Mundane (astrología mundial / geopolítica) ─────────────────────────────────
+
+class MundaneSkyBody(BaseModel):
+    name: str
+    symbol: str
+    longitude: float
+    sign: str
+    sign_symbol: str
+    degree_in_sign: float
+    degree_display: str
+    retrograde: bool
+    speed: float
+
+
+class MundaneAnalog(BaseModel):
+    id: str
+    date: str
+    region: str
+    tags: list[str]
+    sky: list[MundaneSkyBody]
+
+
+class NatalImpact(BaseModel):
+    config_id: str
+    natal_planet: str
+    body: str
+    aspect: str
+    orb: float
+    importance: str
+
+
+class MundaneConfiguration(BaseModel):
+    id: str
+    exact_date: str
+    kind: str  # "aspect" | "ingress"
+    bodies: list[str]
+    aspect: Optional[str] = None
+    sign: Optional[str] = None
+    longitudes: dict[str, float]
+    signature: dict
+    sky: list[MundaneSkyBody]
+    analogs: list[MundaneAnalog] = []
+
+
+class MundaneResponse(BaseModel):
+    start_date: str
+    end_date: str
+    configurations: list[MundaneConfiguration]
+    probable_themes: list[str]
+    natal_impacts: list[NatalImpact] = []

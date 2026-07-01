@@ -16,6 +16,7 @@ export default function NavHeader() {
         <nav className="hidden md:flex gap-6 text-sm text-slate-500">
           <a href="/" className="hover:text-blue-600 transition-colors">{t("nav.home")}</a>
           <a href="/nueva" className="hover:text-blue-600 transition-colors">{t("nav.new_chart")}</a>
+          <a href="/geopolitica" className="hover:text-blue-600 transition-colors">{t("nav.geopolitics")}</a>
           <a href="/glosario" className="hover:text-blue-600 transition-colors">{t("nav.learn")}</a>
         </nav>
         <LangToggle />
