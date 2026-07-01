@@ -23,6 +23,14 @@ type Mode = "world" | "natal";
 
 const YEARS = [2026, 2027];
 
+// Parsea "YYYY-MM-DD" como fecha LOCAL. `new Date("2026-02-20")` se interpreta como
+// medianoche UTC y, en zonas al oeste de UTC, se muestra el día anterior. Al descomponer
+// los campos evitamos el desfase de zona horaria en la fecha del evento.
+function parseLocalDate(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
+}
+
 function Spinner({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -44,7 +52,16 @@ export default function GeopoliticaPage() {
   // Natal mode
   const [charts, setCharts] = useState<SavedChartMeta[]>([]);
   const [selectedChartId, setSelectedChartId] = useState<string>("");
-  const [natalChart, setNatalChart] = useState<ChartResponse | null>(null);
+
+  // La carta natal se deriva SÍNCRONAMENTE del id seleccionado (no como estado con
+  // retraso), para que la petición y la clave de caché siempre correspondan a la
+  // misma carta y no se guarde la respuesta de una persona bajo la clave de otra.
+  const natalChart = useMemo<ChartResponse | null>(() => {
+    if (mode === "natal" && selectedChartId) {
+      return loadChart(selectedChartId)?.chart ?? null;
+    }
+    return null;
+  }, [mode, selectedChartId]);
 
   // Data
   const [cache, setCache] = useState<Record<string, MundaneResponse>>({});
@@ -56,15 +73,6 @@ export default function GeopoliticaPage() {
   useEffect(() => {
     setCharts(listCharts());
   }, []);
-
-  useEffect(() => {
-    if (mode === "natal" && selectedChartId) {
-      const c = loadChart(selectedChartId);
-      setNatalChart(c?.chart ?? null);
-    } else {
-      setNatalChart(null);
-    }
-  }, [mode, selectedChartId]);
 
   const cacheKey = useMemo(
     () => `${mode}_${year}_${mode === "natal" ? selectedChartId : "world"}`,
@@ -223,7 +231,7 @@ export default function GeopoliticaPage() {
               {configs.map((c) => {
                 const nar = getConfigNarrative(c, L);
                 let dateStr = c.exact_date;
-                try { dateStr = format(new Date(c.exact_date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
+                try { dateStr = format(parseLocalDate(c.exact_date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
                 const active = c.id === selectedConfigId;
                 return (
                   <button

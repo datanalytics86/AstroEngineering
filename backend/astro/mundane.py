@@ -186,67 +186,70 @@ def find_mundane_configurations(start_date_str: str, end_date_str: str) -> list[
         step_days = max(MUNDANE_SCAN_STEP.get(body_a, 10), MUNDANE_SCAN_STEP.get(body_b, 10))
         step = timedelta(days=step_days)
 
+        # 1) Muestrear el orbe de cada aspecto a lo largo del rango.
+        samples: dict[str, list[tuple[float, float]]] = {a: [] for a in MUNDANE_ASPECTS}  # (jd, orb)
         current = start_date
-        prev_orb_by_aspect: dict[str, float] = {}
-
         while current <= end_date:
             jd = to_julian_day(current.year, current.month, current.day, 12.0)
             pa = calc_planet_position(jd, id_a)
             pb = calc_planet_position(jd, id_b)
-            if pa is None or pb is None:
-                current += step
-                continue
-            angle = angular_distance(pa["longitude"], pb["longitude"])
-
-            for aspect_name in MUNDANE_ASPECTS:
-                aspect_angle = aspect_angle_map[aspect_name]
-                orb = abs(angle - aspect_angle)
-                prev_orb = prev_orb_by_aspect.get(aspect_name)
-                prev_orb_by_aspect[aspect_name] = orb
-
-                if orb <= MUNDANE_SCAN_ORB:
-                    # Solo registrar la pasada más cercana al mínimo local: evitamos
-                    # múltiples eventos casi idénticos durante el mismo paso de orbe.
-                    is_local_min = prev_orb is None or prev_orb >= orb
-                    if not is_local_min:
-                        continue
-
-                    exact_date = _find_exact_mundane_date(id_a, id_b, aspect_angle, jd)
-                    year = int(exact_date[:4])
-
-                    key = (body_a, body_b, aspect_name, exact_date[:7])
-                    if key in seen_aspect_keys:
-                        continue
-                    seen_aspect_keys.add(key)
-
-                    sky = compute_mundane_sky(exact_date)
-                    pa_sky = next((s for s in sky if s["name"] == body_a), None)
-                    pb_sky = next((s for s in sky if s["name"] == body_b), None)
-                    if pa_sky is None or pb_sky is None:
-                        continue
-
-                    pair_sorted = sorted([body_a, body_b])
-                    config_id = (
-                        f"{_slugify(pair_sorted[0])}_{_slugify(pair_sorted[1])}_"
-                        f"{_slugify(aspect_name)}_{year}"
-                    )
-
-                    configs.append({
-                        "id": config_id,
-                        "exact_date": exact_date,
-                        "kind": "aspect",
-                        "bodies": pair_sorted,
-                        "aspect": aspect_name,
-                        "sign": None,
-                        "longitudes": {
-                            body_a: pa_sky["longitude"],
-                            body_b: pb_sky["longitude"],
-                        },
-                        "signature": {"pair": pair_sorted, "aspect": aspect_name},
-                        "sky": sky,
-                    })
-
+            if pa is not None and pb is not None:
+                angle = angular_distance(pa["longitude"], pb["longitude"])
+                for aspect_name in MUNDANE_ASPECTS:
+                    orb = abs(angle - aspect_angle_map[aspect_name])
+                    samples[aspect_name].append((jd, orb))
             current += step
+
+        # 2) Registrar UNA sola configuración por pasada: cada mínimo local del orbe
+        #    dentro de MUNDANE_SCAN_ORB (una pasada aplicativa→separativa). La
+        #    retrogradación puede producir varias pasadas; cada una es su propio mínimo.
+        for aspect_name in MUNDANE_ASPECTS:
+            aspect_angle = aspect_angle_map[aspect_name]
+            seq = samples[aspect_name]
+            for i, (jd, orb) in enumerate(seq):
+                if orb > MUNDANE_SCAN_ORB:
+                    continue
+                prev_orb = seq[i - 1][1] if i > 0 else None
+                next_orb = seq[i + 1][1] if i < len(seq) - 1 else None
+                is_local_min = (prev_orb is None or orb <= prev_orb) and (next_orb is None or orb <= next_orb)
+                if not is_local_min:
+                    continue
+
+                exact_date = _find_exact_mundane_date(id_a, id_b, aspect_angle, jd)
+
+                # Dedupe por la fecha exacta refinada (colapsa mínimos adyacentes iguales).
+                key = (body_a, body_b, aspect_name, exact_date)
+                if key in seen_aspect_keys:
+                    continue
+                seen_aspect_keys.add(key)
+
+                sky = compute_mundane_sky(exact_date)
+                pa_sky = next((s for s in sky if s["name"] == body_a), None)
+                pb_sky = next((s for s in sky if s["name"] == body_b), None)
+                if pa_sky is None or pb_sky is None:
+                    continue
+
+                pair_sorted = sorted([body_a, body_b])
+                # El id incluye la fecha exacta → único aunque haya varias pasadas (retrógradas) el mismo año.
+                config_id = (
+                    f"{_slugify(pair_sorted[0])}_{_slugify(pair_sorted[1])}_"
+                    f"{_slugify(aspect_name)}_{exact_date.replace('-', '')}"
+                )
+
+                configs.append({
+                    "id": config_id,
+                    "exact_date": exact_date,
+                    "kind": "aspect",
+                    "bodies": pair_sorted,
+                    "aspect": aspect_name,
+                    "sign": None,
+                    "longitudes": {
+                        body_a: pa_sky["longitude"],
+                        body_b: pb_sky["longitude"],
+                    },
+                    "signature": {"pair": pair_sorted, "aspect": aspect_name},
+                    "sky": sky,
+                })
 
     # ── Ingresos de signo de cada cuerpo lento ──────────────────────────────
     for body in MUNDANE_BODIES:
@@ -268,15 +271,15 @@ def find_mundane_configurations(start_date_str: str, end_date_str: str) -> list[
                 # Cruce de signo detectado entre el paso anterior y este.
                 # Determinamos a qué signo entró usando el índice actual.
                 exact_date = _find_exact_ingress_date(pid, sign_idx, jd)
-                year = int(exact_date[:4])
                 sign_name = longitude_to_sign(sign_idx * 30)["sign"]
 
-                key = (body, sign_idx, exact_date[:7])
+                key = (body, sign_idx, exact_date)
                 if key not in seen_ingress_keys:
                     seen_ingress_keys.add(key)
 
                     sky = compute_mundane_sky(exact_date)
-                    config_id = f"{_slugify(body)}_ingreso_{_slugify(sign_name)}_{year}"
+                    # El id incluye la fecha exacta → único aunque un retrógrado recruce el mismo signo.
+                    config_id = f"{_slugify(body)}_ingreso_{_slugify(sign_name)}_{exact_date.replace('-', '')}"
 
                     configs.append({
                         "id": config_id,
