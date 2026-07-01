@@ -16,6 +16,7 @@ import {
   BIBLIOGRAPHY,
   type Lang,
 } from "@/lib/mundane-corpus";
+import { generateMundaneReading } from "@/lib/mundane-interpretation";
 
 const MundaneWheel = dynamic(() => import("@/components/MundaneWheel"), { ssr: false });
 
@@ -256,15 +257,32 @@ export default function GeopoliticaPage() {
               const nar = getConfigNarrative(selectedConfig, L);
               const showAnalog = comparedAnalog !== null;
               const wheelSky = showAnalog ? comparedAnalog!.sky : selectedConfig.sky;
+              // Fecha formateada según locale para la lectura
+              let readingDate = selectedConfig.exact_date;
+              try {
+                readingDate = format(
+                  parseLocalDate(selectedConfig.exact_date),
+                  lang === "es" ? "d 'de' MMMM yyyy" : "MMMM d, yyyy",
+                  { locale: dateLocale },
+                );
+              } catch { /* keep */ }
+              const configImpacts = data.natal_impacts.filter((i) => i.config_id === selectedConfig.id);
+              const reading = generateMundaneReading({
+                config: selectedConfig,
+                analogs: selectedConfig.analogs,
+                natalImpacts: configImpacts,
+                themes: data.probable_themes,
+                year,
+                natalMode: mode === "natal",
+                dateLabel: readingDate,
+                lang: L,
+              });
               return (
                 <div className="space-y-5">
-                  {/* Title + synthesis */}
-                  <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="font-semibold text-lg text-slate-900">{nar.title}</h2>
-                      {nar.theme && <span className="text-xs font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">{nar.theme}</span>}
-                    </div>
-                    <p className="text-sm text-slate-700 leading-relaxed">{nar.synthesis}</p>
+                  {/* Title */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h2 className="font-semibold text-lg text-slate-900">{nar.title}</h2>
+                    {nar.theme && <span className="text-xs font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">{nar.theme}</span>}
                   </div>
 
                   {/* Era compare toggle */}
@@ -288,20 +306,37 @@ export default function GeopoliticaPage() {
                     </div>
                   )}
 
-                  {/* Wheel */}
-                  <div className="space-y-2">
-                    <MundaneWheel
-                      sky={wheelSky}
-                      highlightBodies={selectedConfig.kind === "aspect" ? selectedConfig.bodies : undefined}
-                      highlightAspect={selectedConfig.aspect}
-                      highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
-                      natalPlanets={mode === "natal" && !showAnalog ? natalChart?.planets : undefined}
-                    />
-                    <p className="text-xs text-slate-400 font-mono text-center">
-                      {showAnalog
-                        ? `${getEventNarrative(comparedAnalog!.id, L).title} · ${comparedAnalog!.date} · ${t("geo.wheel.caption_era")}`
-                        : `${selectedConfig.exact_date} · ${t("geo.wheel.caption_now")}`}
-                    </p>
+                  {/* Wheel (izquierda) + Lectura (derecha) */}
+                  <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-6">
+                    <div className="space-y-2">
+                      <MundaneWheel
+                        sky={wheelSky}
+                        highlightBodies={selectedConfig.kind === "aspect" ? selectedConfig.bodies : undefined}
+                        highlightAspect={selectedConfig.aspect}
+                        highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
+                        natalPlanets={mode === "natal" && !showAnalog ? natalChart?.planets : undefined}
+                      />
+                      <p className="text-xs text-slate-400 font-mono text-center">
+                        {showAnalog
+                          ? `${getEventNarrative(comparedAnalog!.id, L).title} · ${comparedAnalog!.date} · ${t("geo.wheel.caption_era")}`
+                          : `${selectedConfig.exact_date} · ${t("geo.wheel.caption_now")}`}
+                      </p>
+                    </div>
+
+                    {/* Lectura narrativa */}
+                    <div className="mt-6 xl:mt-0">
+                      <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 xl:sticky xl:top-20">
+                        <p className="text-xs font-mono text-indigo-500 uppercase tracking-wide">{t("geo.reading.title")}</p>
+                        {reading.paragraphs.map((p, i) => (
+                          <p key={i} className="text-sm text-slate-700 leading-relaxed">{p}</p>
+                        ))}
+                        {reading.natalNote && (
+                          <p className="text-sm text-slate-900 leading-relaxed bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
+                            {reading.natalNote}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Analog details */}

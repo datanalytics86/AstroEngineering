@@ -182,6 +182,7 @@ export const en = {
   "geo.error.rate_limit": "Too many requests. Please wait a moment and try again.",
   "geo.retry": "Retry",
   "geo.probable_themes": "Probable themes",
+  "geo.reading.title": "Reading of the period",
   "geo.configs.title": "Configurations of the year",
   "geo.analogs.title": "Historical analogs",
   "geo.analogs.none": "No documented precedents for this configuration in the corpus.",
