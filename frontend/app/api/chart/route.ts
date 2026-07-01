@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
+// Cubre el cold start del backend (Render free tier, ~50s).
+export const maxDuration = 60;
+
 // Server-only: use BACKEND_URL (no NEXT_PUBLIC_ prefix) so it resolves at runtime
 const BACKEND = process.env.BACKEND_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 

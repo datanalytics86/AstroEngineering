@@ -180,6 +180,7 @@ export const es = {
   "geo.error.generic": "Error al calcular el análisis mundial",
   "geo.error.network": "Error de red. Revisa tu conexión e inténtalo de nuevo.",
   "geo.error.rate_limit": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
+  "geo.error.waking": "El servidor está despertando (puede tardar ~50s la primera vez). Reintentando…",
   "geo.retry": "Reintentar",
   "geo.probable_themes": "Temas probables",
   "geo.reading.title": "Lectura del período",

@@ -84,26 +84,47 @@ export default function GeopoliticaPage() {
     if (mode === "natal" && !natalChart) return;
     setLoading(true);
     setError("");
-    try {
-      const body: Record<string, unknown> = {
-        start_date: `${year}-01-01`,
-        end_date: `${year}-12-31`,
-      };
-      if (mode === "natal" && natalChart) body.natal_planets = natalChart.planets;
 
-      const res = await fetch("/api/mundane", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        setError(res.status === 429 ? t("geo.error.rate_limit") : `${t("geo.error.generic")} (${res.status})`);
-        return;
+    const body: Record<string, unknown> = {
+      start_date: `${year}-01-01`,
+      end_date: `${year}-12-31`,
+    };
+    if (mode === "natal" && natalChart) body.natal_planets = natalChart.planets;
+
+    // El backend (Render free tier) puede estar hibernando: la primera petición
+    // tarda en despertar. Reintentamos una vez tras un fallo de cold start (503/502
+    // o error de red) mostrando un aviso, ya que en caliente responde en ~2s.
+    try {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          const res = await fetch("/api/mundane", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (res.ok) {
+            const data: MundaneResponse = await res.json();
+            setCache((prev) => ({ ...prev, [cacheKey]: data }));
+            setError("");
+            return;
+          }
+          if ((res.status === 503 || res.status === 502) && attempt === 0) {
+            setError(t("geo.error.waking"));
+            await new Promise((r) => setTimeout(r, 5000));
+            continue;
+          }
+          setError(res.status === 429 ? t("geo.error.rate_limit") : `${t("geo.error.generic")} (${res.status})`);
+          return;
+        } catch {
+          if (attempt === 0) {
+            setError(t("geo.error.waking"));
+            await new Promise((r) => setTimeout(r, 5000));
+            continue;
+          }
+          setError(t("geo.error.network"));
+          return;
+        }
       }
-      const data: MundaneResponse = await res.json();
-      setCache((prev) => ({ ...prev, [cacheKey]: data }));
-    } catch {
-      setError(t("geo.error.network"));
     } finally {
       setLoading(false);
     }
