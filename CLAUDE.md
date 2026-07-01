@@ -13,6 +13,8 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 
 ## ESTADO ACTUAL DEL PROYECTO
 
+> 2026-07-01 — Módulo de Análisis Geopolítico (astrología mundial). Nueva ruta standalone `app/geopolitica/page.tsx` con **dos modos** (botones): **Análisis mundial** (independiente) e **Impacto en mi carta natal** (elige carta guardada). Backend: `astro/mundane.py` computa configuraciones reales de planetas lentos 2026-2027 (aspectos + ingresos de signo, con refinamiento binario), un corpus curado de ~16 eventos históricos (Constantinopla 1453, revoluciones, guerras, etc.) cuyo **cielo se computa en vivo** vía Swiss Ephemeris/Moshier, matching analógico por firma, síntesis temática e impactos natales. Endpoint `POST /api/mundane`. Frontend: `components/MundaneWheel.tsx` (rueda SVG de cielo con aspecto definitorio resaltado + anillo natal opcional), `lib/mundane-corpus.ts` (narrativa + bibliografía bilingüe con generador de respaldo). Framing **analógico con disclaimer** — interpretación, no predicción factual. Bibliografía: Cassanya (Crónica Astrológica del Siglo XX), Barbault (índice cíclico), Tarnas (Cosmos and Psyche). Verificado: conjunción Saturno–Neptuno detectada el 2026-02-20; ambos modos del endpoint 200 OK; `npm run build` pasa. i18n ES/EN completo (`geo.*`). NOTA: reintroduce astrología "mundial" (eliminada el 2026-06-17) pero con enfoque histórico-analógico distinto y ruta propia `/geopolitica`.
+
 > 2026-06-23 — Portada + nuevas rutas + glosario. `app/page.tsx` es ahora una portada de bienvenida (intro "¿qué es una carta natal?", tarjetas de planetas, botones "Realizar carta natal" → `/nueva` y "Aprende los significados" → `/glosario`). El formulario BirthDataForm y el panel "Cartas guardadas" se movieron a `app/nueva/page.tsx`. Se añadió `app/glosario/page.tsx` con glosario completo (aspectos, retrogradación, dignidades, planetas, ángulos, orbes). Navegación global con botones "Inicio / Nueva carta" (componentes `PageNav`, `NavHeader`). `storage.ts` usa caché v2 por año. Interpretaciones mensuales enriquecidas. i18n ES/EN completo para interfaz + corpus de tránsitos/retorno solar; interpretaciones natales (click en rueda) pendientes. Ver `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLOY.md` para seguridad.
 
 > 2026-06-21 — i18n bilingual completado (ES/EN). Corpus de tránsitos/retorno solar 100% bilingüe. `generateMonthBrief` y `generateYearBrief` reciben `lang`. Rueda mes/año chips y fechas clave usan locale dinámico. Mensajes de error usan `t()`. InterpretationModal: UI chrome 100% bilingüe. `transits.corpus_note` vaciado en EN.
@@ -42,6 +44,7 @@ Aplicación web de ingeniería astrológica profesional que calcula cartas natal
 | `POST /api/chart` | 20/min | Carta natal |
 | `POST /api/transits` | 5/min | Tránsitos (año actual por mes + 4 años futuros) |
 | `POST /api/solar-return` | 10/min | Retorno solar |
+| `POST /api/mundane` | 5/min | Análisis geopolítico (configuraciones mundiales + análogos históricos + impacto natal opcional) |
 
 ### Frontend — Páginas
 - [x] `app/layout.tsx` — layout principal

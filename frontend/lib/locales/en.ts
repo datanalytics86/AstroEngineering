@@ -163,4 +163,32 @@ export const en = {
   "glossary.orbs.subtitle": "Angular tolerance for considering an aspect active",
   "glossary.back": "← Back",
   "glossary.cta": "Calculate natal chart →",
+
+  // ── Navigation (extra) ──
+  "nav.geopolitics": "Geopolitics",
+
+  // ── Geopolitical Analysis (mundane astrology) ──
+  "geo.title": "Geopolitical Analysis",
+  "geo.subtitle": "Slow-planet cycles and their historical echo · 2026–2027",
+  "geo.disclaimer": "Analogical mundane astrology: forecasts are \"probable themes\" from the recurrence of planetary cycles, with cited bibliography. This is astrological interpretation, NOT a factual prediction of events.",
+  "geo.mode.world": "World analysis",
+  "geo.mode.natal": "Impact on my natal chart",
+  "geo.select_chart": "Select a chart",
+  "geo.no_charts": "You don't have any saved charts yet.",
+  "geo.no_charts_hint": "Create a natal chart →",
+  "geo.calculating": "Computing configurations",
+  "geo.error.generic": "Error computing the world analysis",
+  "geo.error.network": "Network error. Check your connection and try again.",
+  "geo.error.rate_limit": "Too many requests. Please wait a moment and try again.",
+  "geo.retry": "Retry",
+  "geo.probable_themes": "Probable themes",
+  "geo.configs.title": "Configurations of the year",
+  "geo.analogs.title": "Historical analogs",
+  "geo.analogs.none": "No documented precedents for this configuration in the corpus.",
+  "geo.compare": "Compare era:",
+  "geo.wheel.caption_now": "period configuration (real sky)",
+  "geo.wheel.caption_era": "sky of the historical event",
+  "geo.natal_impacts.title": "Impact on your chart",
+  "geo.natal_impacts.none": "This configuration forms no tight aspects with your natal planets.",
+  "geo.bibliography.title": "Bibliography & method",
 } as const;

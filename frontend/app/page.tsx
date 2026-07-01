@@ -205,6 +205,29 @@ export default function PortadaPage() {
         </div>
       </section>
 
+      {/* ── Geopolítica banner ── */}
+      <section className="max-w-4xl mx-auto px-6 py-8">
+        <div
+          onClick={() => router.push("/geopolitica")}
+          className="bg-indigo-600 rounded-2xl p-8 shadow-card-md cursor-pointer hover:bg-indigo-700 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        >
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">🌍</span>
+              <h3 className="font-semibold text-white text-lg">{t("geo.title")}</h3>
+            </div>
+            <p className="text-sm text-indigo-100 leading-relaxed max-w-xl">
+              {lang === "es"
+                ? "Astrología mundial: los grandes ciclos de planetas lentos de 2026–2027 y su eco en eventos históricos, mostrados en la rueda."
+                : "Mundane astrology: the great slow-planet cycles of 2026–2027 and their echo in historical events, shown on the wheel."}
+            </p>
+          </div>
+          <span className="text-sm font-mono text-white border border-indigo-400 rounded-lg px-4 py-2 shrink-0 hover:bg-indigo-500 transition-colors">
+            {lang === "es" ? "Explorar →" : "Explore →"}
+          </span>
+        </div>
+      </section>
+
       {/* ── Bottom CTA ── */}
       <section className="max-w-xl mx-auto px-6 py-16 text-center">
         <h2 className="text-2xl font-bold text-slate-900 mb-4">{t("landing.bottom_cta.title")}</h2>
