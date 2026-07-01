@@ -182,6 +182,7 @@ export const es = {
   "geo.error.rate_limit": "Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.",
   "geo.retry": "Reintentar",
   "geo.probable_themes": "Temas probables",
+  "geo.reading.title": "Lectura del período",
   "geo.configs.title": "Configuraciones del año",
   "geo.analogs.title": "Análogos históricos",
   "geo.analogs.none": "Sin precedentes documentados para esta configuración en el corpus.",
