@@ -11,6 +11,7 @@ import type {
   SkyPlanet,
 } from "@/lib/types";
 import { loadChart, loadYearTransits, saveYearTransits } from "@/lib/storage";
+import { postWithWakingRetry } from "@/lib/api-fetch";
 import { ASPECT_COLORS, IMPORTANCE_COLORS } from "@/lib/zodiac-utils";
 import { generateMonthBrief, generateYearBrief } from "@/lib/brief-summary";
 import type { BriefInfluence } from "@/lib/brief-summary";
@@ -323,17 +324,17 @@ export default function TransitosPage() {
         return next;
       });
       try {
-        const res = await fetch("/api/transits", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const res = await postWithWakingRetry(
+          "/api/transits",
+          {
             natal_planets: chart.planets,
             start_date:    `${year}-01-01`,
             end_date:      `${year}-12-31`,
             latitude:      birthData.latitude,
             longitude:     birthData.longitude,
-          }),
-        });
+          },
+          () => setErrorByYear((prev) => ({ ...prev, [year]: t("common.error.waking") })),
+        );
         if (!res.ok) {
           const msg =
             res.status === 429

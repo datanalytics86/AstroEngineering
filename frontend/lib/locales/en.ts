@@ -4,6 +4,9 @@ export const en = {
   "nav.new_chart": "New chart",
   "nav.learn": "Learn",
 
+  // ── Común ──
+  "common.error.waking": "The server is waking up (may take ~50s the first time). Retrying…",
+
   // ── Footer ──
   "footer.tagline": "AstroEngine Pro — Swiss Ephemeris · Precision ±0.05° · Calculations validated against astro.com",
 
@@ -192,6 +195,8 @@ export const en = {
   "geo.wheel.caption_era": "sky of the historical event",
   "geo.natal_impacts.title": "Impact on your chart",
   "geo.natal_impacts.none": "This configuration forms no tight aspects with your natal planets.",
+  "geo.natal_impacts.expand": "Read more",
+  "geo.natal_impacts.collapse": "Read less",
   "geo.bibliography.title": "Bibliography & method",
   "geo.timeline.title": "Year timeline",
   "geo.filter.majors": "Majors",

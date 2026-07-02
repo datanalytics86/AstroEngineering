@@ -1,6 +1,8 @@
 import type { NatalInterpretation, PlanetPosition, HouseCusp, Aspect, AnglePoint } from "./types";
 
-// ── PLANET ARCHETYPES ──────────────────────────────────────────────────────────
+type Lang = "es" | "en";
+
+// ── PLANET ARCHETYPES (ES) ──────────────────────────────────────────────────────
 
 const PLANET_ARCHETYPE: Record<
   string,
@@ -80,7 +82,87 @@ const PLANET_ARCHETYPE: Record<
   },
 };
 
-// ── SIGN ARCHETYPES ───────────────────────────────────────────────────────────
+// ── PLANET ARCHETYPES (EN) ──────────────────────────────────────────────────────
+
+const PLANET_ARCHETYPE_EN: Record<
+  string,
+  { function: string; gift: string; shadow: string; keywords: string[] }
+> = {
+  Sol: {
+    function: "identity and vital purpose",
+    gift: "creative vitality, conscious will",
+    shadow: "ego, rigidity, need for recognition",
+    keywords: ["identity", "will", "purpose", "vitality"],
+  },
+  Luna: {
+    function: "emotional response and needs",
+    gift: "intuition, empathy, nurturing",
+    shadow: "attachment, reactivity, dependence",
+    keywords: ["emotions", "instincts", "home", "security"],
+  },
+  Mercurio: {
+    function: "mental processing and communication",
+    gift: "agility, curiosity, clear expression",
+    shadow: "scatteredness, nervousness, superficiality",
+    keywords: ["communication", "mind", "learning", "connection"],
+  },
+  Venus: {
+    function: "creation of beauty and relationships",
+    gift: "charm, aesthetic sense, harmony",
+    shadow: "superficiality, indulgence, relational dependence",
+    keywords: ["love", "values", "beauty", "resources"],
+  },
+  Marte: {
+    function: "action, desire and assertiveness",
+    gift: "courage, determination, passion",
+    shadow: "aggression, impulsiveness, anger",
+    keywords: ["action", "desire", "energy", "conflict"],
+  },
+  Júpiter: {
+    function: "expansion, belief and growth",
+    gift: "optimism, broad vision, generosity",
+    shadow: "excess, arrogance, lack of limits",
+    keywords: ["expansion", "faith", "wisdom", "abundance"],
+  },
+  Saturno: {
+    function: "structure, limitation and mastery",
+    gift: "discipline, responsibility, lasting achievement",
+    shadow: "repression, coldness, pessimism",
+    keywords: ["discipline", "structure", "maturity", "achievement"],
+  },
+  Urano: {
+    function: "liberation, innovation and change",
+    gift: "originality, future vision, revolutionary spirit",
+    shadow: "destructive rebellion, emotional detachment",
+    keywords: ["innovation", "freedom", "technology", "change"],
+  },
+  Neptuno: {
+    function: "dissolution, dreaming and transcendence",
+    gift: "creativity, spiritual inspiration, compassion",
+    shadow: "escapism, illusion, confusion",
+    keywords: ["spirituality", "creativity", "intuition", "mystery"],
+  },
+  Plutón: {
+    function: "transformation, power and regeneration",
+    gift: "capacity to be reborn, deep healing",
+    shadow: "control, obsession, destructive power",
+    keywords: ["transformation", "power", "regeneration", "depth"],
+  },
+  "Nodo Norte": {
+    function: "evolutionary direction and karmic purpose",
+    gift: "growth toward the unknown, expansion of the soul",
+    shadow: "resistance to change, attachment to past patterns",
+    keywords: ["evolution", "purpose", "karma", "growth"],
+  },
+  Quirón: {
+    function: "primal wound and capacity for healing",
+    gift: "wisdom born of pain, guiding and healing others",
+    shadow: "victimhood, unintegrated wounds, hypersensitivity",
+    keywords: ["healing", "wound", "wisdom", "integration"],
+  },
+};
+
+// ── SIGN ARCHETYPES (ES) ─────────────────────────────────────────────────────────
 
 const SIGN_ARCHETYPE: Record<
   string,
@@ -160,7 +242,87 @@ const SIGN_ARCHETYPE: Record<
   },
 };
 
-// ── HOUSE MEANINGS ─────────────────────────────────────────────────────────────
+// ── SIGN ARCHETYPES (EN) ─────────────────────────────────────────────────────────
+
+const SIGN_ARCHETYPE_EN: Record<
+  string,
+  { element: string; modality: string; style: string; keywords: string[] }
+> = {
+  Aries: {
+    element: "Fire",
+    modality: "Cardinal",
+    style: "direct, impulsive, pioneering",
+    keywords: ["action", "initiative", "courage", "independence"],
+  },
+  Tauro: {
+    element: "Earth",
+    modality: "Fixed",
+    style: "patient, sensory, building",
+    keywords: ["stability", "beauty", "value", "sensuality"],
+  },
+  Géminis: {
+    element: "Air",
+    modality: "Mutable",
+    style: "versatile, curious, communicative",
+    keywords: ["communication", "versatility", "learning", "connection"],
+  },
+  Cáncer: {
+    element: "Water",
+    modality: "Cardinal",
+    style: "intuitive, protective, emotional",
+    keywords: ["home", "family", "protection", "intuition"],
+  },
+  Leo: {
+    element: "Fire",
+    modality: "Fixed",
+    style: "radiant, expressive, generous",
+    keywords: ["creativity", "leadership", "self-expression", "drama"],
+  },
+  Virgo: {
+    element: "Earth",
+    modality: "Mutable",
+    style: "analytical, precise, service-oriented",
+    keywords: ["analysis", "service", "precision", "health"],
+  },
+  Libra: {
+    element: "Air",
+    modality: "Cardinal",
+    style: "diplomatic, refined, peace-seeking",
+    keywords: ["harmony", "justice", "beauty", "relationships"],
+  },
+  Escorpio: {
+    element: "Water",
+    modality: "Fixed",
+    style: "deep, intense, penetrating",
+    keywords: ["transformation", "depth", "power", "secrets"],
+  },
+  Sagitario: {
+    element: "Fire",
+    modality: "Mutable",
+    style: "expansive, philosophical, adventurous",
+    keywords: ["philosophy", "freedom", "wisdom", "expansion"],
+  },
+  Capricornio: {
+    element: "Earth",
+    modality: "Cardinal",
+    style: "disciplined, ambitious, responsible",
+    keywords: ["discipline", "ambition", "structure", "achievement"],
+  },
+  Acuario: {
+    element: "Air",
+    modality: "Fixed",
+    style: "innovative, independent, humanitarian",
+    keywords: ["innovation", "freedom", "humanity", "future"],
+  },
+  Piscis: {
+    element: "Water",
+    modality: "Mutable",
+    style: "intuitive, compassionate, mystical",
+    keywords: ["spirituality", "compassion", "creativity", "transcendence"],
+  },
+};
+
+// ── HOUSE MEANINGS (ES) ───────────────────────────────────────────────────────────
 
 const HOUSE_ARCHETYPES: Record<number, { name: string; domain: string; keywords: string[] }> = {
   1: {
@@ -225,7 +387,72 @@ const HOUSE_ARCHETYPES: Record<number, { name: string; domain: string; keywords:
   },
 };
 
-// ── KEYPHRASES ────────────────────────────────────────────────────────────────
+// ── HOUSE MEANINGS (EN) ───────────────────────────────────────────────────────────
+
+const HOUSE_ARCHETYPES_EN: Record<number, { name: string; domain: string; keywords: string[] }> = {
+  1: {
+    name: "House of Self",
+    domain: "personality, physical appearance, attitude toward life",
+    keywords: ["identity", "body", "appearance", "beginnings"],
+  },
+  2: {
+    name: "House of Resources",
+    domain: "money, material and personal values",
+    keywords: ["resources", "values", "money", "self-worth"],
+  },
+  3: {
+    name: "House of the Mind",
+    domain: "communication, learning, immediate environment",
+    keywords: ["communication", "learning", "siblings", "neighborhood"],
+  },
+  4: {
+    name: "House of Roots",
+    domain: "home, family, private life, roots",
+    keywords: ["home", "family", "roots", "childhood"],
+  },
+  5: {
+    name: "House of Creation",
+    domain: "creativity, romance, personal expression",
+    keywords: ["creativity", "romance", "expression", "joy"],
+  },
+  6: {
+    name: "House of Service",
+    domain: "work, health, daily routine",
+    keywords: ["work", "health", "service", "skills"],
+  },
+  7: {
+    name: "House of the Other",
+    domain: "significant relationships, partnerships",
+    keywords: ["partner", "partnerships", "projection", "balance"],
+  },
+  8: {
+    name: "House of Transformation",
+    domain: "crisis, sexuality, shared resources, death/rebirth",
+    keywords: ["transformation", "power", "sexuality", "inheritance"],
+  },
+  9: {
+    name: "House of the Horizon",
+    domain: "philosophy, travel, higher education",
+    keywords: ["philosophy", "travel", "education", "wisdom"],
+  },
+  10: {
+    name: "House of Vocation",
+    domain: "career, reputation, public image",
+    keywords: ["career", "reputation", "vocation", "authority"],
+  },
+  11: {
+    name: "House of the Tribe",
+    domain: "community, friendships, future vision",
+    keywords: ["friends", "community", "ideals", "future"],
+  },
+  12: {
+    name: "House of the Soul",
+    domain: "inner world, spirituality, the hidden",
+    keywords: ["spirituality", "unconscious", "solitude", "transcendence"],
+  },
+};
+
+// ── KEYPHRASES (ES) ───────────────────────────────────────────────────────────────
 
 const KEYPHRASES = {
   Sol_Aries: "El fuego de ser pionero quema en tu corazón",
@@ -246,9 +473,59 @@ const KEYPHRASES = {
 
 type KeyphraseKey = keyof typeof KEYPHRASES;
 
+// ── KEYPHRASES (EN) ───────────────────────────────────────────────────────────────
+
+const KEYPHRASES_EN: Record<KeyphraseKey, string> = {
+  Sol_Aries: "The fire of being a pioneer burns in your heart",
+  Sol_Tauro: "Your identity is a temple of beauty and worth",
+  Sol_Géminis: "Your true self is an endless messenger",
+  Sol_Cáncer: "Your light shines in caring for the home",
+  Sol_Leo: "Your creation is your signature on the world",
+  Sol_Virgo: "Your perfection lies in serving with precision",
+  Sol_Libra: "Your balance is your greatest strength",
+  Sol_Escorpio: "Your depth is your transformative power",
+  Sol_Sagitario: "Your truth is your freedom",
+  Sol_Capricornio: "Your discipline is your legacy",
+  Sol_Acuario: "Your future vision illuminates others",
+  Sol_Piscis: "Your spirit transcends all limits",
+  Luna_Cáncer: "Your emotional world is your safe home",
+  Luna_Piscis: "Your intuition is your spiritual compass",
+};
+
 // ── GENERATOR FUNCTIONS ────────────────────────────────────────────────────────
 
-function generatePlanetInSign(planet: string, sign: string): NatalInterpretation | null {
+function generatePlanetInSign(planet: string, sign: string, lang: Lang = "es"): NatalInterpretation | null {
+  if (lang === "en") {
+    const p = PLANET_ARCHETYPE_EN[planet];
+    const s = SIGN_ARCHETYPE_EN[sign];
+    if (!p || !s) return null;
+
+    const keywords = [...p.keywords.slice(0, 2), ...s.keywords.slice(0, 2)];
+    const keyphraseKey = `${planet}_${sign}` as KeyphraseKey;
+    const keyphrase =
+      KEYPHRASES_EN[keyphraseKey] ||
+      `${planet} in ${sign}: your ${p.function} expresses itself in a ${s.style.toLowerCase()} way`;
+
+    return {
+      title: `${planet} in ${sign}`,
+      subtitle: `${s.element} ${s.modality}`,
+      principal: `${planet} represents ${p.function}. In ${sign}, this energy takes on a ${s.style.toLowerCase()} style. You express your ${p.function} in a way characteristic of ${sign}: ${s.keywords.join(", ")}.`,
+      strengths: [
+        `Capacity for ${s.keywords[0]} thanks to your ${p.gift}`,
+        `${s.style.charAt(0).toUpperCase() + s.style.slice(1).toLowerCase()} expression of your ${p.function}`,
+        `Integration of ${s.element} with your ${p.function}`,
+      ],
+      challenges: [
+        `Tendency toward ${p.shadow.split(",")[0]} expressed in a ${s.style.toLowerCase()} way`,
+        `Can become ${s.modality === "Fixed" ? "obsessive" : "scattered"} around themes of ${p.keywords[0]}`,
+        `Need to learn balance regarding ${s.keywords[1]}`,
+      ],
+      growth: `Your growth lies in recognizing that your ${p.function} carries both strengths and shadows. Consciously integrate ${s.element} with your deeper purpose. Seek to express your ${p.gift} responsibly.`,
+      keywords,
+      keyphrase,
+    };
+  }
+
   const p = PLANET_ARCHETYPE[planet];
   const s = SIGN_ARCHETYPE[sign];
   if (!p || !s) return null;
@@ -279,7 +556,32 @@ function generatePlanetInSign(planet: string, sign: string): NatalInterpretation
   };
 }
 
-function generatePlanetInHouse(planet: string, house: number): NatalInterpretation {
+function generatePlanetInHouse(planet: string, house: number, lang: Lang = "es"): NatalInterpretation {
+  if (lang === "en") {
+    const p = PLANET_ARCHETYPE_EN[planet];
+    const h = HOUSE_ARCHETYPES_EN[house];
+    if (!p || !h) throw new Error(`Missing EN archetype for ${planet} in house ${house}`);
+
+    return {
+      title: `${planet} in House ${house}`,
+      subtitle: h.name,
+      principal: `${planet} (your ${p.function}) operates in the ${h.name}, the life area of ${h.domain}. Your ${p.function} unfolds mainly in the context of ${h.keywords[0]}.`,
+      strengths: [
+        `Talent for ${h.keywords[0]} thanks to your ${p.function}`,
+        `Natural capacity around themes of ${h.keywords[1]}`,
+        `Your ${p.gift} is especially useful in house ${house}`,
+      ],
+      challenges: [
+        `Possible excessive focus on themes of ${h.domain}`,
+        `Can manifest as ${p.shadow.split(",")[0]} in this area`,
+        `Need to expand beyond house ${house}`,
+      ],
+      growth: `Your soul lesson in this life includes learning to express your ${p.function} in a balanced way in the area of ${h.domain}. Use your ${p.gift} to contribute consciously to these themes.`,
+      keywords: [...p.keywords.slice(0, 2), ...h.keywords.slice(0, 2)],
+      keyphrase: `Your ${p.function} transforms the world of ${h.domain}`,
+    };
+  }
+
   const p = PLANET_ARCHETYPE[planet];
   const h = HOUSE_ARCHETYPES[house];
   if (!p || !h) throw new Error(`Missing archetype for ${planet} in house ${house}`);
@@ -304,48 +606,101 @@ function generatePlanetInHouse(planet: string, house: number): NatalInterpretati
   };
 }
 
+const ASPECT_INFO: Record<string, { nature: string; dynamic: string; phrase: string }> = {
+  Conjunción: {
+    nature: "transformador",
+    dynamic: "fusión e intensificación de energías",
+    phrase: "se unen en ti",
+  },
+  Oposición: {
+    nature: "desafiante",
+    dynamic: "polarización que exige integración",
+    phrase: "crean tensión creativa",
+  },
+  Cuadratura: {
+    nature: "desafiante",
+    dynamic: "fricción que genera crecimiento",
+    phrase: "se friccionan productivamente",
+  },
+  Trígono: {
+    nature: "constructivo",
+    dynamic: "fluidez y facilidad",
+    phrase: "fluyen en armonía",
+  },
+  Sextil: {
+    nature: "constructivo",
+    dynamic: "apoyo sutil y oportunidades",
+    phrase: "se apoyan mutuamente",
+  },
+};
+
+const ASPECT_INFO_EN: Record<string, { nature: string; dynamic: string; phrase: string }> = {
+  Conjunción: {
+    nature: "transformative",
+    dynamic: "fusion and intensification of energies",
+    phrase: "merge within you",
+  },
+  Oposición: {
+    nature: "challenging",
+    dynamic: "polarization that demands integration",
+    phrase: "create creative tension",
+  },
+  Cuadratura: {
+    nature: "challenging",
+    dynamic: "friction that generates growth",
+    phrase: "grind against each other productively",
+  },
+  Trígono: {
+    nature: "constructive",
+    dynamic: "fluidity and ease",
+    phrase: "flow in harmony",
+  },
+  Sextil: {
+    nature: "constructive",
+    dynamic: "subtle support and opportunities",
+    phrase: "support each other",
+  },
+};
+
 function generateAspect(
   planet1: string,
   aspectName: string,
   planet2: string,
-  orb?: number
+  orb?: number,
+  lang: Lang = "es"
 ): NatalInterpretation {
+  if (lang === "en") {
+    const p1 = PLANET_ARCHETYPE_EN[planet1];
+    const p2 = PLANET_ARCHETYPE_EN[planet2];
+    if (!p1 || !p2) throw new Error(`Missing EN archetype for ${planet1} or ${planet2}`);
+
+    const aspect = ASPECT_INFO_EN[aspectName] || ASPECT_INFO_EN.Conjunción;
+
+    return {
+      title: `${planet1} ${aspectName} ${planet2}`,
+      subtitle: aspectName,
+      principal: `Your ${p1.function} and your ${p2.function} ${aspect.phrase} in your psyche. This is a relationship of ${aspect.dynamic}. This aspect means these two inner functions must learn to coexist.`,
+      strengths: [
+        `Potential to integrate ${p1.function} and ${p2.function}`,
+        `Your ${aspect.nature === "constructive" ? p1.gift : "unique character"} is enhanced`,
+        `Capacity to turn this aspect into growth`,
+      ],
+      challenges: [
+        `${aspect.nature === "challenging" ? "Natural tension between" : "Need to activate"} ${p1.function} and ${p2.function}`,
+        `Possible ${p1.shadow.split(",")[0]} if you ignore ${p2.function}`,
+        `Requires awareness to avoid projecting outward`,
+      ],
+      growth: `Integrate these two forces by recognizing that both are valid. Your lesson is to learn that ${p1.function} and ${p2.function} are not enemies but companions in your evolution.`,
+      keywords: [...p1.keywords.slice(0, 2), ...p2.keywords.slice(0, 2)],
+      keyphrase: `The dance between ${planet1} and ${planet2} is your mastery`,
+    };
+  }
+
   const p1 = PLANET_ARCHETYPE[planet1];
   const p2 = PLANET_ARCHETYPE[planet2];
   if (!p1 || !p2) throw new Error(`Missing archetype for ${planet1} or ${planet2}`);
 
-  const aspectInfo: Record<
-    string,
-    { nature: string; dynamic: string; phrase: string }
-  > = {
-    Conjunción: {
-      nature: "transformador",
-      dynamic: "fusión e intensificación de energías",
-      phrase: "se unen en ti",
-    },
-    Oposición: {
-      nature: "desafiante",
-      dynamic: "polarización que exige integración",
-      phrase: "crean tensión creativa",
-    },
-    Cuadratura: {
-      nature: "desafiante",
-      dynamic: "fricción que genera crecimiento",
-      phrase: "se friccionan productivamente",
-    },
-    Trígono: {
-      nature: "constructivo",
-      dynamic: "fluidez y facilidad",
-      phrase: "fluyen en armonía",
-    },
-    Sextil: {
-      nature: "constructivo",
-      dynamic: "apoyo sutil y oportunidades",
-      phrase: "se apoyan mutuamente",
-    },
-  };
-
-  const aspect = aspectInfo[aspectName] || aspectInfo.Conjunción;
+  const aspect = ASPECT_INFO[aspectName] || ASPECT_INFO.Conjunción;
 
   return {
     title: `${planet1} ${aspectName} ${planet2}`,
@@ -369,24 +724,57 @@ function generateAspect(
 
 // ── LOOKUP FUNCTIONS ───────────────────────────────────────────────────────────
 
-export function getPlanetInSignInterpretation(planet: string, sign: string): NatalInterpretation | null {
-  return generatePlanetInSign(planet, sign);
+export function getPlanetInSignInterpretation(
+  planet: string,
+  sign: string,
+  lang: Lang = "es"
+): NatalInterpretation | null {
+  return generatePlanetInSign(planet, sign, lang);
 }
 
-export function getPlanetInHouseInterpretation(planet: string, house: number): NatalInterpretation {
-  return generatePlanetInHouse(planet, house);
+export function getPlanetInHouseInterpretation(
+  planet: string,
+  house: number,
+  lang: Lang = "es"
+): NatalInterpretation {
+  return generatePlanetInHouse(planet, house, lang);
 }
 
 export function getAspectInterpretation(
   planet1: string,
   aspectName: string,
   planet2: string,
-  orb?: number
+  orb?: number,
+  lang: Lang = "es"
 ): NatalInterpretation {
-  return generateAspect(planet1, aspectName, planet2, orb);
+  return generateAspect(planet1, aspectName, planet2, orb, lang);
 }
 
-export function getHouseMeaning(house: number): NatalInterpretation {
+export function getHouseMeaning(house: number, lang: Lang = "es"): NatalInterpretation {
+  if (lang === "en") {
+    const h = HOUSE_ARCHETYPES_EN[house];
+    if (!h) throw new Error(`House ${house} not found`);
+
+    return {
+      title: `House ${house}: ${h.name}`,
+      subtitle: "Meaning",
+      principal: `House ${house} is the area of your life related to ${h.domain}. This house shows where and how you express your energies in day-to-day experience.`,
+      strengths: [
+        `Opportunity to grow in ${h.keywords[0]}`,
+        `Life areas where you have conscious control`,
+        `Space to express your authenticity`,
+      ],
+      challenges: [
+        `Can be an area of karmic testing`,
+        `Themes that require attention and development`,
+        `Places where you learn important lessons`,
+      ],
+      growth: `House ${house} invites you to develop mastery in ${h.domain}. It is an area where you can meaningfully contribute to your own evolution and that of others.`,
+      keywords: h.keywords,
+      keyphrase: `In house ${house}, your ${h.keywords[0]} flourishes`,
+    };
+  }
+
   const h = HOUSE_ARCHETYPES[house];
   if (!h) throw new Error(`House ${house} not found`);
 
@@ -410,30 +798,75 @@ export function getHouseMeaning(house: number): NatalInterpretation {
   };
 }
 
-export function getAngleMeaning(angleName: string, sign: string): NatalInterpretation {
+const ANGLE_DESCRIPTIONS: Record<string, { role: string; phrase: string }> = {
+  ASC: {
+    role: "la máscara que presentas al mundo",
+    phrase: "cómo te ven los demás y cómo ves la vida",
+  },
+  DSC: {
+    role: "lo que atraes en relaciones",
+    phrase: "el espejo en el que ves tu sombra",
+  },
+  MC: {
+    role: "tu vocación y imagen pública",
+    phrase: "tu contribución al mundo",
+  },
+  IC: {
+    role: "tus raíces y privacidad",
+    phrase: "tu hogar emocional y base psicológica",
+  },
+};
+
+const ANGLE_DESCRIPTIONS_EN: Record<string, { role: string; phrase: string }> = {
+  ASC: {
+    role: "the mask you present to the world",
+    phrase: "how others see you and how you see life",
+  },
+  DSC: {
+    role: "what you attract in relationships",
+    phrase: "the mirror in which you see your shadow",
+  },
+  MC: {
+    role: "your vocation and public image",
+    phrase: "your contribution to the world",
+  },
+  IC: {
+    role: "your roots and privacy",
+    phrase: "your emotional home and psychological foundation",
+  },
+};
+
+export function getAngleMeaning(angleName: string, sign: string, lang: Lang = "es"): NatalInterpretation {
+  if (lang === "en") {
+    const s = SIGN_ARCHETYPE_EN[sign];
+    if (!s) throw new Error(`Sign ${sign} not found`);
+
+    const desc = ANGLE_DESCRIPTIONS_EN[angleName] || ANGLE_DESCRIPTIONS_EN.ASC;
+
+    return {
+      title: `${angleName} in ${sign}`,
+      subtitle: "Angle",
+      principal: `Your ${angleName} in ${sign} represents ${desc.role}. In ${sign}, you express this in a ${s.style.toLowerCase()} way, with emphasis on ${s.keywords.join(", ")}.`,
+      strengths: [
+        `Natural ease expressing ${s.keywords[0]}`,
+        `Ability to embody ${s.element}`,
+        `Authenticity in how you present yourself to the world`,
+      ],
+      challenges: [
+        `Tendency to overplay aspects of ${sign}`,
+        `Can seem ${s.modality === "Fixed" ? "inflexible" : "inconsistent"}`,
+        `Shadow-integration work for ${sign}`,
+      ],
+      growth: `Your ${angleName} invites you to develop the gifts of ${sign} while integrating its shadows. Remember that ${desc.phrase}.`,
+      keywords: s.keywords,
+      keyphrase: `Your ${angleName} is your cosmic signature in ${sign}`,
+    };
+  }
+
   const s = SIGN_ARCHETYPE[sign];
   if (!s) throw new Error(`Sign ${sign} not found`);
 
-  const angleDescriptions: Record<string, { role: string; phrase: string }> = {
-    ASC: {
-      role: "la máscara que presentas al mundo",
-      phrase: "cómo te ven los demás y cómo ves la vida",
-    },
-    DSC: {
-      role: "lo que atraes en relaciones",
-      phrase: "el espejo en el que ves tu sombra",
-    },
-    MC: {
-      role: "tu vocación y imagen pública",
-      phrase: "tu contribución al mundo",
-    },
-    IC: {
-      role: "tus raíces y privacidad",
-      phrase: "tu hogar emocional y base psicológica",
-    },
-  };
-
-  const desc = angleDescriptions[angleName] || angleDescriptions.ASC;
+  const desc = ANGLE_DESCRIPTIONS[angleName] || ANGLE_DESCRIPTIONS.ASC;
 
   return {
     title: `${angleName} en ${sign}`,

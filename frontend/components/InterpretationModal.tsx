@@ -37,21 +37,22 @@ const NATURE_COLORS: Record<string, string> = {
   menor: "#A78BFA",
 };
 
-function getInterpretation(target: ClickTarget): NatalInterpretation | null {
+function getInterpretation(target: ClickTarget, lang: "es" | "en"): NatalInterpretation | null {
   switch (target.type) {
     case "planet":
-      return getPlanetInSignInterpretation(target.planet.name, target.planet.sign);
+      return getPlanetInSignInterpretation(target.planet.name, target.planet.sign, lang);
     case "aspect":
       return getAspectInterpretation(
         target.aspect.planet1,
         target.aspect.aspect_name,
         target.aspect.planet2,
         target.aspect.orb,
+        lang,
       );
     case "house":
-      return getHouseMeaning(target.house.number);
+      return getHouseMeaning(target.house.number, lang);
     case "angle":
-      return getAngleMeaning(target.name, target.sign);
+      return getAngleMeaning(target.name, target.sign, lang);
     default:
       return null;
   }
@@ -146,7 +147,7 @@ function AspectPills({ aspects, planetName }: { aspects: Aspect[]; planetName: s
 export default function InterpretationModal({ target, allAspects = [], onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
-  const { t } = useT();
+  const { t, lang } = useT();
 
   useEffect(() => {
     if (target) {
@@ -173,7 +174,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
 
   if (!target) return null;
 
-  const interp = getInterpretation(target);
+  const interp = getInterpretation(target, lang);
   const { icon, main, sub } = getTitle(target, t);
 
   const copyText = interp
@@ -323,7 +324,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
                     {t("modal.in_house")} {target.planet.house}
                   </h3>
                   <p className="text-sm text-slate-500 leading-relaxed">
-                    {getPlanetInHouseInterpretation(target.planet.name, target.planet.house).principal}
+                    {getPlanetInHouseInterpretation(target.planet.name, target.planet.house, lang).principal}
                   </p>
                 </section>
               )}

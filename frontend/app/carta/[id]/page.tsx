@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import type { ChartResponse, BirthData, ClickTarget } from "@/lib/types";
 import { loadChart, saveYearTransits, saveSolarReturn } from "@/lib/storage";
+import { postWithWakingRetry } from "@/lib/api-fetch";
 import ChartWheel from "@/components/ChartWheel";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
@@ -51,15 +52,14 @@ export default function CartaPage() {
     };
 
     try {
-      const res = await fetch("/api/transits", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(req),
-      });
+      const res = await postWithWakingRetry("/api/transits", req, () =>
+        setTransitError(t("common.error.waking")),
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: "Error al calcular tránsitos" }));
         throw new Error(err.detail ?? `HTTP ${res.status}`);
       }
+      setTransitError(null);
       const data = await res.json();
       saveYearTransits(id, year, data);
       router.push(`/transitos/${id}`);
@@ -78,22 +78,23 @@ export default function CartaPage() {
     if (!sunPlanet) { setLoadingSR(false); return; }
     try {
       const year = new Date().getFullYear();
-      const res = await fetch("/api/solar-return", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const res = await postWithWakingRetry(
+        "/api/solar-return",
+        {
           natal_sun_longitude: sunPlanet.longitude,
           year,
           latitude: birthData.latitude,
           longitude: birthData.longitude,
           timezone_offset: birthData.timezone_offset,
           name: `Retorno Solar ${year} — ${chart.name}`,
-        }),
-      });
+        },
+        () => setSrError(t("common.error.waking")),
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: "Error" }));
         throw new Error(err.detail ?? `HTTP ${res.status}`);
       }
+      setSrError(null);
       const srChart = await res.json();
       saveSolarReturn(id, srChart);
       router.push(`/retorno/${id}`);

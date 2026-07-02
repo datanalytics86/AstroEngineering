@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -16,7 +16,8 @@ import {
   BIBLIOGRAPHY,
   type Lang,
 } from "@/lib/mundane-corpus";
-import { generateMundaneReading } from "@/lib/mundane-interpretation";
+import { generateMundaneReading, buildImpactInterpretationKey } from "@/lib/mundane-interpretation";
+import { getInterpretation } from "@/lib/interpretation-engine";
 import { ASPECT_SYMBOL, ASPECT_LINE_COLOR, INGRESS_COLOR } from "@/components/MundaneWheel";
 import { SIGN_NAMES, SIGN_SYMBOLS } from "@/lib/wheel-geometry";
 
@@ -85,18 +86,37 @@ function Spinner({ label }: { label: string }) {
   );
 }
 
+// useSearchParams exige un límite de <Suspense> en el build estático de Next;
+// el default export solo envuelve el contenido real.
 export default function GeopoliticaPage() {
+  return (
+    <Suspense fallback={null}>
+      <GeopoliticaContent />
+    </Suspense>
+  );
+}
+
+function GeopoliticaContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t, lang } = useT();
   const L = lang as Lang;
   const dateLocale = lang === "en" ? enUS : es;
 
-  const [mode, setMode] = useState<Mode>("world");
-  const [year, setYear] = useState<number>(2026);
+  // Deep-links: ?year=&mode=&chart=&config= — el estado inicial se lee de la
+  // URL para que una configuración concreta sea compartible por enlace.
+  const [mode, setMode] = useState<Mode>(() =>
+    searchParams.get("mode") === "natal" ? "natal" : "world",
+  );
+  const [year, setYear] = useState<number>(() => {
+    const y = Number(searchParams.get("year"));
+    return YEARS.includes(y) ? y : YEARS[0];
+  });
+  const pendingConfigRef = useRef<string | null>(searchParams.get("config"));
 
   // Natal mode
   const [charts, setCharts] = useState<SavedChartMeta[]>([]);
-  const [selectedChartId, setSelectedChartId] = useState<string>("");
+  const [selectedChartId, setSelectedChartId] = useState<string>(() => searchParams.get("chart") ?? "");
 
   // La carta natal se deriva SÍNCRONAMENTE del id seleccionado (no como estado con
   // retraso), para que la petición y la clave de caché siempre correspondan a la
@@ -209,6 +229,17 @@ export default function GeopoliticaPage() {
   // Default selected config = first con análogos dentro del filtro activo, si no el primero
   useEffect(() => {
     if (!data) return;
+    // Deep-link: si la URL traía ?config= y existe en los datos, priorízala
+    // (y amplía el filtro si el filtro por defecto la ocultaría).
+    const pending = pendingConfigRef.current;
+    if (pending && configs.some((c) => c.id === pending)) {
+      pendingConfigRef.current = null;
+      setSelectedConfigId(pending);
+      if (!filteredConfigs.some((c) => c.id === pending)) setFilterMode("all");
+      setCompareEra(null);
+      setCompareMode("era");
+      return;
+    }
     setSelectedConfigId((prev) => {
       if (prev && filteredConfigs.some((c) => c.id === prev)) return prev;
       const withAnalog = filteredConfigs.find((c) => c.analogs.length > 0);
@@ -218,6 +249,31 @@ export default function GeopoliticaPage() {
     setCompareMode("era");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, filterMode]);
+
+  // Mantiene la URL sincronizada (replace, sin recargar) para compartir enlaces.
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("year", String(year));
+    if (mode === "natal") {
+      params.set("mode", "natal");
+      if (selectedChartId) params.set("chart", selectedChartId);
+    }
+    if (selectedConfigId) params.set("config", selectedConfigId);
+    router.replace(`/geopolitica?${params.toString()}`, { scroll: false });
+  }, [year, mode, selectedChartId, selectedConfigId, router]);
+
+  // Meses del índice cíclico que contienen configuraciones mayores → marcadores
+  // clicables sobre la línea del índice (ata la gráfica de Barbault al timeline).
+  const indexMarkers = useMemo(() => {
+    const map: Record<string, { id: string; title: string }[]> = {};
+    for (const c of configs) {
+      const isMajor = c.kind === "ingress" || (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect));
+      if (!isMajor) continue;
+      const m = c.exact_date.slice(0, 7);
+      (map[m] ??= []).push({ id: c.id, title: getConfigNarrative(c, L).title });
+    }
+    return map;
+  }, [configs, L]);
 
   const selectedConfig: MundaneConfiguration | null =
     configs.find((c) => c.id === selectedConfigId) ?? null;
@@ -318,7 +374,18 @@ export default function GeopoliticaPage() {
           )}
 
           {/* Cyclic index (Barbault) */}
-          {data.cyclic_index.length > 0 && <CyclicIndexChart data={data.cyclic_index} lang={L} />}
+          {data.cyclic_index.length > 0 && (
+            <CyclicIndexChart
+              data={data.cyclic_index}
+              lang={L}
+              markers={indexMarkers}
+              onSelectConfig={(id) => {
+                setSelectedConfigId(id);
+                setCompareEra(null);
+                if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
+              }}
+            />
+          )}
 
           {/* Filter chips */}
           <div className="flex flex-wrap gap-2 items-center">
@@ -574,11 +641,7 @@ export default function GeopoliticaPage() {
                         ) : (
                           <div className="space-y-1.5">
                             {impacts.map((im, i) => (
-                              <div key={i} className="flex items-center gap-2 text-sm font-mono text-slate-700">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                                <span>{im.body} {im.aspect} {im.natal_planet} natal</span>
-                                <span className="ml-auto text-xs text-slate-400 uppercase">{im.importance}</span>
-                              </div>
+                              <NatalImpactRow key={i} impact={im} lang={L} />
                             ))}
                           </div>
                         )}
@@ -601,6 +664,57 @@ export default function GeopoliticaPage() {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// ── Fila de impacto natal con interpretación reutilizada del motor existente ──
+// Construye "{cuerpo}_{aspecto}_{planeta natal}" y busca en interpretation-engine.ts
+// (las ~270 interpretaciones ya escritas para tránsitos natales normales). Si no
+// existe la clave, la fila se degrada silenciosamente al formato simple anterior.
+function NatalImpactRow({ impact, lang }: { impact: import("@/lib/types").NatalImpact; lang: Lang }) {
+  const { t } = useT();
+  const [expanded, setExpanded] = useState(false);
+  const interp = useMemo(() => getInterpretation(buildImpactInterpretationKey(impact), lang), [impact, lang]);
+
+  return (
+    <div className="border-b border-slate-100 last:border-0 pb-1.5 last:pb-0">
+      <button
+        type="button"
+        onClick={() => interp && setExpanded((v) => !v)}
+        className={`w-full flex items-center gap-2 text-sm font-mono text-slate-700 text-left ${interp ? "cursor-pointer" : "cursor-default"}`}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+        <span>{impact.body} {impact.aspect} {impact.natal_planet} natal</span>
+        <span className="ml-auto text-xs text-slate-400 uppercase">{impact.importance}</span>
+      </button>
+      {interp && (
+        <p className="text-xs text-slate-500 leading-relaxed pl-3.5 mt-0.5">
+          {interp.summary}
+          {expanded ? null : (
+            <button
+              type="button"
+              onClick={() => setExpanded(true)}
+              className="ml-1.5 text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+            >
+              {t("geo.natal_impacts.expand")}
+            </button>
+          )}
+        </p>
+      )}
+      {interp && expanded && (
+        <div className="pl-3.5 mt-1 space-y-1">
+          <p className="text-xs text-slate-600 leading-relaxed">{interp.detailed}</p>
+          <p className="text-xs text-slate-400 italic leading-relaxed">{interp.advice}</p>
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+          >
+            {t("geo.natal_impacts.collapse")}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
