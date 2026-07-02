@@ -204,6 +204,8 @@ class MundaneAnalog(BaseModel):
     region: str
     tags: list[str]
     sky: list[MundaneSkyBody]
+    match_type: str = "exact"  # "exact" | "phase" (misma pareja, otra fase del ciclo)
+    event_aspect: Optional[str] = None  # aspecto real del evento histórico (firmas de aspecto)
 
 
 class NatalImpact(BaseModel):
@@ -226,6 +228,12 @@ class MundaneConfiguration(BaseModel):
     signature: dict
     sky: list[MundaneSkyBody]
     analogs: list[MundaneAnalog] = []
+    themes: list[str] = []  # temas agregados de los análogos de ESTA configuración
+
+
+class CyclicIndexPoint(BaseModel):
+    month: str   # "YYYY-MM"
+    value: float  # suma de separaciones angulares (0-180°) de los 10 pares lentos
 
 
 class MundaneResponse(BaseModel):
@@ -234,3 +242,4 @@ class MundaneResponse(BaseModel):
     configurations: list[MundaneConfiguration]
     probable_themes: list[str]
     natal_impacts: list[NatalImpact] = []
+    cyclic_index: list[CyclicIndexPoint] = []
