@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
-import type { MundaneResponse, MundaneConfiguration, ChartResponse } from "@/lib/types";
+import type { MundaneResponse, MundaneConfiguration, ChartResponse, MundaneAnalog } from "@/lib/types";
 import { listCharts, loadChart, type SavedChartMeta } from "@/lib/storage";
 import { useT } from "@/lib/i18n";
 import {
@@ -17,12 +17,56 @@ import {
   type Lang,
 } from "@/lib/mundane-corpus";
 import { generateMundaneReading } from "@/lib/mundane-interpretation";
+import { ASPECT_SYMBOL, ASPECT_LINE_COLOR, INGRESS_COLOR } from "@/components/MundaneWheel";
+import { SIGN_NAMES, SIGN_SYMBOLS } from "@/lib/wheel-geometry";
 
 const MundaneWheel = dynamic(() => import("@/components/MundaneWheel"), { ssr: false });
+const MundaneTimelineChart = dynamic(() => import("@/components/MundaneTimelineChart"), { ssr: false });
+const CyclicIndexChart = dynamic(() => import("@/components/CyclicIndexChart"), { ssr: false });
 
 type Mode = "world" | "natal";
+type FilterMode = "majors" | "all" | "precedents";
+type CompareMode = "overlay" | "era";
 
 const YEARS = [2026, 2027];
+const MAJOR_ASPECTS = new Set(["Conjunción", "Oposición", "Cuadratura"]);
+const ASPECT_ANGLES: Record<string, number> = {
+  Conjunción: 0, Sextil: 60, Cuadratura: 90, Trígono: 120, Oposición: 180,
+};
+
+function angularDistance(a: number, b: number): number {
+  const diff = Math.abs(a - b) % 360;
+  return diff > 180 ? 360 - diff : diff;
+}
+
+/** Orbe del par protagonista de una config de aspecto, dado un cielo (actual o de época). */
+function pairOrb(sky: { name: string; longitude: number }[], bodies: string[], aspect: string | null): number | null {
+  if (!aspect || bodies.length !== 2) return null;
+  const a = sky.find((s) => s.name === bodies[0]);
+  const b = sky.find((s) => s.name === bodies[1]);
+  if (!a || !b) return null;
+  const angle = angularDistance(a.longitude, b.longitude);
+  const exact = ASPECT_ANGLES[aspect];
+  if (exact === undefined) return null;
+  return Math.abs(angle - exact);
+}
+
+/** Glifos de cuerpo(s) + símbolo de aspecto/ingreso, para tarjetas y timeline. */
+function configGlyphs(c: MundaneConfiguration): { text: string; color: string } {
+  if (c.kind === "aspect" && c.bodies.length === 2) {
+    const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
+    const symbolB = c.sky.find((s) => s.name === c.bodies[1])?.symbol ?? "";
+    const color = (c.aspect && ASPECT_LINE_COLOR[c.aspect]) || "#334155";
+    return { text: `${symbolA} ${c.aspect ? ASPECT_SYMBOL[c.aspect] ?? "" : ""} ${symbolB}`, color };
+  }
+  if (c.kind === "ingress" && c.bodies.length === 1) {
+    const symbolBody = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
+    const signIdx = c.sign ? SIGN_NAMES.indexOf(c.sign as (typeof SIGN_NAMES)[number]) : -1;
+    const signSymbol = signIdx >= 0 ? SIGN_SYMBOLS[signIdx] : "";
+    return { text: `${symbolBody} → ${signSymbol}`, color: INGRESS_COLOR };
+  }
+  return { text: "", color: "#334155" };
+}
 
 // Parsea "YYYY-MM-DD" como fecha LOCAL. `new Date("2026-02-20")` se interpreta como
 // medianoche UTC y, en zonas al oeste de UTC, se muestra el día anterior. Al descomponer
@@ -70,6 +114,8 @@ export default function GeopoliticaPage() {
   const [error, setError] = useState<string>("");
   const [selectedConfigId, setSelectedConfigId] = useState<string>("");
   const [compareEra, setCompareEra] = useState<string | null>(null); // analog id being compared
+  const [compareMode, setCompareMode] = useState<CompareMode>("era"); // cómo se muestra compareEra
+  const [filterMode, setFilterMode] = useState<FilterMode>("majors");
 
   useEffect(() => {
     setCharts(listCharts());
@@ -140,22 +186,34 @@ export default function GeopoliticaPage() {
   const data = cache[cacheKey] ?? null;
   const configs = data?.configurations ?? [];
 
-  // Default selected config = first with analogs, else first
+  // Filtro: "Mayores" (default) = ingresos + conjunción/oposición/cuadratura; "Todos"; "Con precedentes".
+  const filteredConfigs = useMemo(() => {
+    if (filterMode === "all") return configs;
+    if (filterMode === "precedents") return configs.filter((c) => c.analogs.length > 0);
+    return configs.filter((c) => c.kind === "ingress" || (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)));
+  }, [configs, filterMode]);
+
+  // Default selected config = first con análogos dentro del filtro activo, si no el primero
   useEffect(() => {
     if (!data) return;
-    const withAnalog = configs.find((c) => c.analogs.length > 0);
     setSelectedConfigId((prev) => {
-      if (prev && configs.some((c) => c.id === prev)) return prev;
-      return withAnalog?.id ?? configs[0]?.id ?? "";
+      if (prev && filteredConfigs.some((c) => c.id === prev)) return prev;
+      const withAnalog = filteredConfigs.find((c) => c.analogs.length > 0);
+      return withAnalog?.id ?? filteredConfigs[0]?.id ?? "";
     });
     setCompareEra(null);
+    setCompareMode("era");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, filterMode]);
 
   const selectedConfig: MundaneConfiguration | null =
     configs.find((c) => c.id === selectedConfigId) ?? null;
 
   const comparedAnalog = selectedConfig?.analogs.find((a) => a.id === compareEra) ?? null;
+
+  function selectEra(id: string) {
+    setCompareEra(id);
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -246,12 +304,41 @@ export default function GeopoliticaPage() {
             </div>
           )}
 
+          {/* Cyclic index (Barbault) */}
+          {data.cyclic_index.length > 0 && <CyclicIndexChart data={data.cyclic_index} lang={L} />}
+
+          {/* Filter chips */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.configs.title")}</span>
+            {([
+              ["majors", "geo.filter.majors"],
+              ["all", "geo.filter.all"],
+              ["precedents", "geo.filter.with_precedents"],
+            ] as [FilterMode, "geo.filter.majors" | "geo.filter.all" | "geo.filter.with_precedents"][]).map(([fm, key]) => (
+              <button
+                key={fm}
+                onClick={() => setFilterMode(fm)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${filterMode === fm ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+              >{t(key)}</button>
+            ))}
+          </div>
+
+          {/* Timeline chart */}
+          <MundaneTimelineChart
+            configs={filteredConfigs}
+            year={year}
+            selectedId={selectedConfigId}
+            onSelect={(id) => { setSelectedConfigId(id); setCompareEra(null); }}
+            lang={L}
+          />
+
           <div className="xl:grid xl:grid-cols-[300px_1fr] xl:gap-8">
             {/* LEFT — config timeline */}
             <div className="space-y-2 mb-6 xl:mb-0">
               <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-1">{t("geo.configs.title")}</p>
-              {configs.map((c) => {
+              {filteredConfigs.map((c) => {
                 const nar = getConfigNarrative(c, L);
+                const glyphs = configGlyphs(c);
                 let dateStr = c.exact_date;
                 try { dateStr = format(parseLocalDate(c.exact_date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
                 const active = c.id === selectedConfigId;
@@ -262,7 +349,10 @@ export default function GeopoliticaPage() {
                     className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${active ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:border-indigo-200"}`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-slate-800">{nar.title}</span>
+                      <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                        <span className="font-mono text-xs" style={{ color: glyphs.color }}>{glyphs.text}</span>
+                        {nar.title}
+                      </span>
                       {c.analogs.length > 0 && (
                         <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full shrink-0">{c.analogs.length}★</span>
                       )}
@@ -277,7 +367,10 @@ export default function GeopoliticaPage() {
             {selectedConfig && (() => {
               const nar = getConfigNarrative(selectedConfig, L);
               const showAnalog = comparedAnalog !== null;
-              const wheelSky = showAnalog ? comparedAnalog!.sky : selectedConfig.sky;
+              const showOverlay = showAnalog && compareMode === "overlay";
+              const showEraOnly = showAnalog && compareMode === "era";
+              const wheelSky = showEraOnly ? comparedAnalog!.sky : selectedConfig.sky;
+              const overlaySky = showOverlay ? comparedAnalog!.sky : undefined;
               // Fecha formateada según locale para la lectura
               let readingDate = selectedConfig.exact_date;
               try {
@@ -298,6 +391,10 @@ export default function GeopoliticaPage() {
                 dateLabel: readingDate,
                 lang: L,
               });
+
+              const orbNow = pairOrb(selectedConfig.sky, selectedConfig.bodies, selectedConfig.aspect);
+              const orbEra = showAnalog ? pairOrb(comparedAnalog!.sky, selectedConfig.bodies, selectedConfig.aspect) : null;
+
               return (
                 <div className="space-y-5">
                   {/* Title */}
@@ -306,24 +403,54 @@ export default function GeopoliticaPage() {
                     {nar.theme && <span className="text-xs font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">{nar.theme}</span>}
                   </div>
 
-                  {/* Era compare toggle */}
+                  {/* Eco histórico (mini-strip) */}
                   {selectedConfig.analogs.length > 0 && (
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.compare")}</span>
-                      <button
-                        onClick={() => setCompareEra(null)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${!showAnalog ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
-                      >{year}</button>
-                      {selectedConfig.analogs.map((a) => {
-                        const en = getEventNarrative(a.id, L);
-                        return (
-                          <button
-                            key={a.id}
-                            onClick={() => setCompareEra(a.id)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${compareEra === a.id ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
-                          >{en.title} · {a.date.slice(0, 4)}</button>
-                        );
-                      })}
+                    <MundaneEchoStrip
+                      analogs={selectedConfig.analogs}
+                      year={year}
+                      activeId={compareEra}
+                      onSelect={(id) => { setCompareEra(id); }}
+                      lang={L}
+                    />
+                  )}
+
+                  {/* Era compare: selector de época + modo de comparación (3 estados) */}
+                  {selectedConfig.analogs.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.compare")}</span>
+                        <button
+                          onClick={() => setCompareEra(null)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${!showAnalog ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+                        >{year}</button>
+                        <button
+                          onClick={() => { setCompareMode("overlay"); if (!compareEra) selectEra(selectedConfig.analogs[0].id); }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${showOverlay ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+                        >{t("geo.compare.overlay")}</button>
+                        <button
+                          onClick={() => { setCompareMode("era"); if (!compareEra) selectEra(selectedConfig.analogs[0].id); }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${showEraOnly ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+                        >{t("geo.compare.era_only")}</button>
+                      </div>
+                      {showAnalog && (
+                        <div className="flex flex-wrap gap-2 items-center">
+                          {selectedConfig.analogs.map((a) => {
+                            const en = getEventNarrative(a.id, L);
+                            return (
+                              <button
+                                key={a.id}
+                                onClick={() => setCompareEra(a.id)}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${compareEra === a.id ? "bg-indigo-100 border border-indigo-300 text-indigo-700" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+                              >
+                                {en.title} · {a.date.slice(0, 4)}
+                                {a.match_type === "phase" && a.event_aspect && (
+                                  <span className="text-slate-400"> ({t("geo.analogs.phase_prefix")}: {a.event_aspect})</span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -336,11 +463,16 @@ export default function GeopoliticaPage() {
                         highlightAspect={selectedConfig.aspect}
                         highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
                         natalPlanets={mode === "natal" && !showAnalog ? natalChart?.planets : undefined}
+                        overlaySky={overlaySky}
                       />
                       <p className="text-xs text-slate-400 font-mono text-center">
-                        {showAnalog
-                          ? `${getEventNarrative(comparedAnalog!.id, L).title} · ${comparedAnalog!.date} · ${t("geo.wheel.caption_era")}`
-                          : `${selectedConfig.exact_date} · ${t("geo.wheel.caption_now")}`}
+                        {showOverlay
+                          ? (orbNow !== null && orbEra !== null
+                            ? `${t("geo.compare.orb_now")}: ${orbNow.toFixed(1)}° · ${t("geo.compare.orb_era")} (${comparedAnalog!.date.slice(0, 4)}): ${orbEra.toFixed(1)}°`
+                            : `${getEventNarrative(comparedAnalog!.id, L).title} · ${comparedAnalog!.date}`)
+                          : showEraOnly
+                            ? `${getEventNarrative(comparedAnalog!.id, L).title} · ${comparedAnalog!.date} · ${t("geo.wheel.caption_era")}`
+                            : `${selectedConfig.exact_date} · ${t("geo.wheel.caption_now")}`}
                       </p>
                     </div>
 
@@ -354,6 +486,11 @@ export default function GeopoliticaPage() {
                         {reading.natalNote && (
                           <p className="text-sm text-slate-900 leading-relaxed bg-indigo-50 border border-indigo-100 rounded-lg px-3 py-2">
                             {reading.natalNote}
+                          </p>
+                        )}
+                        {nar.source && (
+                          <p className="text-[11px] text-slate-400 font-mono pt-1 border-t border-slate-100">
+                            {t("geo.source_label")}: {nar.source}
                           </p>
                         )}
                       </div>
@@ -395,8 +532,16 @@ export default function GeopoliticaPage() {
                                 <div className="flex items-center gap-2 flex-wrap">
                                   <span className="text-sm font-medium text-slate-800">{en.title}</span>
                                   <span className="text-xs text-slate-400 font-mono">{a.date} · {a.region}</span>
+                                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full ${a.match_type === "exact" ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}>
+                                    {a.match_type === "exact" ? t("geo.analogs.match_exact") : t("geo.analogs.match_phase")}
+                                  </span>
                                 </div>
-                                <p className="text-xs text-slate-600 leading-relaxed mt-0.5">{en.description}</p>
+                                <p className="text-xs text-slate-600 leading-relaxed mt-0.5">
+                                  {en.description}
+                                  {a.match_type === "phase" && a.event_aspect && (
+                                    <span className="text-slate-400"> — {t("geo.analogs.phase_prefix")}: {a.event_aspect}</span>
+                                  )}
+                                </p>
                               </button>
                             );
                           })}
@@ -443,6 +588,78 @@ export default function GeopoliticaPage() {
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+// ── Eco histórico (mini-strip) ────────────────────────────────────────────────
+// Eje horizontal ~1400→2030: un punto por análogo (relleno=exact, hueco=phase),
+// año actual marcado en indigo. Hover = tooltip, click = seleccionar esa época.
+const ECHO_MIN_YEAR = 1400;
+const ECHO_MAX_YEAR = 2030;
+const ECHO_WIDTH = 1000;
+const ECHO_HEIGHT = 60;
+const ECHO_MARGIN = 24;
+
+function echoX(year: number): number {
+  const clamped = Math.min(ECHO_MAX_YEAR, Math.max(ECHO_MIN_YEAR, year));
+  const frac = (clamped - ECHO_MIN_YEAR) / (ECHO_MAX_YEAR - ECHO_MIN_YEAR);
+  return ECHO_MARGIN + frac * (ECHO_WIDTH - 2 * ECHO_MARGIN);
+}
+
+function MundaneEchoStrip({
+  analogs,
+  year,
+  activeId,
+  onSelect,
+  lang,
+}: {
+  analogs: MundaneAnalog[];
+  year: number;
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  lang: Lang;
+}) {
+  const { t } = useT();
+  const [tip, setTip] = useState<{ x: number; title: string; yearLabel: string } | null>(null);
+  const midY = ECHO_HEIGHT / 2 + 4;
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-3">
+      <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wide mb-1">{t("geo.echo.title")}</p>
+      <svg viewBox={`0 0 ${ECHO_WIDTH} ${ECHO_HEIGHT}`} className="w-full" style={{ fontFamily: "monospace" }}>
+        <line x1={ECHO_MARGIN} y1={midY} x2={ECHO_WIDTH - ECHO_MARGIN} y2={midY} stroke="#E2E8F0" strokeWidth={1} />
+        {/* Año actual */}
+        <line x1={echoX(year)} y1={midY - 14} x2={echoX(year)} y2={midY + 14} stroke="#4F46E5" strokeWidth={1.5} opacity={0.6} />
+        <text x={echoX(year)} y={midY - 18} textAnchor="middle" fontSize={9} fill="#4F46E5" fontWeight="700" className="select-none">{year}</text>
+
+        {analogs.map((a) => {
+          const y = Number(a.date.slice(0, 4));
+          const x = echoX(y);
+          const isExact = a.match_type === "exact";
+          const active = a.id === activeId;
+          return (
+            <g key={a.id} className="cursor-pointer"
+              onClick={() => onSelect(a.id)}
+              onMouseEnter={() => setTip({ x, title: getEventNarrative(a.id, lang).title, yearLabel: String(y) })}
+              onMouseLeave={() => setTip(null)}>
+              {active && <circle cx={x} cy={midY} r={8} fill="none" stroke="#4F46E5" strokeWidth={1.5} opacity={0.6} />}
+              <circle cx={x} cy={midY} r={5} fill={isExact ? "#4F46E5" : "white"} stroke="#4F46E5" strokeWidth={1.5} />
+            </g>
+          );
+        })}
+
+        {tip && (() => {
+          const tx = Math.min(Math.max(tip.x, 70), ECHO_WIDTH - 70);
+          return (
+            <g>
+              <rect x={tx - 60} y={2} width={120} height={30} rx={4} fill="#1E293B" opacity={0.94} />
+              <text x={tx} y={14} textAnchor="middle" fontSize={9} fill="white" fontWeight="600">{tip.title}</text>
+              <text x={tx} y={25} textAnchor="middle" fontSize={8} fill="#94A3B8">{tip.yearLabel}</text>
+            </g>
+          );
+        })()}
+      </svg>
     </div>
   );
 }
