@@ -33,6 +33,13 @@ interface Props {
   highlightSign?: string | null;
   /** Anillo natal opcional (modo impacto). */
   natalPlanets?: PlanetPosition[];
+  /**
+   * Cielo de un análogo histórico a superponer en un anillo interior (gris,
+   * más pequeño) mientras `sky` permanece a color en el anillo exterior —
+   * comparación de época sin perder el cielo actual de vista. Mutuamente
+   * excluyente con `natalPlanets` (el llamador decide cuál mostrar).
+   */
+  overlaySky?: MundaneSkyBody[];
 }
 
 const SVG_SIZE = 560;
@@ -59,16 +66,23 @@ const R_CORE = 96;
 const R_CENTER = 24;
 const R_SPHERE = 10;
 
-const BODY_COLORS: Record<string, string> = {
+export const BODY_COLORS: Record<string, string> = {
   Plutón: "#7C3AED", Neptuno: "#3B82F6", Urano: "#06B6D4",
   Saturno: "#F59E0B", Júpiter: "#10B981", Marte: "#EF4444",
   Sol: "#F97316", Luna: "#64748B", Mercurio: "#6366F1", Venus: "#EC4899",
 };
 
-const ASPECT_LINE_COLOR: Record<string, string> = {
+export const ASPECT_LINE_COLOR: Record<string, string> = {
   Conjunción: "#334155", Oposición: "#DC2626", Cuadratura: "#EA580C",
   Trígono: "#2563EB", Sextil: "#16A34A",
 };
+
+export const ASPECT_SYMBOL: Record<string, string> = {
+  Conjunción: "☌", Oposición: "☍", Cuadratura: "□", Trígono: "△", Sextil: "⚹",
+};
+
+/** Color de acento para ingresos de signo (no son un "aspecto", usan el acento indigo del módulo). */
+export const INGRESS_COLOR = "#4F46E5";
 
 const ASC_LON = 0; // rueda mundial: 0° Aries a la izquierda
 
@@ -96,6 +110,7 @@ export default function MundaneWheel({
   highlightAspect,
   highlightSign,
   natalPlanets,
+  overlaySky,
 }: Props) {
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
   const toAngle = useMemo(() => makeToAngle(ASC_LON), []);
@@ -126,6 +141,10 @@ export default function MundaneWheel({
   const natalDots = useMemo(
     () => (natalPlanets ? resolveCollisions(natalPlanets) : []),
     [natalPlanets],
+  );
+  const overlayDots = useMemo(
+    () => (overlaySky ? resolveCollisions(overlaySky) : []),
+    [overlaySky],
   );
 
   // Línea del aspecto definitorio entre los dos cuerpos protagonistas
@@ -222,7 +241,26 @@ export default function MundaneWheel({
           );
         })}
 
-        <circle cx={cx} cy={cy} r={R_SEP} fill="white" stroke="#94A3B8" strokeWidth={natalPlanets ? 2 : 1} />
+        <circle cx={cx} cy={cy} r={R_SEP} fill="white" stroke="#94A3B8" strokeWidth={natalPlanets || overlaySky ? 2 : 1} />
+
+        {/* Anillo de superposición de época (cielo del análogo, gris) */}
+        {overlayDots.map((p) => {
+          const ang = toAngle(p.longitude);
+          const gPos = polarXY(cx, cy, R_NA_GLYPH + p.rOffset, ang);
+          const dPos = polarXY(cx, cy, R_NA_DEGREE + p.rOffset, ang);
+          const nOut = polarXY(cx, cy, R_NA_NEEDLE_OUT, ang);
+          const nIn = polarXY(cx, cy, R_NA_NEEDLE_IN, ang);
+          return (
+            <g key={`ov-${p.name}`} opacity={0.85}>
+              <circle cx={nOut.x} cy={nOut.y} r={2} fill="#94A3B8" />
+              <line x1={nOut.x} y1={nOut.y} x2={nIn.x} y2={nIn.y} stroke="#94A3B8" strokeWidth={0.6} />
+              <text x={gPos.x} y={gPos.y} textAnchor="middle" dominantBaseline="central" fontSize={11} fill="#94A3B8" fontWeight="600" className="cursor-pointer select-none"
+                onMouseEnter={(e) => showTip(e, `${p.name} (época)`, `${p.degree_display} ${p.sign}${p.retrograde ? " ℞" : ""}`)}
+                onMouseLeave={() => setTooltip(null)}>{p.symbol}</text>
+              <text x={dPos.x} y={dPos.y} textAnchor="middle" dominantBaseline="central" fontSize={6} fill="#CBD5E1" className="select-none pointer-events-none">{`${Math.floor(p.longitude % 30)}°`}</text>
+            </g>
+          );
+        })}
 
         {/* Anillo natal opcional (modo impacto) */}
         {natalDots.map((p) => {

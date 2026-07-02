@@ -63,13 +63,15 @@ export function generateMundaneReading(params: {
   config: MundaneConfiguration;
   analogs: MundaneAnalog[];
   natalImpacts: NatalImpact[]; // ya filtrados a esta configuración
-  themes: string[];
+  /** Temas globales del período — solo se usan como respaldo si la config no tiene los suyos. */
+  themes?: string[];
   year: number;
   natalMode: boolean;
   dateLabel: string; // fecha ya formateada según locale
   lang: Lang;
 }): MundaneReading {
-  const { config, analogs, natalImpacts, themes, natalMode, dateLabel, lang } = params;
+  const { config, analogs, natalImpacts, natalMode, dateLabel, lang } = params;
+  const themes = config.themes && config.themes.length > 0 ? config.themes : (params.themes ?? []);
   const es = lang === "es";
   const nar = getConfigNarrative(config, lang);
   const paragraphs: string[] = [];
@@ -116,11 +118,18 @@ export function generateMundaneReading(params: {
       Array.from(new Set(analogs.map((a) => a.date.slice(0, 4)))),
       lang,
     );
-    const firstTitle = getEventNarrative(analogs[0].id, lang).title;
+    const first = analogs[0];
+    const firstTitle = getEventNarrative(first.id, lang).title;
+    const isPhase = first.match_type === "phase";
+    const phaseNote = isPhase
+      ? es
+        ? ` (en otra fase del mismo ciclo: ${first.event_aspect ?? ""})`
+        : ` (in another phase of the same cycle: ${first.event_aspect ?? ""})`
+      : "";
     paragraphs.push(
       es
-        ? `Firmas parecidas se vieron en ${years}. Entonces, «${firstTitle}» marcó la época. Los mundialistas —Cassanya, Barbault, Tarnas— leen estos retornos como ecos temáticos, no como calcos de los mismos hechos.`
-        : `Similar signatures appeared in ${years}. Back then, "${firstTitle}" defined the era. Mundane astrologers —Cassanya, Barbault, Tarnas— read these returns as thematic echoes, not carbon copies of the same events.`,
+        ? `Firmas parecidas se vieron en ${years}. Entonces, «${firstTitle}»${phaseNote} marcó la época. Los mundialistas —Cassanya, Barbault, Tarnas— leen estos retornos como ecos temáticos, no como calcos de los mismos hechos.`
+        : `Similar signatures appeared in ${years}. Back then, "${firstTitle}"${phaseNote} defined the era. Mundane astrologers —Cassanya, Barbault, Tarnas— read these returns as thematic echoes, not carbon copies of the same events.`,
     );
   }
 

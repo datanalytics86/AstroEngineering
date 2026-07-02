@@ -238,12 +238,16 @@ export interface MundaneSkyBody {
   speed: number;
 }
 
+export type MundaneMatchType = "exact" | "phase";
+
 export interface MundaneAnalog {
   id: string;                 // enlaza con el corpus bilingüe (mundane-corpus.ts)
   date: string;               // "YYYY-MM-DD"
   region: string;
   tags: string[];
   sky: MundaneSkyBody[];
+  match_type: MundaneMatchType;   // "exact" (mismo aspecto) | "phase" (misma pareja, otra fase del ciclo)
+  event_aspect: string | null;    // aspecto real del evento histórico (firmas de aspecto)
 }
 
 export interface NatalImpact {
@@ -266,6 +270,12 @@ export interface MundaneConfiguration {
   signature: Record<string, unknown>;
   sky: MundaneSkyBody[];
   analogs: MundaneAnalog[];
+  themes: string[];           // temas agregados de LOS ANÁLOGOS de esta configuración (máx 6)
+}
+
+export interface CyclicIndexPoint {
+  month: string;              // "YYYY-MM"
+  value: number;               // suma de separaciones angulares (0-180°) de los 10 pares lentos
 }
 
 export interface MundaneResponse {
@@ -274,4 +284,5 @@ export interface MundaneResponse {
   configurations: MundaneConfiguration[];
   probable_themes: string[];
   natal_impacts: NatalImpact[];
+  cyclic_index: CyclicIndexPoint[];
 }

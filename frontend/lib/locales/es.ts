@@ -193,6 +193,22 @@ export const es = {
   "geo.natal_impacts.title": "Impacto en tu carta",
   "geo.natal_impacts.none": "Esta configuración no forma aspectos estrechos con tus planetas natales.",
   "geo.bibliography.title": "Bibliografía y método",
+  "geo.timeline.title": "Cronología del año",
+  "geo.filter.majors": "Mayores",
+  "geo.filter.all": "Todos",
+  "geo.filter.with_precedents": "Con precedentes",
+  "geo.compare.overlay": "Superponer",
+  "geo.compare.era_only": "Solo época",
+  "geo.compare.orb_now": "Orbe actual",
+  "geo.compare.orb_era": "Orbe en la época",
+  "geo.analogs.phase_prefix": "otra fase del ciclo",
+  "geo.analogs.match_exact": "mismo aspecto",
+  "geo.analogs.match_phase": "otra fase",
+  "geo.echo.title": "Eco histórico",
+  "geo.index.title": "Índice cíclico",
+  "geo.index.explain": "Suma de las separaciones angulares entre los pares de planetas lentos (Barbault). Sus mínimos históricos coinciden con fases de concentración cíclica — lectura analógica, no predicción factual.",
+  "geo.index.min_label": "mínimo del año",
+  "geo.source_label": "Fuente",
 } as const;
 
 export type TranslationKeys = keyof typeof es;
