@@ -1,8 +1,9 @@
-import type { ChartResponse, BirthData, TransitResponse } from "./types";
+import type { ChartResponse, BirthData, TransitResponse, MundaneResponse } from "./types";
 
 const PREFIX_CHART   = "astro_chart_";
 const PREFIX_TRANSIT = "astro_transit_";
 const PREFIX_BIRTH   = "astro_birth_";
+const PREFIX_MUNDANE = "astro_mundane_v2:";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -93,6 +94,43 @@ export function loadSolarReturn(id: string): ChartResponse | null {
     const s = localStorage.getItem(PREFIX_SR + id);
     return s ? JSON.parse(s) : null;
   } catch { return null; }
+}
+
+// ── Mundane (astrología mundial / geopolítica) ────────────────────────────────
+// Caché v2: invalida las respuestas guardadas con el corpus histórico viejo
+// (16 eventos, sin match_type/themes/cyclic_index) cuando se despliega este
+// corpus ampliado y verificado (52 eventos).
+
+function mundaneKey(year: number, mode: "world" | "natal", chartId: string | null): string {
+  return `${PREFIX_MUNDANE}${year}_${mode}_${chartId ?? "world"}`;
+}
+
+export function saveMundane(
+  year: number,
+  mode: "world" | "natal",
+  chartId: string | null,
+  data: MundaneResponse,
+): void {
+  const key = mundaneKey(year, mode, chartId);
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch {
+    pruneStorage();
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* sin espacio: se usará solo en memoria */ }
+  }
+}
+
+export function loadMundane(
+  year: number,
+  mode: "world" | "natal",
+  chartId: string | null,
+): MundaneResponse | null {
+  try {
+    const str = localStorage.getItem(mundaneKey(year, mode, chartId));
+    return str ? JSON.parse(str) : null;
+  } catch {
+    return null;
+  }
 }
 
 // ── Saved-chart list ─────────────────────────────────────────────────────────

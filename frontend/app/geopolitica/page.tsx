@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import type { MundaneResponse, MundaneConfiguration, ChartResponse, MundaneAnalog } from "@/lib/types";
-import { listCharts, loadChart, type SavedChartMeta } from "@/lib/storage";
+import { listCharts, loadChart, saveMundane, loadMundane, type SavedChartMeta } from "@/lib/storage";
 import { useT } from "@/lib/i18n";
 import {
   getConfigNarrative,
@@ -151,6 +151,7 @@ export default function GeopoliticaPage() {
           if (res.ok) {
             const data: MundaneResponse = await res.json();
             setCache((prev) => ({ ...prev, [cacheKey]: data }));
+            saveMundane(year, mode, mode === "natal" ? selectedChartId : null, data);
             setError("");
             return;
           }
@@ -174,14 +175,26 @@ export default function GeopoliticaPage() {
     } finally {
       setLoading(false);
     }
-  }, [mode, year, natalChart, cacheKey, t]);
+  }, [mode, year, natalChart, cacheKey, t, selectedChartId]);
 
   useEffect(() => {
     if (cache[cacheKey]) return;
+    if (mode === "natal" && !natalChart) return;
+
+    // Caché persistente (localStorage) — evita re-pedir al backend (Render free
+    // tier, cold start ~30s) datos ya calculados en una sesión anterior. El
+    // botón "Reintentar" del panel de error llama a fetchData() directamente,
+    // sin pasar por aquí, así que siempre salta esta caché.
+    const cached = loadMundane(year, mode, mode === "natal" ? selectedChartId : null);
+    if (cached) {
+      setCache((prev) => ({ ...prev, [cacheKey]: cached }));
+      return;
+    }
+
     if (mode === "world") void fetchData();
     if (mode === "natal" && natalChart) void fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey, mode, natalChart]);
+  }, [cacheKey, mode, natalChart, year, selectedChartId]);
 
   const data = cache[cacheKey] ?? null;
   const configs = data?.configurations ?? [];
