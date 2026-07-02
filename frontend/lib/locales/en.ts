@@ -192,6 +192,8 @@ export const en = {
   "geo.wheel.caption_era": "sky of the historical event",
   "geo.natal_impacts.title": "Impact on your chart",
   "geo.natal_impacts.none": "This configuration forms no tight aspects with your natal planets.",
+  "geo.natal_impacts.expand": "Read more",
+  "geo.natal_impacts.collapse": "Read less",
   "geo.bibliography.title": "Bibliography & method",
   "geo.timeline.title": "Year timeline",
   "geo.filter.majors": "Majors",

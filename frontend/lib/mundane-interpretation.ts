@@ -12,10 +12,23 @@
 import type { MundaneConfiguration, MundaneAnalog, NatalImpact } from "./types";
 import { SIGN_NAMES } from "./wheel-geometry";
 import { getConfigNarrative, getEventNarrative, getThemeLabel, type Lang } from "./mundane-corpus";
+import { getInterpretation } from "./interpretation-engine";
 
 export interface MundaneReading {
   paragraphs: string[];
   natalNote: string;
+}
+
+// Ranking de importancia para elegir el impacto "principal" cuando hay varios.
+const IMPORTANCE_RANK: Record<string, number> = { crítica: 4, alta: 3, media: 2, baja: 1 };
+
+/**
+ * Construye la clave de interpretation-engine.ts para un impacto natal
+ * mundial: "{cuerpo}_{aspecto}_{planeta natal}" en minúsculas, igual que las
+ * claves de tránsitos normales (ej. "saturno_trígono_luna").
+ */
+export function buildImpactInterpretationKey(impact: NatalImpact): string {
+  return `${impact.body.toLowerCase()}_${impact.aspect.toLowerCase().replace(/ /g, "_")}_${impact.natal_planet.toLowerCase()}`;
 }
 
 // Verbo/acción por aspecto (más vívido que el nombre a secas).
@@ -162,6 +175,19 @@ export function generateMundaneReading(params: {
       natalNote = es
         ? `En tu carta, esta configuración toca ${joinList(items, lang)}. Ahí es donde el clima del período se vuelve personal.`
         : `In your chart, this configuration touches ${joinList(items, lang)}. That is where the period's climate turns personal.`;
+
+      // Si el impacto principal (mayor importancia) tiene interpretación en el
+      // motor de tránsitos existente, añadimos una frase de su `summary` —
+      // reusa las ~270 interpretaciones ya escritas en vez de duplicar texto.
+      const mainImpact = [...natalImpacts].sort(
+        (a, b) => (IMPORTANCE_RANK[b.importance] ?? 0) - (IMPORTANCE_RANK[a.importance] ?? 0),
+      )[0];
+      if (mainImpact) {
+        const interp = getInterpretation(buildImpactInterpretationKey(mainImpact), lang);
+        if (interp) {
+          natalNote += ` ${interp.summary}`;
+        }
+      }
     } else {
       natalNote = es
         ? "Esta configuración no forma aspectos estrechos con tus planetas natales: te alcanza más como parte del clima general."

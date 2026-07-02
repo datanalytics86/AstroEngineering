@@ -192,6 +192,8 @@ export const es = {
   "geo.wheel.caption_era": "cielo del evento histórico",
   "geo.natal_impacts.title": "Impacto en tu carta",
   "geo.natal_impacts.none": "Esta configuración no forma aspectos estrechos con tus planetas natales.",
+  "geo.natal_impacts.expand": "Ver más",
+  "geo.natal_impacts.collapse": "Ver menos",
   "geo.bibliography.title": "Bibliografía y método",
   "geo.timeline.title": "Cronología del año",
   "geo.filter.majors": "Mayores",

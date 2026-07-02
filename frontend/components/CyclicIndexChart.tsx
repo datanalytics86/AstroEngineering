@@ -17,6 +17,9 @@ import type { Lang } from "@/lib/mundane-corpus";
 interface Props {
   data: CyclicIndexPoint[];
   lang: Lang;
+  /** Configuraciones mayores por mes ("YYYY-MM") → marcador clicable sobre la línea. */
+  markers?: Record<string, { id: string; title: string }[]>;
+  onSelectConfig?: (id: string) => void;
 }
 
 const WIDTH = 1000;
@@ -27,7 +30,7 @@ const MARGIN_BOTTOM = 30;
 
 interface Tooltip { x: number; y: number; label: string; value: number }
 
-export default function CyclicIndexChart({ data, lang }: Props) {
+export default function CyclicIndexChart({ data, lang, markers, onSelectConfig }: Props) {
   const { t } = useT();
   const dateLocale = lang === "en" ? enUS : esLocale;
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
@@ -90,6 +93,24 @@ export default function CyclicIndexChart({ data, lang }: Props) {
               onMouseEnter={() => setTooltip({ x: p.x, y: p.y, label: monthLabel(p.month), value: p.value })}
               onMouseLeave={() => setTooltip(null)}
             />
+            {/* Marcador de configuraciones mayores del mes (hueco, clicable).
+                Tooltip nativo <title> lista los títulos; click selecciona la primera. */}
+            {(markers?.[p.month]?.length ?? 0) > 0 && (
+              <g
+                className="cursor-pointer"
+                onClick={() => onSelectConfig?.(markers![p.month][0].id)}
+              >
+                <circle
+                  cx={p.x}
+                  cy={p.y - (i === minIdx ? 26 : 14)}
+                  r={4}
+                  fill="white"
+                  stroke="#4F46E5"
+                  strokeWidth={1.5}
+                />
+                <title>{markers![p.month].map((m) => m.title).join("\n")}</title>
+              </g>
+            )}
           </g>
         ))}
 
