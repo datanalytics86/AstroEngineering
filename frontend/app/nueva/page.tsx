@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import BirthDataForm from "@/components/BirthDataForm";
 import type { BirthData, ChartResponse } from "@/lib/types";
 import { saveChart, listCharts, deleteChart, type SavedChartMeta } from "@/lib/storage";
+import { postWithWakingRetry } from "@/lib/api-fetch";
 import { useT } from "@/lib/i18n";
 
 const SIGN_COLORS: Record<string, string> = {
@@ -29,11 +30,9 @@ export default function NuevaCartaPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/chart", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const res = await postWithWakingRetry("/api/chart", data, () =>
+        setError(t("common.error.waking")),
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: "Error desconocido" }));
         throw new Error(err.detail ?? `HTTP ${res.status}`);

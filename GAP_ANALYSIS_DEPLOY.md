@@ -229,6 +229,8 @@ except Exception as e:
 
 ### A-2 · Sin manejo de errores en `fetch()` de las rutas Next.js
 
+> ✅ **RESUELTO (2026-07-02):** los 4 proxies (`chart`, `transits`, `solar-return`, `mundane`) tienen try/catch, parseo defensivo del cuerpo upstream, timeout de 55s y devuelven 503 `backend_waking`; los consumidores muestran aviso de "servidor despertando" y reintentan una vez (`lib/api-fetch.ts`).
+
 **Archivos:** `frontend/app/api/*/route.ts`  
 **Problema:** Si el backend está caído o responde HTML (error 502 de Render al despertar), `upstream.json()` lanza una excepción no capturada → el frontend muestra un error genérico sin posibilidad de reintentar.
 
@@ -327,6 +329,8 @@ class TransitRequest(BaseModel):
 ---
 
 ### A-6 · `next.config.mjs` sin headers de seguridad HTTP
+
+> ✅ **RESUELTO (2026-07-02):** `headers()` global con `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. (CSP/HSTS siguen pendientes — HSTS lo gestiona Vercel.)
 
 **Archivo:** `frontend/next.config.mjs`  
 **Problema:** Sin CSP, X-Frame-Options, ni HSTS. El sitio puede ser embedido en iframes por terceros (clickjacking).

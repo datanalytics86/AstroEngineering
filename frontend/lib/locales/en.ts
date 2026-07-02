@@ -4,6 +4,9 @@ export const en = {
   "nav.new_chart": "New chart",
   "nav.learn": "Learn",
 
+  // ── Común ──
+  "common.error.waking": "The server is waking up (may take ~50s the first time). Retrying…",
+
   // ── Footer ──
   "footer.tagline": "AstroEngine Pro — Swiss Ephemeris · Precision ±0.05° · Calculations validated against astro.com",
 
