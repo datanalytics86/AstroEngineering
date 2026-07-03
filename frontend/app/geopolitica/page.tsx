@@ -109,20 +109,36 @@ function GeopoliticaContent() {
   const L = lang as Lang;
   const dateLocale = lang === "en" ? enUS : es;
 
-  // Deep-links: ?year=&mode=&chart=&config= — el estado inicial se lee de la
-  // URL para que una configuración concreta sea compartible por enlace.
-  const [mode, setMode] = useState<Mode>(() =>
-    searchParams.get("mode") === "natal" ? "natal" : "world",
-  );
-  const [year, setYear] = useState<number>(() => {
-    const y = Number(searchParams.get("year"));
-    return YEARS.includes(y) ? y : YEARS[0];
-  });
-  const pendingConfigRef = useRef<string | null>(searchParams.get("config"));
+  // Deep-links: ?year=&mode=&chart=&config= — el estado inicial usa siempre
+  // los valores neutros por defecto (nunca lee searchParams en el
+  // inicializador de useState) para que el primer render del cliente
+  // coincida con el HTML del servidor; los params entrantes se aplican en un
+  // useEffect de montaje (ver más abajo), evitando el error de hidratación.
+  const [mode, setMode] = useState<Mode>("world");
+  const [year, setYear] = useState<number>(YEARS[0]);
+  const pendingConfigRef = useRef<string | null>(null);
+  // Se vuelve true tras aplicar los searchParams entrantes una vez montado;
+  // hasta entonces, el efecto de sincronización de URL no debe ejecutarse
+  // (pisaría la URL con los valores neutros antes de leer los reales).
+  const [paramsApplied, setParamsApplied] = useState(false);
 
   // Natal mode
   const [charts, setCharts] = useState<SavedChartMeta[]>([]);
-  const [selectedChartId, setSelectedChartId] = useState<string>(() => searchParams.get("chart") ?? "");
+  const [selectedChartId, setSelectedChartId] = useState<string>("");
+
+  useEffect(() => {
+    const m = searchParams.get("mode") === "natal" ? "natal" : "world";
+    const y = Number(searchParams.get("year"));
+    const yr = YEARS.includes(y) ? y : YEARS[0];
+    const chart = searchParams.get("chart") ?? "";
+    pendingConfigRef.current = searchParams.get("config");
+    setMode(m);
+    setYear(yr);
+    setSelectedChartId(chart);
+    setParamsApplied(true);
+    // Solo al montar: los searchParams entrantes se aplican una única vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // La carta natal se deriva SÍNCRONAMENTE del id seleccionado (no como estado con
   // retraso), para que la petición y la clave de caché siempre correspondan a la
@@ -262,7 +278,10 @@ function GeopoliticaContent() {
   }, [data, filterMode]);
 
   // Mantiene la URL sincronizada (replace, sin recargar) para compartir enlaces.
+  // Guardado por `paramsApplied`: si corriera antes de aplicar los searchParams
+  // entrantes, pisaría la URL con los valores neutros por defecto.
   useEffect(() => {
+    if (!paramsApplied) return;
     const params = new URLSearchParams();
     params.set("year", String(year));
     if (mode === "natal") {
@@ -271,7 +290,7 @@ function GeopoliticaContent() {
     }
     if (selectedConfigId) params.set("config", selectedConfigId);
     router.replace(`/geopolitica?${params.toString()}`, { scroll: false });
-  }, [year, mode, selectedChartId, selectedConfigId, router]);
+  }, [paramsApplied, year, mode, selectedChartId, selectedConfigId, router]);
 
   // Meses del índice cíclico que contienen configuraciones mayores → marcadores
   // clicables sobre la línea del índice (ata la gráfica de Barbault al timeline).
@@ -446,7 +465,6 @@ function GeopoliticaContent() {
           <div className="xl:grid xl:grid-cols-[300px_1fr] xl:gap-8">
             {/* LEFT — config timeline */}
             <div className="space-y-2 mb-6 xl:mb-0">
-              <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-1">{t("geo.configs.title")}</p>
               {filteredConfigs.map((c) => {
                 const nar = getConfigNarrative(c, L);
                 const glyphs = configGlyphs(c);

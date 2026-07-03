@@ -150,8 +150,8 @@ export function generateMundaneReading(params: {
         nearbySlowConfig.bodies.slice().sort((a, b) => SLOWNESS.indexOf(a) - SLOWNESS.indexOf(b))[0] ??
         nearbySlowConfig.bodies[0];
       synthesis += es
-        ? ` En esta época actúa sobre el terreno del ciclo ${slowPrimary} recién descrito.`
-        : ` Around this time it acts on the ground of the ${slowPrimary} cycle described earlier.`;
+        ? ` En esta época actúa sobre el terreno del ciclo de ${slowPrimary} activo en esas fechas.`
+        : ` Around this time it acts on the ground of the ${slowPrimary} cycle active in that period.`;
     }
     paragraphs.push(synthesis);
     paragraphs.push(
