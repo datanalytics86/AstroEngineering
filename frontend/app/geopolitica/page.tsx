@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
+import type { Locale } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import type { MundaneResponse, MundaneConfiguration, ChartResponse, MundaneAnalog } from "@/lib/types";
@@ -27,8 +28,11 @@ const MundaneTimelineChart = dynamic(() => import("@/components/MundaneTimelineC
 const CyclicIndexChart = dynamic(() => import("@/components/CyclicIndexChart"), { ssr: false });
 
 type Mode = "world" | "natal";
-type FilterMode = "majors" | "all" | "precedents";
+type FilterMode = "majors" | "all" | "precedents" | "triggers";
 type CompareMode = "overlay" | "era";
+
+// Disparadores rápidos de Marte: mismo rojo que MundaneWheel.BODY_COLORS.Marte
+const TRIGGER_COLOR = "#EF4444";
 
 const YEARS = [2026, 2027];
 const MAJOR_ASPECTS = new Set(["Conjunción", "Oposición", "Cuadratura"]);
@@ -55,10 +59,10 @@ function pairOrb(sky: { name: string; longitude: number }[], bodies: string[], a
 
 /** Glifos de cuerpo(s) + símbolo de aspecto/ingreso, para tarjetas y timeline. */
 function configGlyphs(c: MundaneConfiguration): { text: string; color: string } {
-  if (c.kind === "aspect" && c.bodies.length === 2) {
+  if ((c.kind === "aspect" || c.kind === "trigger") && c.bodies.length === 2) {
     const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
     const symbolB = c.sky.find((s) => s.name === c.bodies[1])?.symbol ?? "";
-    const color = (c.aspect && ASPECT_LINE_COLOR[c.aspect]) || "#334155";
+    const color = c.kind === "trigger" ? TRIGGER_COLOR : (c.aspect && ASPECT_LINE_COLOR[c.aspect]) || "#334155";
     return { text: `${symbolA} ${c.aspect ? ASPECT_SYMBOL[c.aspect] ?? "" : ""} ${symbolB}`, color };
   }
   if (c.kind === "ingress" && c.bodies.length === 1) {
@@ -68,6 +72,15 @@ function configGlyphs(c: MundaneConfiguration): { text: string; color: string } 
     return { text: `${symbolBody} → ${signSymbol}`, color: INGRESS_COLOR };
   }
   return { text: "", color: "#334155" };
+}
+
+/** Formatea una fecha "YYYY-MM-DD" con el locale dado; cae al string original si falla. */
+function formatGeoDate(dateStr: string, dateLocale: Locale): string {
+  try {
+    return format(parseLocalDate(dateStr), "d MMM yyyy", { locale: dateLocale });
+  } catch {
+    return dateStr;
+  }
 }
 
 function Spinner({ label }: { label: string }) {
@@ -212,11 +225,16 @@ function GeopoliticaContent() {
   const data = cache[cacheKey] ?? null;
   const configs = data?.configurations ?? [];
 
-  // Filtro: "Mayores" (default) = ingresos + conjunción/oposición/cuadratura; "Todos"; "Con precedentes".
+  // Filtro: "Mayores" (default) = ingresos + conjunción/oposición/cuadratura de los
+  // lentos + disparadores de Marte (como marcadores menores); "Todos"; "Con
+  // precedentes"; "Disparadores" = solo los disparadores rápidos de Marte.
   const filteredConfigs = useMemo(() => {
     if (filterMode === "all") return configs;
+    if (filterMode === "triggers") return configs.filter((c) => c.kind === "trigger");
     if (filterMode === "precedents") return configs.filter((c) => c.analogs.length > 0);
-    return configs.filter((c) => c.kind === "ingress" || (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)));
+    return configs.filter(
+      (c) => c.kind === "trigger" || c.kind === "ingress" || (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)),
+    );
   }, [configs, filterMode]);
 
   // Default selected config = first con análogos dentro del filtro activo, si no el primero
@@ -270,6 +288,25 @@ function GeopoliticaContent() {
 
   const selectedConfig: MundaneConfiguration | null =
     configs.find((c) => c.id === selectedConfigId) ?? null;
+
+  // Disparadores: la configuración lenta (no-trigger) más cercana en el tiempo,
+  // para que la lectura pueda mencionar genéricamente sobre qué ciclo de fondo actúa.
+  const nearbySlowConfig = useMemo(() => {
+    if (!selectedConfig || selectedConfig.kind !== "trigger") return null;
+    const targetMs = parseLocalDate(selectedConfig.exact_date).getTime();
+    let best: MundaneConfiguration | null = null;
+    let bestDist = Infinity;
+    for (const c of configs) {
+      if (c.kind === "trigger") continue;
+      const dist = Math.abs(parseLocalDate(c.exact_date).getTime() - targetMs);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = c;
+      }
+    }
+    const maxDistMs = 45 * 24 * 60 * 60 * 1000;
+    return best && bestDist <= maxDistMs ? best : null;
+  }, [selectedConfig, configs]);
 
   const comparedAnalog = selectedConfig?.analogs.find((a) => a.id === compareEra) ?? null;
 
@@ -387,7 +424,8 @@ function GeopoliticaContent() {
               ["majors", "geo.filter.majors"],
               ["all", "geo.filter.all"],
               ["precedents", "geo.filter.with_precedents"],
-            ] as [FilterMode, "geo.filter.majors" | "geo.filter.all" | "geo.filter.with_precedents"][]).map(([fm, key]) => (
+              ["triggers", "geo.filter.triggers"],
+            ] as [FilterMode, "geo.filter.majors" | "geo.filter.all" | "geo.filter.with_precedents" | "geo.filter.triggers"][]).map(([fm, key]) => (
               <button
                 key={fm}
                 onClick={() => setFilterMode(fm)}
@@ -426,7 +464,9 @@ function GeopoliticaContent() {
                         <span className="font-mono text-xs" style={{ color: glyphs.color }}>{glyphs.text}</span>
                         {nar.title}
                       </span>
-                      {c.analogs.length > 0 && (
+                      {c.kind === "trigger" ? (
+                        <span className="text-[10px] font-mono text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full shrink-0">{t("geo.trigger.badge")}</span>
+                      ) : c.analogs.length > 0 && (
                         <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full shrink-0">{c.analogs.length}★</span>
                       )}
                     </div>
@@ -463,6 +503,7 @@ function GeopoliticaContent() {
                 natalMode: mode === "natal",
                 dateLabel: readingDate,
                 lang: L,
+                nearbySlowConfig,
               });
 
               const orbNow = pairOrb(selectedConfig.sky, selectedConfig.bodies, selectedConfig.aspect);
@@ -476,8 +517,13 @@ function GeopoliticaContent() {
                     {nar.theme && <span className="text-xs font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">{nar.theme}</span>}
                   </div>
 
-                  {/* Eco histórico (mini-strip) */}
-                  {selectedConfig.analogs.length > 0 && (
+                  {/* Eco histórico (mini-strip) — los disparadores no tienen precedentes,
+                      recurren cada ~2 años y se leen por arquetipo. */}
+                  {selectedConfig.kind === "trigger" ? (
+                    <p className="text-xs text-slate-400 font-mono bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                      {t("geo.trigger.recurrence_note")}
+                    </p>
+                  ) : selectedConfig.analogs.length > 0 && (
                     <MundaneEchoStrip
                       analogs={selectedConfig.analogs}
                       year={year}
@@ -532,7 +578,7 @@ function GeopoliticaContent() {
                     <div className="space-y-2">
                       <MundaneWheel
                         sky={wheelSky}
-                        highlightBodies={selectedConfig.kind === "aspect" ? selectedConfig.bodies : undefined}
+                        highlightBodies={(selectedConfig.kind === "aspect" || selectedConfig.kind === "trigger") ? selectedConfig.bodies : undefined}
                         highlightAspect={selectedConfig.aspect}
                         highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
                         natalPlanets={mode === "natal" && !showAnalog ? natalChart?.planets : undefined}
@@ -547,6 +593,11 @@ function GeopoliticaContent() {
                             ? `${getEventNarrative(comparedAnalog!.id, L).title} · ${comparedAnalog!.date} · ${t("geo.wheel.caption_era")}`
                             : `${selectedConfig.exact_date} · ${t("geo.wheel.caption_now")}`}
                       </p>
+                      {selectedConfig.kind === "trigger" && selectedConfig.window_start && selectedConfig.window_end && (
+                        <p className="text-xs text-red-500 font-mono text-center">
+                          {t("geo.trigger.window_label")}: {formatGeoDate(selectedConfig.window_start, dateLocale)} – {formatGeoDate(selectedConfig.window_end, dateLocale)}
+                        </p>
+                      )}
                     </div>
 
                     {/* Lectura narrativa */}
@@ -590,8 +641,8 @@ function GeopoliticaContent() {
                     );
                   })()}
 
-                  {/* Historical analogs list */}
-                  {!showAnalog && (
+                  {/* Historical analogs list — oculto para disparadores (no tienen precedentes, ver nota de recurrencia arriba) */}
+                  {!showAnalog && selectedConfig.kind !== "trigger" && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-5">
                       <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-3">{t("geo.analogs.title")}</p>
                       {selectedConfig.analogs.length === 0 ? (

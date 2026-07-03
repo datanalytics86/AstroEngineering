@@ -239,6 +239,10 @@ export const es = {
   "geo.personal_cta.title": "¿Y tu año personal?",
   "geo.personal_cta.body": "Aquí ves los ciclos mundiales lentos. Para tu cronología personal planeta a planeta —con días de influencia e interpretación— visita Tu cielo en movimiento.",
   "geo.personal_cta.button": "Ver mi cronología personal",
+  "geo.filter.triggers": "Disparadores",
+  "geo.trigger.badge": "disparador",
+  "geo.trigger.window_label": "Ventana del disparador",
+  "geo.trigger.recurrence_note": "Los disparadores rápidos de Marte recurren cada ~2 años; se leen por arquetipo, no por precedente histórico.",
 } as const;
 
 export type TranslationKeys = keyof typeof es;

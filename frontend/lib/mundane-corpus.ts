@@ -89,8 +89,8 @@ const SRC_CASSANYA: Bilingual = {
   en: "Mundane tradition — V. Cassanya, \"Crónica Astrológica del Siglo XX\"",
 };
 const SRC_BARBAULT: Bilingual = {
-  es: "Ciclos planetarios — André Barbault (índice cíclico)",
-  en: "Planetary cycles — André Barbault (cyclic index)",
+  es: "Ciclos planetarios — André Barbault (índice cíclico y doctrina del disparador)",
+  en: "Planetary cycles — André Barbault (cyclic index and trigger doctrine)",
 };
 const SRC_TARNAS: Bilingual = {
   es: "Correlaciones históricas — Richard Tarnas, «Cosmos and Psyche»",
@@ -104,9 +104,13 @@ const SRC_CAMPION: Bilingual = {
   es: "Horóscopos históricos de naciones — Nicholas Campion, «The Book of World Horoscopes»",
   en: "Historical horoscopes of nations — Nicholas Campion, \"The Book of World Horoscopes\"",
 };
+const SRC_EBERTIN: Bilingual = {
+  es: "Pares planetarios — R. Ebertin, «The Combination of Stellar Influences»",
+  en: "Planetary pairs — R. Ebertin, \"The Combination of Stellar Influences\"",
+};
 
 export const BIBLIOGRAPHY: Bilingual[] = [
-  SRC_CASSANYA, SRC_BARBAULT, SRC_TARNAS, SRC_BAIGENT, SRC_CAMPION,
+  SRC_CASSANYA, SRC_BARBAULT, SRC_TARNAS, SRC_BAIGENT, SRC_CAMPION, SRC_EBERTIN,
 ];
 
 // ── Narrativa de eventos históricos (keyed por id de backend) ──────────────────
@@ -710,6 +714,112 @@ const CONFIG_NARRATIVES: Record<string, ConfigEntry> = {
   },
 };
 
+// ── Disparadores rápidos de Marte (déclencheur, doctrina de Barbault) ──────────
+// Marte no participa de MUNDANE_BODIES: es un cuerpo rápido que, en la
+// tradición mundana, ACTIVA los ciclos lentos de fondo en vez de definirlos
+// por sí mismo. Solo cubrimos aspectos duros (Conjunción/Oposición/Cuadratura),
+// los que Ebertin asocia con descarga de tensión y no con integración armónica.
+type TriggerPairKey = "Marte+Urano" | "Marte+Plutón" | "Marte+Saturno" | "Marte+Neptuno" | "Marte+Júpiter";
+
+interface TriggerEntry {
+  titleByAspect: Partial<Record<string, Bilingual>>;
+  titleGeneric: Bilingual;
+  theme: Bilingual;
+  synthesis: Bilingual;
+}
+
+const TRIGGER_NARRATIVES: Record<TriggerPairKey, TriggerEntry> = {
+  "Marte+Urano": {
+    titleByAspect: {
+      Conjunción: { es: "Marte–Urano en conjunción", en: "Mars–Uranus conjunction" },
+      Oposición: { es: "Marte–Urano en oposición", en: "Mars–Uranus opposition" },
+      Cuadratura: { es: "Marte–Urano en cuadratura", en: "Mars–Uranus square" },
+    },
+    titleGeneric: { es: "Marte–Urano en aspecto duro", en: "Mars–Uranus hard aspect" },
+    theme: { es: "Descarga súbita", en: "Sudden discharge" },
+    synthesis: {
+      es: "El impulso de acción (Marte) se encuentra con lo eléctrico e imprevisto (Urano): una descarga súbita, una ruptura brusca, el gesto que rompe el patrón esperado. Es el disparador más asociado a lo repentino.",
+      en: "The impulse to act (Mars) meets the electric and unforeseen (Uranus): a sudden discharge, an abrupt break, the gesture that breaks the expected pattern. This is the trigger most associated with the sudden and unexpected.",
+    },
+  },
+  "Marte+Plutón": {
+    titleByAspect: {
+      Conjunción: { es: "Marte–Plutón en conjunción", en: "Mars–Pluto conjunction" },
+      Oposición: { es: "Marte–Plutón en oposición", en: "Mars–Pluto opposition" },
+      Cuadratura: { es: "Marte–Plutón en cuadratura", en: "Mars–Pluto square" },
+    },
+    titleGeneric: { es: "Marte–Plutón en aspecto duro", en: "Mars–Pluto hard aspect" },
+    theme: { es: "Fuerza concentrada", en: "Concentrated force" },
+    synthesis: {
+      es: "El impulso de acción (Marte) se funde con el poder profundo (Plutón): fuerza concentrada, un pulso de intensidad que busca salida. La tradición lo lee como el disparador de mayor densidad energética.",
+      en: "The impulse to act (Mars) merges with deep power (Pluto): concentrated force, a pulse of intensity seeking release. Tradition reads this as the trigger with the greatest energetic density.",
+    },
+  },
+  "Marte+Saturno": {
+    titleByAspect: {
+      Conjunción: { es: "Marte–Saturno en conjunción", en: "Mars–Saturn conjunction" },
+      Oposición: { es: "Marte–Saturno en oposición", en: "Mars–Saturn opposition" },
+      Cuadratura: { es: "Marte–Saturno en cuadratura", en: "Mars–Saturn square" },
+    },
+    titleGeneric: { es: "Marte–Saturno en aspecto duro", en: "Mars–Saturn hard aspect" },
+    theme: { es: "Fricción entre impulso y límite", en: "Friction between drive and limit" },
+    synthesis: {
+      es: "El impulso de acción (Marte) choca con la estructura y el límite (Saturno): fricción, un frenazo, energía que se acumula contra una resistencia antes de encontrar cauce.",
+      en: "The impulse to act (Mars) collides with structure and limit (Saturn): friction, an abrupt braking, energy building up against resistance before finding a channel.",
+    },
+  },
+  "Marte+Neptuno": {
+    titleByAspect: {
+      Conjunción: { es: "Marte–Neptuno en conjunción", en: "Mars–Neptune conjunction" },
+      Oposición: { es: "Marte–Neptuno en oposición", en: "Mars–Neptune opposition" },
+      Cuadratura: { es: "Marte–Neptuno en cuadratura", en: "Mars–Neptune square" },
+    },
+    titleGeneric: { es: "Marte–Neptuno en aspecto duro", en: "Mars–Neptune hard aspect" },
+    theme: { es: "Acción difusa", en: "Diffuse action" },
+    synthesis: {
+      es: "El impulso de acción (Marte) se diluye en lo ideal y lo indefinido (Neptuno): acción difusa, desgaste sin objetivo claro, o idealismo que pasa a los hechos sin del todo materializarse.",
+      en: "The impulse to act (Mars) dissolves into the ideal and the undefined (Neptune): diffuse action, wear without a clear target, or idealism moving into action without fully materializing.",
+    },
+  },
+  "Marte+Júpiter": {
+    titleByAspect: {
+      Conjunción: { es: "Marte–Júpiter en conjunción", en: "Mars–Jupiter conjunction" },
+      Oposición: { es: "Marte–Júpiter en oposición", en: "Mars–Jupiter opposition" },
+      Cuadratura: { es: "Marte–Júpiter en cuadratura", en: "Mars–Jupiter square" },
+    },
+    titleGeneric: { es: "Marte–Júpiter en aspecto duro", en: "Mars–Jupiter hard aspect" },
+    theme: { es: "Impulso expansivo", en: "Expansive drive" },
+    synthesis: {
+      es: "El impulso de acción (Marte) se amplifica con la expansión (Júpiter): energía que crece rápido, con el riesgo de la sobreextensión — más terreno del que se puede sostener.",
+      en: "The impulse to act (Mars) amplifies with expansion (Jupiter): energy that grows fast, with the risk of overextension — more ground taken than can be held.",
+    },
+  },
+};
+
+function triggerPairKey(bodies: string[]): TriggerPairKey | null {
+  if (bodies.length !== 2 || bodies[0] !== "Marte") return null;
+  const key = `Marte+${bodies[1]}`;
+  return (key in TRIGGER_NARRATIVES) ? (key as TriggerPairKey) : null;
+}
+
+export function getTriggerNarrative(
+  config: { bodies: string[]; aspect: string | null },
+  lang: Lang,
+): { title: string; theme: string; synthesis: string; source: string } {
+  const key = triggerPairKey(config.bodies);
+  if (!key) {
+    return { title: config.bodies.join("–"), theme: "", synthesis: "", source: SRC_EBERTIN[lang] };
+  }
+  const entry = TRIGGER_NARRATIVES[key];
+  const title = (config.aspect && entry.titleByAspect[config.aspect]) || entry.titleGeneric;
+  return {
+    title: title[lang],
+    theme: entry.theme[lang],
+    synthesis: entry.synthesis[lang],
+    source: SRC_EBERTIN[lang],
+  };
+}
+
 function signatureKey(config: { signature: Record<string, unknown> }): string | null {
   const sig = config.signature;
   if (Array.isArray(sig.pair) && typeof sig.aspect === "string") {
@@ -724,7 +834,7 @@ function signatureKey(config: { signature: Record<string, unknown> }): string | 
 
 export function getConfigNarrative(
   config: {
-    kind: "aspect" | "ingress";
+    kind: "aspect" | "ingress" | "trigger";
     bodies: string[];
     aspect: string | null;
     sign: string | null;
@@ -732,6 +842,10 @@ export function getConfigNarrative(
   },
   lang: Lang,
 ): { title: string; theme: string; synthesis: string; source: string } {
+  if (config.kind === "trigger") {
+    return getTriggerNarrative(config, lang);
+  }
+
   const key = signatureKey(config);
   if (key && CONFIG_NARRATIVES[key]) {
     const c = CONFIG_NARRATIVES[key];

@@ -31,6 +31,8 @@ const MARGIN_X = 28;
 const ROW_H = 30;
 const AXIS_Y_OFFSET = 22; // espacio para etiquetas de mes bajo el eje
 const MARKER_R = 10;
+const TRIGGER_MARKER_R = 6; // disparadores rápidos de Marte: marcador menor y visualmente distinto
+const TRIGGER_COLOR = "#EF4444";
 
 function dayOfYearFraction(dateStr: string, year: number): number {
   const d = parseLocalDate(dateStr);
@@ -42,7 +44,7 @@ function dayOfYearFraction(dateStr: string, year: number): number {
 }
 
 function configLabel(c: MundaneConfiguration): string {
-  if (c.kind === "aspect" && c.bodies.length === 2) {
+  if ((c.kind === "aspect" || c.kind === "trigger") && c.bodies.length === 2) {
     const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
     const symbolB = c.sky.find((s) => s.name === c.bodies[1])?.symbol ?? "";
     return `${symbolA}${c.aspect ? ASPECT_SYMBOL[c.aspect] ?? "" : ""}${symbolB}`;
@@ -57,6 +59,7 @@ function configLabel(c: MundaneConfiguration): string {
 }
 
 function configColor(c: MundaneConfiguration): string {
+  if (c.kind === "trigger") return TRIGGER_COLOR;
   if (c.kind === "ingress") return INGRESS_COLOR;
   return (c.aspect && ASPECT_LINE_COLOR[c.aspect]) || "#334155";
 }
@@ -120,14 +123,16 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
           const color = configColor(c);
           const active = c.id === selectedId;
           const label = configLabel(c);
+          const isTrigger = c.kind === "trigger";
+          const r = isTrigger ? TRIGGER_MARKER_R : MARKER_R;
           return (
             <g key={c.id} className="cursor-pointer" onClick={() => onSelect(c.id)}
               onMouseEnter={(e) => showTip(e, label, c.exact_date)}
               onMouseLeave={() => setTooltip(null)}>
               <line x1={x} y1={y} x2={x} y2={baseY} stroke={color} strokeWidth={1} opacity={0.35} />
-              {active && <circle cx={x} cy={y} r={MARKER_R + 4} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />}
-              <circle cx={x} cy={y} r={MARKER_R} fill={color} opacity={0.92} />
-              <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={9} fill="white" fontWeight="700" className="select-none pointer-events-none">
+              {active && <circle cx={x} cy={y} r={r + 4} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />}
+              <circle cx={x} cy={y} r={r} fill={color} opacity={0.92} />
+              <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={isTrigger ? 7 : 9} fill="white" fontWeight="700" className="select-none pointer-events-none">
                 {label.length > 3 ? label.slice(0, 3) : label}
               </text>
               {c.analogs.length > 0 && (

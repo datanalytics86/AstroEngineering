@@ -273,7 +273,7 @@ export interface NatalImpact {
 export interface MundaneConfiguration {
   id: string;
   exact_date: string;         // "YYYY-MM-DD"
-  kind: "aspect" | "ingress";
+  kind: "aspect" | "ingress" | "trigger";
   bodies: string[];
   aspect: string | null;
   sign: string | null;
@@ -282,6 +282,8 @@ export interface MundaneConfiguration {
   sky: MundaneSkyBody[];
   analogs: MundaneAnalog[];
   themes: string[];           // temas agregados de LOS ANÁLOGOS de esta configuración (máx 6)
+  window_start?: string;      // disparadores rápidos de Marte: primer día con orbe <= 2°
+  window_end?: string;        // disparadores rápidos de Marte: último día con orbe <= 2°
 }
 
 export interface CyclicIndexPoint {
