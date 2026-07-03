@@ -860,6 +860,15 @@ function parseKey(key: string): [string, string, string] | null {
 
 // ── API pública ───────────────────────────────────────────────────────────────
 
+// Construye la clave "{planeta/cuerpo}_{aspecto}_{planeta natal}" en minúsculas
+// que usa este módulo (ej. "saturno_cuadratura_sol"). Único punto de verdad del
+// formato de clave — reutilizado por el motor de interpretaciones natales de
+// tránsitos, los impactos natales de geopolítica (mundane-interpretation.ts) y
+// la cronología anual de tránsitos (transitos/[id]/page.tsx).
+export function buildInterpretationKey(planet: string, aspect: string, natalPlanet: string): string {
+  return `${planet.toLowerCase()}_${aspect.toLowerCase().replace(/ /g, "_")}_${natalPlanet.toLowerCase()}`;
+}
+
 export function getInterpretation(key: string, lang: "es" | "en" = "es"): TransitInterpretation | undefined {
   if (lang === "en") {
     const parsed = parseKey(key);

@@ -20,6 +20,7 @@ import { generateMundaneReading, buildImpactInterpretationKey } from "@/lib/mund
 import { getInterpretation } from "@/lib/interpretation-engine";
 import { ASPECT_SYMBOL, ASPECT_LINE_COLOR, INGRESS_COLOR } from "@/components/MundaneWheel";
 import { SIGN_NAMES, SIGN_SYMBOLS } from "@/lib/wheel-geometry";
+import { parseLocalDate } from "@/lib/date-utils";
 
 const MundaneWheel = dynamic(() => import("@/components/MundaneWheel"), { ssr: false });
 const MundaneTimelineChart = dynamic(() => import("@/components/MundaneTimelineChart"), { ssr: false });
@@ -67,14 +68,6 @@ function configGlyphs(c: MundaneConfiguration): { text: string; color: string } 
     return { text: `${symbolBody} → ${signSymbol}`, color: INGRESS_COLOR };
   }
   return { text: "", color: "#334155" };
-}
-
-// Parsea "YYYY-MM-DD" como fecha LOCAL. `new Date("2026-02-20")` se interpreta como
-// medianoche UTC y, en zonas al oeste de UTC, se muestra el día anterior. Al descomponer
-// los campos evitamos el desfase de zona horaria en la fecha del evento.
-function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1);
 }
 
 function Spinner({ label }: { label: string }) {
