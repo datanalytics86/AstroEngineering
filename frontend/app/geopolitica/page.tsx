@@ -158,6 +158,8 @@ function GeopoliticaContent() {
   const [compareEra, setCompareEra] = useState<string | null>(null); // analog id being compared
   const [compareMode, setCompareMode] = useState<CompareMode>("era"); // cómo se muestra compareEra
   const [filterMode, setFilterMode] = useState<FilterMode>("majors");
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+  const [showAllConfigs, setShowAllConfigs] = useState(false); // móvil: "Ver todas (N)"
 
   useEffect(() => {
     setCharts(listCharts());
@@ -253,6 +255,20 @@ function GeopoliticaContent() {
     );
   }, [configs, filterMode]);
 
+  // Lista de tarjetas (columna izquierda): en el filtro "Mayores" se ocultan
+  // los disparadores de Marte (siguen visibles en el timeline, solo como
+  // marcadores menores) para no ahogar los ciclos lentos entre las tarjetas
+  // (B1). En "Todos"/"Con precedentes"/"Disparadores" se mantienen.
+  const cardConfigs = useMemo(
+    () => (filterMode === "majors" ? filteredConfigs.filter((c) => c.kind !== "trigger") : filteredConfigs),
+    [filteredConfigs, filterMode],
+  );
+
+  // Al cambiar de filtro, la lista móvil vuelve a mostrar solo las primeras N.
+  useEffect(() => {
+    setShowAllConfigs(false);
+  }, [filterMode]);
+
   // Default selected config = first con análogos dentro del filtro activo, si no el primero
   useEffect(() => {
     if (!data) return;
@@ -347,9 +363,18 @@ function GeopoliticaContent() {
         </div>
       </div>
 
-      {/* Disclaimer */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
-        <p className="text-xs text-amber-800 leading-relaxed">{t("geo.disclaimer")}</p>
+      {/* Disclaimer — compacto, expandible al texto completo (B6) */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-6">
+        <p className="text-xs text-amber-800 leading-relaxed">
+          ⓘ {disclaimerOpen ? t("geo.disclaimer") : t("geo.disclaimer_short")}{" "}
+          <button
+            type="button"
+            onClick={() => setDisclaimerOpen((v) => !v)}
+            className="text-amber-900 underline underline-offset-2 hover:text-amber-950 font-medium"
+          >
+            {disclaimerOpen ? t("geo.disclaimer_less") : t("geo.disclaimer_more")}
+          </button>
+        </p>
       </div>
 
       {/* Mode buttons */}
@@ -410,31 +435,14 @@ function GeopoliticaContent() {
         </div>
       ) : data ? (
         <div className="space-y-6">
-          {/* Probable themes */}
-          {data.probable_themes.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-5">
-              <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.probable_themes")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {data.probable_themes.map((th) => (
-                  <span key={th} className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full font-mono">{getThemeLabel(th, L)}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Cyclic index (Barbault) */}
-          {data.cyclic_index.length > 0 && (
-            <CyclicIndexChart
-              data={data.cyclic_index}
-              lang={L}
-              markers={indexMarkers}
-              onSelectConfig={(id) => {
-                setSelectedConfigId(id);
-                setCompareEra(null);
-                if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
-              }}
-            />
-          )}
+          {/* Cronología del año — el corazón de la página, primera pantalla (B5) */}
+          <MundaneTimelineChart
+            configs={filteredConfigs}
+            year={year}
+            selectedId={selectedConfigId}
+            onSelect={(id) => { setSelectedConfigId(id); setCompareEra(null); }}
+            lang={L}
+          />
 
           {/* Filter chips */}
           <div className="flex flex-wrap gap-2 items-center">
@@ -453,45 +461,66 @@ function GeopoliticaContent() {
             ))}
           </div>
 
-          {/* Timeline chart */}
-          <MundaneTimelineChart
-            configs={filteredConfigs}
-            year={year}
-            selectedId={selectedConfigId}
-            onSelect={(id) => { setSelectedConfigId(id); setCompareEra(null); }}
-            lang={L}
-          />
-
           <div className="xl:grid xl:grid-cols-[300px_1fr] xl:gap-8">
-            {/* LEFT — config timeline */}
-            <div className="space-y-2 mb-6 xl:mb-0">
-              {filteredConfigs.map((c) => {
-                const nar = getConfigNarrative(c, L);
-                const glyphs = configGlyphs(c);
-                let dateStr = c.exact_date;
-                try { dateStr = format(parseLocalDate(c.exact_date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
-                const active = c.id === selectedConfigId;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${active ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:border-indigo-200"}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
-                        <span className="font-mono text-xs" style={{ color: glyphs.color }}>{glyphs.text}</span>
-                        {nar.title}
-                      </span>
-                      {c.kind === "trigger" ? (
-                        <span className="text-[10px] font-mono text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full shrink-0">{t("geo.trigger.badge")}</span>
-                      ) : c.analogs.length > 0 && (
-                        <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full shrink-0">{c.analogs.length}★</span>
-                      )}
-                    </div>
-                    <span className="text-xs text-slate-400 font-mono">{dateStr}</span>
-                  </button>
-                );
-              })}
+            {/* LEFT — config list. Contenida (max-h + scroll) para que la página no
+                crezca con el número de configuraciones; en móvil solo se ven las
+                primeras 5 + "Ver todas (N)" (B2). */}
+            <div className="mb-6 xl:mb-0">
+              <div className="space-y-2 xl:max-h-[70vh] xl:overflow-y-auto xl:sticky xl:top-20 xl:pr-1">
+                {cardConfigs.map((c, idx) => {
+                  const nar = getConfigNarrative(c, L);
+                  const glyphs = configGlyphs(c);
+                  let dateStr = c.exact_date;
+                  try { dateStr = format(parseLocalDate(c.exact_date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
+                  const active = c.id === selectedConfigId;
+                  const hideOnMobile = !showAllConfigs && idx >= 5;
+
+                  // Disparadores: tarjeta compacta de una sola línea (B1) — solo
+                  // aparecen aquí en los filtros "Todos" y "Disparadores".
+                  if (c.kind === "trigger") {
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-2 ${active ? "bg-red-50 border-red-200" : "bg-white border-slate-200 hover:border-red-200"} ${hideOnMobile ? "hidden xl:flex" : ""}`}
+                      >
+                        <span className="font-mono text-xs shrink-0" style={{ color: glyphs.color }}>{glyphs.text}</span>
+                        <span className="text-xs text-slate-700 truncate flex-1">{nar.title}</span>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">{dateStr}</span>
+                        <span className="text-[9px] font-mono text-red-500 bg-red-50 px-1 py-0.5 rounded-full shrink-0">{t("geo.trigger.badge")}</span>
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${active ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:border-indigo-200"} ${hideOnMobile ? "hidden xl:block" : ""}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                          <span className="font-mono text-xs" style={{ color: glyphs.color }}>{glyphs.text}</span>
+                          {nar.title}
+                        </span>
+                        {c.analogs.length > 0 && (
+                          <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full shrink-0">{c.analogs.length}★</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-400 font-mono">{dateStr}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {!showAllConfigs && cardConfigs.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllConfigs(true)}
+                  className="xl:hidden mt-2 w-full text-center text-xs font-mono text-indigo-600 border border-indigo-200 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors"
+                >
+                  {t("geo.configs.show_all")} ({cardConfigs.length})
+                </button>
+              )}
             </div>
 
             {/* RIGHT — detail */}
@@ -728,6 +757,32 @@ function GeopoliticaContent() {
               );
             })()}
           </div>
+
+          {/* Probable themes — sección compacta (B5) */}
+          {data.probable_themes.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+              <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.probable_themes")}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {data.probable_themes.map((th) => (
+                  <span key={th} className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full font-mono">{getThemeLabel(th, L)}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cyclic index (Barbault) — colapsable, no compite con la cronología (B4/B5) */}
+          {data.cyclic_index.length > 0 && (
+            <CyclicIndexChart
+              data={data.cyclic_index}
+              lang={L}
+              markers={indexMarkers}
+              onSelectConfig={(id) => {
+                setSelectedConfigId(id);
+                setCompareEra(null);
+                if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
+              }}
+            />
+          )}
 
           {/* Bibliography */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
