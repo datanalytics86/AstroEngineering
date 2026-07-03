@@ -167,10 +167,21 @@ class ExactAspectEvent(BaseModel):
     interpretation_key: str
 
 
+class RetroPeriod(BaseModel):
+    planet: str
+    symbol: str
+    start_date: str  # estación retrógrada, YYYY-MM-DD
+    end_date: str    # estación directa, YYYY-MM-DD
+    start_sign: str
+    end_sign: str
+    days: int
+
+
 class TransitResponse(BaseModel):
     current_transits: list[TransitEvent]
     timeline: list[MonthlyForecast]
     exact_aspects_calendar: list[ExactAspectEvent]
+    retro_periods: list[RetroPeriod] = []
 
 
 # ── Solar Return ───────────────────────────────────────────────────────────────

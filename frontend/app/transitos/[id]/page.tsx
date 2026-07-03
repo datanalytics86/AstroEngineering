@@ -9,13 +9,29 @@ import type {
   BirthData,
   MonthlyForecast,
   SkyPlanet,
+  TransitEvent,
+  RetroPeriod,
 } from "@/lib/types";
 import { loadChart, loadYearTransits, saveYearTransits } from "@/lib/storage";
 import { postWithWakingRetry } from "@/lib/api-fetch";
 import { ASPECT_COLORS, IMPORTANCE_COLORS } from "@/lib/zodiac-utils";
 import { generateMonthBrief, generateYearBrief } from "@/lib/brief-summary";
 import type { BriefInfluence } from "@/lib/brief-summary";
+import { parseLocalDate } from "@/lib/date-utils";
+import { getInterpretation, buildInterpretationKey } from "@/lib/interpretation-engine";
+import { getRetroMeaning } from "@/lib/retro-meanings";
+import {
+  RETRO_FILTER,
+  ROW_ORDER as TIMELINE_ROW_ORDER,
+  PLANET_SYMBOLS,
+  ASPECT_SYMBOLS,
+  transitEventKey,
+  retroPeriodKey,
+  isRetroKey,
+} from "@/lib/transit-timeline";
+import { BODY_COLORS as PLANET_COLOR } from "@/components/MundaneWheel";
 import { format } from "date-fns";
+import type { Locale } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { useT } from "@/lib/i18n";
@@ -24,28 +40,10 @@ const TransitZodiacWheel = dynamic(
   () => import("@/components/TransitZodiacWheel"),
   { ssr: false }
 );
-
-// ── Símbolos locales ──────────────────────────────────────────────────────────
-
-const PLANET_SYMBOLS: Record<string, string> = {
-  Sol: "☉", Luna: "☽", Mercurio: "☿", Venus: "♀", Marte: "♂",
-  "Júpiter": "♃", Saturno: "♄", Urano: "♅", Neptuno: "♆", Plutón: "♇",
-  "Nodo Norte": "☊", "Quirón": "⚷",
-};
-
-const ASPECT_SYMBOLS: Record<string, string> = {
-  "Conjunción": "☌", "Oposición": "☍", "Cuadratura": "□",
-  "Trígono": "△", "Sextil": "⚹", "Quincuncio": "⚻",
-  "Sesquicuadratura": "⚼", "Semi-sextil": "⚺",
-};
-
-const PLANET_COLOR: Record<string, string> = {
-  "Plutón":  "#7C3AED",
-  "Neptuno": "#3B82F6",
-  "Urano":   "#06B6D4",
-  "Saturno": "#F59E0B",
-  "Júpiter": "#10B981",
-};
+const TransitYearTimeline = dynamic(
+  () => import("@/components/TransitYearTimeline"),
+  { ssr: false }
+);
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -60,6 +58,19 @@ function skyDots(sky?: SkyPlanet[]): { name: string; symbol: string; longitude: 
 
 function capitalizeFirst(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function formatLocalDate(dateStr: string, locale: Locale): string {
+  try {
+    return format(parseLocalDate(dateStr), "d MMM yyyy", { locale });
+  } catch {
+    return dateStr;
+  }
+}
+
+function daysBetween(a: string, b: string): number {
+  const diff = parseLocalDate(b).getTime() - parseLocalDate(a).getTime();
+  return Math.max(0, Math.round(diff / 86400000));
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -121,6 +132,128 @@ function InfluenceRow({ inf }: { inf: BriefInfluence }) {
         </span>
       </div>
       <p className="text-xs text-slate-600 leading-relaxed pl-4">{inf.narrative || inf.text}</p>
+    </div>
+  );
+}
+
+// ── Panel de detalle de la cronología (bloque B) ──────────────────────────────
+// Al seleccionar una barra en TransitYearTimeline, muestra los días de
+// influencia (enters_orb → leaves_orb) y la interpretación reutilizada del
+// motor existente (~270 combinaciones); degradación silenciosa si no hay clave.
+// Para bandas retrógradas usa el mini-corpus de retro-meanings.ts.
+interface TransitDetailPanelProps {
+  event?: TransitEvent;
+  retro?: RetroPeriod;
+  lang: "es" | "en";
+}
+
+function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
+  const { t } = useT();
+  const dateLocale = lang === "en" ? enUS : es;
+  const [expanded, setExpanded] = useState(false);
+
+  if (retro) {
+    const meaning = getRetroMeaning(retro.planet, lang);
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
+        <p className="text-xs font-mono text-slate-400 uppercase tracking-wide">
+          {t("transits.timeline.detail.title")}
+        </p>
+        <h3 className="font-semibold text-slate-800 text-sm">
+          {retro.symbol} {retro.planet} {t("transits.timeline.detail.retro_title")}
+        </h3>
+        <p className="text-sm text-slate-600 font-mono">
+          {t("transits.timeline.detail.influence")}: {formatLocalDate(retro.start_date, dateLocale)} –{" "}
+          {formatLocalDate(retro.end_date, dateLocale)} ({retro.days} {t("transits.timeline.detail.days")})
+        </p>
+        <p className="text-xs text-slate-400 font-mono">
+          {t("transits.timeline.detail.retro_signs")}: {retro.start_sign} → {retro.end_sign}
+        </p>
+        {meaning && (
+          <div className="space-y-1.5 pt-2 border-t border-slate-100">
+            <p className="text-sm text-slate-700 leading-relaxed">{meaning.meaning}</p>
+            <p className="text-xs text-slate-400 italic leading-relaxed">{meaning.advice}</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (event) {
+    const tSym = PLANET_SYMBOLS[event.transit_planet] ?? "";
+    const aSym = ASPECT_SYMBOLS[event.aspect_name] ?? event.aspect_name;
+    const nSym = PLANET_SYMBOLS[event.natal_planet] ?? "";
+    const interp = getInterpretation(
+      buildInterpretationKey(event.transit_planet, event.aspect_name, event.natal_planet),
+      lang
+    );
+    const importColor = IMPORTANCE_COLORS[event.importance] ?? "#94A3B8";
+    const days = daysBetween(event.enters_orb, event.leaves_orb);
+
+    return (
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
+        <p className="text-xs font-mono text-slate-400 uppercase tracking-wide">
+          {t("transits.timeline.detail.title")}
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <h3 className="font-semibold text-slate-800 text-sm">
+            {tSym} {event.transit_planet} {aSym} {nSym} {event.natal_planet} {t("transits.timeline.natal_suffix")}
+          </h3>
+          {event.transit_retrograde && (
+            <span className="text-xs font-mono text-red-500 bg-red-50 border border-red-200 px-1 rounded">℞</span>
+          )}
+          <span
+            className="ml-auto text-xs font-mono uppercase tracking-wide shrink-0"
+            style={{ color: importColor }}
+          >
+            {event.importance}
+          </span>
+        </div>
+
+        <p className="text-sm text-slate-600 font-mono">
+          {t("transits.timeline.detail.influence")}: {formatLocalDate(event.enters_orb, dateLocale)} –{" "}
+          {formatLocalDate(event.leaves_orb, dateLocale)} ({days} {t("transits.timeline.detail.days")})
+          {event.exact_date && (
+            <>
+              {" "}
+              · {t("transits.timeline.exact")}: {formatLocalDate(event.exact_date.slice(0, 10), dateLocale)}
+            </>
+          )}
+        </p>
+
+        {interp && (
+          <div className="space-y-1.5 pt-2 border-t border-slate-100">
+            <p className="text-sm text-slate-700 leading-relaxed">{interp.summary}</p>
+            {expanded ? (
+              <>
+                <p className="text-xs text-slate-600 leading-relaxed">{interp.detailed}</p>
+                <p className="text-xs text-slate-400 italic leading-relaxed">{interp.advice}</p>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(false)}
+                  className="text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+                >
+                  {t("transits.timeline.detail.collapse")}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setExpanded(true)}
+                className="text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+              >
+                {t("transits.timeline.detail.expand")}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-5">
+      <p className="text-sm text-slate-400">{t("transits.timeline.detail.select_hint")}</p>
     </div>
   );
 }
@@ -305,6 +438,18 @@ export default function TransitosPage() {
   const [errorByYear, setErrorByYear]       = useState<Record<number, string>>({});
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>("");
 
+  // Cronología anual (bloque B): vista por defecto = "timeline", con zoom por
+  // astro y selección de barra para el panel de detalle.
+  const [viewMode, setViewMode]       = useState<"timeline" | "month">("timeline");
+  const [planetFilter, setPlanetFilter] = useState<string | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+
+  // Al cambiar de año la selección anterior ya no aplica (otros datos).
+  useEffect(() => {
+    setSelectedKey(null);
+    setPlanetFilter(null);
+  }, [selectedYear]);
+
   // Load chart on mount
   useEffect(() => {
     if (!id) { router.push("/nueva"); return; }
@@ -418,6 +563,22 @@ export default function TransitosPage() {
         null
       : null;
 
+  // Planetas presentes en los tránsitos del año, en orden lento→rápido — para
+  // los chips de zoom de la cronología.
+  const presentPlanets = data
+    ? TIMELINE_ROW_ORDER.filter((p) => data.current_transits.some((tr) => tr.transit_planet === p))
+    : [];
+  const retroPeriods = data?.retro_periods ?? [];
+
+  const selectedEvent: TransitEvent | undefined =
+    data && selectedKey && !isRetroKey(selectedKey)
+      ? data.current_transits.find((ev) => transitEventKey(ev) === selectedKey)
+      : undefined;
+  const selectedRetro: RetroPeriod | undefined =
+    selectedKey && isRetroKey(selectedKey)
+      ? retroPeriods.find((p) => retroPeriodKey(p) === selectedKey)
+      : undefined;
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* ── Header ── */}
@@ -481,93 +642,179 @@ export default function TransitosPage() {
           </button>
         </div>
       ) : data ? (
-        selectedYear === currentYear ? (
-          /* ── CURRENT YEAR VIEW ── */
-          <div className="space-y-6">
-            {/* Month chips */}
-            <div className="flex flex-wrap gap-2">
-              {orderedTimeline.map((m) => {
-                let label = m.month;
-                try {
-                  label = capitalizeFirst(
-                    format(new Date(`${m.month}-01`), "MMM", { locale: dateLocale })
-                  );
-                } catch { /* keep raw */ }
-                return (
+        <div className="space-y-6">
+          {/* ── View toggle ── */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setViewMode("timeline")}
+              className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${
+                viewMode === "timeline"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"
+              }`}
+            >
+              {t("transits.view.toggle_timeline")}
+            </button>
+            <button
+              onClick={() => setViewMode("month")}
+              className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${
+                viewMode === "month"
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"
+              }`}
+            >
+              {t("transits.view.toggle_month")}
+            </button>
+          </div>
+
+          {viewMode === "timeline" ? (
+            /* ── TIMELINE VIEW (Gantt anual, zoom por astro) ── */
+            <div className="space-y-4">
+              <p className="text-sm font-semibold text-slate-700">
+                {t("transits.timeline.title")} {selectedYear}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setPlanetFilter(null)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${
+                    planetFilter === null
+                      ? "bg-slate-800 text-white"
+                      : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"
+                  }`}
+                >
+                  {t("transits.timeline.all")}
+                </button>
+                {presentPlanets.map((p) => (
                   <button
-                    key={m.month}
-                    onClick={() => setSelectedMonthKey(m.month)}
+                    key={p}
+                    onClick={() => setPlanetFilter(p)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors border ${
+                      planetFilter === p
+                        ? "text-white border-transparent"
+                        : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300"
+                    }`}
+                    style={planetFilter === p ? { backgroundColor: PLANET_COLOR[p] ?? "#334155" } : undefined}
+                  >
+                    {PLANET_SYMBOLS[p] ?? ""} {p}
+                  </button>
+                ))}
+                {retroPeriods.length > 0 && (
+                  <button
+                    onClick={() => setPlanetFilter(RETRO_FILTER)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${
-                      selectedMonthKey === m.month
-                        ? "bg-blue-600 text-white"
-                        : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
+                      planetFilter === RETRO_FILTER
+                        ? "bg-red-600 text-white"
+                        : "bg-white border border-slate-200 text-red-500 hover:border-red-300"
                     }`}
                   >
-                    {label}
+                    {t("transits.timeline.retro_chip")}
                   </button>
-                );
-              })}
-            </div>
+                )}
+              </div>
 
-            {/* Two-column layout */}
-            {selectedMonth && (
-              <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-8">
-                {/* LEFT — wheel */}
+              <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-8 xl:items-start">
+                <TransitYearTimeline
+                  transits={data.current_transits}
+                  retroPeriods={retroPeriods}
+                  year={selectedYear}
+                  selectedKey={selectedKey}
+                  onSelect={setSelectedKey}
+                  planetFilter={planetFilter}
+                  lang={lang}
+                />
+                <div className="mt-6 xl:mt-0 xl:sticky xl:top-6">
+                  <TransitDetailPanel key={selectedKey ?? "none"} event={selectedEvent} retro={selectedRetro} lang={lang} />
+                </div>
+              </div>
+            </div>
+          ) : selectedYear === currentYear ? (
+            /* ── CURRENT YEAR VIEW (por mes) ── */
+            <div className="space-y-6">
+              {/* Month chips */}
+              <div className="flex flex-wrap gap-2">
+                {orderedTimeline.map((m) => {
+                  let label = m.month;
+                  try {
+                    label = capitalizeFirst(
+                      format(new Date(`${m.month}-01`), "MMM", { locale: dateLocale })
+                    );
+                  } catch { /* keep raw */ }
+                  return (
+                    <button
+                      key={m.month}
+                      onClick={() => setSelectedMonthKey(m.month)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${
+                        selectedMonthKey === m.month
+                          ? "bg-blue-600 text-white"
+                          : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Two-column layout */}
+              {selectedMonth && (
+                <div className="xl:grid xl:grid-cols-[1fr_360px] xl:gap-8">
+                  {/* LEFT — wheel */}
+                  <div className="space-y-3">
+                    <TransitZodiacWheel
+                      natalPlanets={chart.planets}
+                      natalHouses={chart.houses}
+                      ascendant={chart.ascendant}
+                      midheaven={chart.midheaven}
+                      natalAspects={chart.aspects}
+                      transitPlanets={skyDots(selectedMonth.sky)}
+                      transitEvents={selectedMonth.transits_active}
+                    />
+                    <p className="text-xs text-slate-400 font-mono text-center">
+                      {capitalizeFirst(
+                        format(new Date(`${selectedMonth.month}-01`), "MMMM yyyy", { locale: dateLocale })
+                      )}{" "}
+                      · {t("transits.wheel.caption")}
+                    </p>
+                  </div>
+
+                  {/* RIGHT — month brief */}
+                  <div className="mt-6 xl:mt-0">
+                    <MonthBriefPanel
+                      month={selectedMonth}
+                      exactCalendar={data.exact_aspects_calendar}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* ── FUTURE YEAR VIEW (análisis anual) ── */
+            <div className="space-y-6">
+              <YearBriefPanel data={data} year={selectedYear} />
+
+              {/* Mid-year wheel snapshot */}
+              {midYearMonth && (
                 <div className="space-y-3">
+                  <p className="text-sm font-semibold text-slate-700">
+                    {t("transits.wheel.midyear")} {selectedYear}
+                  </p>
                   <TransitZodiacWheel
                     natalPlanets={chart.planets}
                     natalHouses={chart.houses}
                     ascendant={chart.ascendant}
                     midheaven={chart.midheaven}
                     natalAspects={chart.aspects}
-                    transitPlanets={skyDots(selectedMonth.sky)}
-                    transitEvents={selectedMonth.transits_active}
+                    transitPlanets={skyDots(midYearMonth.sky)}
+                    transitEvents={midYearMonth.transits_active}
                   />
                   <p className="text-xs text-slate-400 font-mono text-center">
-                    {capitalizeFirst(
-                      format(new Date(`${selectedMonth.month}-01`), "MMMM yyyy", { locale: dateLocale })
-                    )}{" "}
-                    · {t("transits.wheel.caption")}
+                    {t("transits.wheel.midyear_caption")}
                   </p>
                 </div>
-
-                {/* RIGHT — month brief */}
-                <div className="mt-6 xl:mt-0">
-                  <MonthBriefPanel
-                    month={selectedMonth}
-                    exactCalendar={data.exact_aspects_calendar}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          /* ── FUTURE YEAR VIEW ── */
-          <div className="space-y-6">
-            <YearBriefPanel data={data} year={selectedYear} />
-
-            {/* Mid-year wheel snapshot */}
-            {midYearMonth && (
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-slate-700">
-                  {t("transits.wheel.midyear")} {selectedYear}
-                </p>
-                <TransitZodiacWheel
-                  natalPlanets={chart.planets}
-                  natalHouses={chart.houses}
-                  ascendant={chart.ascendant}
-                  midheaven={chart.midheaven}
-                  natalAspects={chart.aspects}
-                  transitPlanets={skyDots(midYearMonth.sky)}
-                  transitEvents={midYearMonth.transits_active}
-                />
-                <p className="text-xs text-slate-400 font-mono text-center">
-                  {t("transits.wheel.midyear_caption")}
-                </p>
-              </div>
-            )}
-          </div>
-        )
+              )}
+            </div>
+          )}
+        </div>
       ) : null}
     </div>
   );

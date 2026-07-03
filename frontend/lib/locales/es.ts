@@ -114,6 +114,28 @@ export const es = {
   "transits.opportunities.title": "Oportunidades",
   "transits.challenges.title": "Desafíos",
   "transits.corpus_note": "",
+  "transits.view.toggle_timeline": "📅 Cronología",
+  "transits.view.toggle_month": "🎡 Por mes",
+  "transits.timeline.title": "Tu año en movimiento",
+  "transits.timeline.all": "Todos",
+  "transits.timeline.retro_chip": "℞",
+  "transits.timeline.retro_row": "℞ rápidos",
+  "transits.timeline.natal_suffix": "natal",
+  "transits.timeline.exact": "Exacto",
+  "transits.timeline.empty": "No hay tránsitos ni retrogradaciones que mostrar en este año.",
+  "transits.timeline.legend.harmonic": "armonioso",
+  "transits.timeline.legend.tense": "tenso",
+  "transits.timeline.legend.neutral": "neutro",
+  "transits.timeline.legend.exact": "exacto",
+  "transits.timeline.legend.retro": "período retrógrado",
+  "transits.timeline.detail.title": "Detalle del tránsito",
+  "transits.timeline.detail.influence": "En influencia",
+  "transits.timeline.detail.days": "días",
+  "transits.timeline.detail.expand": "Ver más",
+  "transits.timeline.detail.collapse": "Ver menos",
+  "transits.timeline.detail.select_hint": "Selecciona una barra de la cronología para ver sus días de influencia e interpretación.",
+  "transits.timeline.detail.retro_title": "retrógrado",
+  "transits.timeline.detail.retro_signs": "Signo de estación a estación",
 
   // ── Retorno Solar page ──
   "solar.loading": "Cargando retorno solar…",
@@ -214,6 +236,9 @@ export const es = {
   "geo.index.explain": "Suma de las separaciones angulares entre los pares de planetas lentos (Barbault). Sus mínimos históricos coinciden con fases de concentración cíclica — lectura analógica, no predicción factual.",
   "geo.index.min_label": "mínimo del año",
   "geo.source_label": "Fuente",
+  "geo.personal_cta.title": "¿Y tu año personal?",
+  "geo.personal_cta.body": "Aquí ves los ciclos mundiales lentos. Para tu cronología personal planeta a planeta —con días de influencia e interpretación— visita Tu cielo en movimiento.",
+  "geo.personal_cta.button": "Ver mi cronología personal",
 } as const;
 
 export type TranslationKeys = keyof typeof es;

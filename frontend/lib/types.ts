@@ -149,10 +149,21 @@ export interface ExactAspectEvent {
   interpretation_key: string;
 }
 
+export interface RetroPeriod {
+  planet: string;
+  symbol: string;
+  start_date: string;  // estación retrógrada, "YYYY-MM-DD"
+  end_date: string;    // estación directa, "YYYY-MM-DD"
+  start_sign: string;
+  end_sign: string;
+  days: number;
+}
+
 export interface TransitResponse {
   current_transits: TransitEvent[];
   timeline: MonthlyForecast[];
   exact_aspects_calendar: ExactAspectEvent[];
+  retro_periods?: RetroPeriod[];
 }
 
 // ── Interpretation Engine Types ────────────────────────────────────────────────

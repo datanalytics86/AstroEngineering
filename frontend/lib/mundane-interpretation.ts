@@ -12,7 +12,7 @@
 import type { MundaneConfiguration, MundaneAnalog, NatalImpact } from "./types";
 import { SIGN_NAMES } from "./wheel-geometry";
 import { getConfigNarrative, getEventNarrative, getThemeLabel, type Lang } from "./mundane-corpus";
-import { getInterpretation } from "./interpretation-engine";
+import { getInterpretation, buildInterpretationKey } from "./interpretation-engine";
 
 export interface MundaneReading {
   paragraphs: string[];
@@ -28,7 +28,7 @@ const IMPORTANCE_RANK: Record<string, number> = { crítica: 4, alta: 3, media: 2
  * claves de tránsitos normales (ej. "saturno_trígono_luna").
  */
 export function buildImpactInterpretationKey(impact: NatalImpact): string {
-  return `${impact.body.toLowerCase()}_${impact.aspect.toLowerCase().replace(/ /g, "_")}_${impact.natal_planet.toLowerCase()}`;
+  return buildInterpretationKey(impact.body, impact.aspect, impact.natal_planet);
 }
 
 // Verbo/acción por aspecto (más vívido que el nombre a secas).

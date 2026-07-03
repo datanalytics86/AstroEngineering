@@ -16,6 +16,7 @@ import { SIGN_NAMES, SIGN_SYMBOLS } from "@/lib/wheel-geometry";
 import { ASPECT_LINE_COLOR, ASPECT_SYMBOL, INGRESS_COLOR } from "@/components/MundaneWheel";
 import { useT } from "@/lib/i18n";
 import type { Lang } from "@/lib/mundane-corpus";
+import { parseLocalDate } from "@/lib/date-utils";
 
 interface Props {
   configs: MundaneConfiguration[];
@@ -30,11 +31,6 @@ const MARGIN_X = 28;
 const ROW_H = 30;
 const AXIS_Y_OFFSET = 22; // espacio para etiquetas de mes bajo el eje
 const MARKER_R = 10;
-
-function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split("-").map(Number);
-  return new Date(y, (m ?? 1) - 1, d ?? 1);
-}
 
 function dayOfYearFraction(dateStr: string, year: number): number {
   const d = parseLocalDate(dateStr);

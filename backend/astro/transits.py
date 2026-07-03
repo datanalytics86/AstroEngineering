@@ -7,6 +7,10 @@ import swisseph as swe
 from datetime import datetime, timedelta
 from .chart import to_julian_day, calc_planet_position, PLANET_IDS, PLANET_SYMBOLS
 from .houses import longitude_to_sign, degrees_to_dms
+
+# Planetas "rápidos" cuyas retrogradaciones se reportan como bandas propias
+# (no se escanean como aspectos porque son demasiado fugaces para una vista anual).
+RETRO_PLANETS = ("Mercurio", "Venus", "Marte")
 from .aspects import ASPECTS, TRANSIT_ORBS, score_transit, importance_label, angular_distance
 
 # Solo planetas lentos con impacto real en pronósticos
@@ -136,6 +140,109 @@ def compute_sky_snapshot(year: int, month: int) -> list[dict]:
             "speed": round(pos["speed"], 6),
         })
     return sky
+
+
+def compute_retrograde_periods(
+    year: int, planets: tuple = RETRO_PLANETS
+) -> list[dict]:
+    """
+    Detecta los períodos retrógrados de planetas rápidos (Mercurio, Venus, Marte)
+    que intersectan `year`. Escanea día a día un rango con margen amplio
+    alrededor del año (para no perder estaciones cercanas al límite dic/ene),
+    detecta cambios de signo en la velocidad (estación) y refina cada una con
+    búsqueda binaria a ±0.5 día. Las fechas de estación se entregan tal cual
+    (sin recortar al año), aunque caigan en el año vecino.
+    """
+    margin_days = 150
+    scan_start = datetime(year, 1, 1) - timedelta(days=margin_days)
+    scan_end = datetime(year, 12, 31) + timedelta(days=margin_days)
+    year_start_jd = to_julian_day(year, 1, 1, 0.0)
+    year_end_jd = to_julian_day(year, 12, 31, 23.999)
+
+    results: list[dict] = []
+
+    for planet in planets:
+        pid = PLANET_IDS.get(planet)
+        if pid is None:
+            continue
+
+        # Fase 1: barrido diario para localizar cambios de signo de velocidad
+        stations: list[tuple[float, float, str]] = []
+        prev_jd = None
+        prev_speed = None
+        current = scan_start
+        while current <= scan_end:
+            jd = to_julian_day(current.year, current.month, current.day, 12.0)
+            pos = calc_planet_position(jd, pid)
+            if pos is not None:
+                speed = pos["speed"]
+                if prev_speed is not None:
+                    if prev_speed >= 0 and speed < 0:
+                        stations.append((prev_jd, jd, "Rx"))
+                    elif prev_speed < 0 and speed >= 0:
+                        stations.append((prev_jd, jd, "D"))
+                prev_speed = speed
+                prev_jd = jd
+            current += timedelta(days=1)
+
+        # Fase 2: refinamiento binario ±0.5 día (20 iteraciones)
+        refined: list[tuple[float, str]] = []
+        for jd_before, jd_after, typ in stations:
+            lo, hi = jd_before, jd_after
+            for _ in range(20):
+                mid = (lo + hi) / 2
+                pos = calc_planet_position(mid, pid)
+                if pos is None:
+                    break
+                is_retro = pos["speed"] < 0
+                if typ == "Rx":
+                    if is_retro:
+                        hi = mid
+                    else:
+                        lo = mid
+                else:
+                    if is_retro:
+                        lo = mid
+                    else:
+                        hi = mid
+            refined.append(((lo + hi) / 2, typ))
+
+        # Emparejar cada estación Rx con la siguiente estación D consecutiva
+        # para formar un período completo; descarta estaciones sin par
+        # dentro de la ventana escaneada (incompletas).
+        i = 0
+        while i < len(refined):
+            jd_start, typ = refined[i]
+            if typ == "Rx" and i + 1 < len(refined) and refined[i + 1][1] == "D":
+                jd_end = refined[i + 1][0]
+                if jd_end >= year_start_jd and jd_start <= year_end_jd:
+                    y1, m1, d1, _ = swe.revjul(jd_start)
+                    y2, m2, d2, _ = swe.revjul(jd_end)
+                    start_pos = calc_planet_position(jd_start, pid)
+                    end_pos = calc_planet_position(jd_end, pid)
+                    start_sign = (
+                        longitude_to_sign(start_pos["longitude"])["sign"]
+                        if start_pos else ""
+                    )
+                    end_sign = (
+                        longitude_to_sign(end_pos["longitude"])["sign"]
+                        if end_pos else ""
+                    )
+                    results.append({
+                        "planet": planet,
+                        "symbol": PLANET_SYMBOLS.get(planet, ""),
+                        "start_date": f"{int(y1):04d}-{int(m1):02d}-{int(d1):02d}",
+                        "end_date": f"{int(y2):04d}-{int(m2):02d}-{int(d2):02d}",
+                        "start_sign": start_sign,
+                        "end_sign": end_sign,
+                        "days": int(round(jd_end - jd_start)),
+                    })
+                i += 2
+            else:
+                i += 1
+
+    results.sort(key=lambda r: r["start_date"])
+    return results
 
 
 def find_exact_aspect_date(
@@ -376,11 +483,13 @@ def calculate_transit_timeline(
     exact_aspects_calendar.sort(key=lambda x: x["date"])
 
     timeline = build_monthly_timeline(current_transits, start_date, end_date)
+    retro_periods = compute_retrograde_periods(start_date.year)
 
     return {
         "current_transits": current_transits,
         "timeline": timeline,
         "exact_aspects_calendar": exact_aspects_calendar,
+        "retro_periods": retro_periods,
     }
 
 
