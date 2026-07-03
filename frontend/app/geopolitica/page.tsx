@@ -641,6 +641,20 @@ function GeopoliticaContent() {
                       </div>
                     );
                   })()}
+
+                  {/* Puente hacia la cronología personal (bloque C) */}
+                  {mode === "natal" && selectedChartId && (
+                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 space-y-2">
+                      <p className="text-sm font-semibold text-indigo-900">{t("geo.personal_cta.title")}</p>
+                      <p className="text-xs text-indigo-700 leading-relaxed">{t("geo.personal_cta.body")}</p>
+                      <button
+                        onClick={() => router.push(`/transitos/${selectedChartId}`)}
+                        className="mt-1 bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 transition-colors font-mono"
+                      >
+                        {t("geo.personal_cta.button")}
+                      </button>
+                    </div>
+                  )}
                 </div>
               );
             })()}

@@ -236,4 +236,7 @@ export const en = {
   "geo.index.explain": "Sum of the angular separations between the slow-planet pairs (Barbault). Its historical minimums coincide with phases of cyclical concentration — an analogical reading, not a factual prediction.",
   "geo.index.min_label": "year minimum",
   "geo.source_label": "Source",
+  "geo.personal_cta.title": "What about your personal year?",
+  "geo.personal_cta.body": "Here you see the slow-moving world cycles. For your personal, planet-by-planet timeline — with days of influence and interpretation — visit Your sky in motion.",
+  "geo.personal_cta.button": "See my personal timeline",
 } as const;

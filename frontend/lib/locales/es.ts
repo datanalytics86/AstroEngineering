@@ -236,6 +236,9 @@ export const es = {
   "geo.index.explain": "Suma de las separaciones angulares entre los pares de planetas lentos (Barbault). Sus mínimos históricos coinciden con fases de concentración cíclica — lectura analógica, no predicción factual.",
   "geo.index.min_label": "mínimo del año",
   "geo.source_label": "Fuente",
+  "geo.personal_cta.title": "¿Y tu año personal?",
+  "geo.personal_cta.body": "Aquí ves los ciclos mundiales lentos. Para tu cronología personal planeta a planeta —con días de influencia e interpretación— visita Tu cielo en movimiento.",
+  "geo.personal_cta.button": "Ver mi cronología personal",
 } as const;
 
 export type TranslationKeys = keyof typeof es;
