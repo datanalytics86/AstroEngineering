@@ -888,6 +888,49 @@ export function getEclipseNarrative(
   };
 }
 
+// ── Impacto por país (cartas nacionales, tradición de Campion) ──────────────
+// Significado mundano de cada cuerpo lento + Sol en una carta NACIONAL (no
+// personal) — tradición Baigent/Campion/Harvey. Distinto del significado
+// psicológico-personal de interpretation-engine.ts (que no se reutiliza aquí
+// a propósito: una carta nacional no tiene una "psique").
+export const NATIONAL_PLANET_MEANINGS: Record<string, Bilingual> = {
+  Sol: { es: "el liderazgo y la identidad nacional", en: "leadership and national identity" },
+  Mercurio: { es: "la prensa, las comunicaciones y el transporte", en: "the press, communications and transport" },
+  Venus: { es: "la economía, la diplomacia y la moneda", en: "the economy, diplomacy and currency" },
+  Marte: { es: "las fuerzas armadas y el conflicto", en: "the armed forces and conflict" },
+  Júpiter: { es: "la justicia, la expansión y el comercio exterior", en: "justice, expansion and foreign trade" },
+  Saturno: { es: "las instituciones y la estructura del Estado", en: "institutions and the structure of the State" },
+  Urano: { es: "las rupturas y los movimientos sociales", en: "ruptures and social movements" },
+  Neptuno: { es: "la ideología colectiva y la disolución", en: "collective ideology and dissolution" },
+  Plutón: { es: "el poder profundo y las transformaciones de régimen", en: "deep power and regime transformations" },
+};
+
+const NATIONAL_ASPECT_TONE: Record<string, Bilingual> = {
+  Conjunción: { es: "una fusión directa", en: "a direct fusion" },
+  Oposición: { es: "una confrontación abierta", en: "an open confrontation" },
+  Cuadratura: { es: "una tensión estructural", en: "a structural tension" },
+  Trígono: { es: "un flujo armónico", en: "a harmonic flow" },
+  Sextil: { es: "un apoyo cooperativo", en: "cooperative support" },
+};
+
+/**
+ * Compone una lectura de 2 frases para un impacto sobre una carta nacional:
+ * "{cuerpo} {aspecto} el {planeta} nacional — {significado} bajo {tono}."
+ * Puramente compositivo (sin texto curado por país): mismo patrón que el
+ * generador de respaldo de getConfigNarrative. Sin afirmaciones factuales.
+ */
+export function getNationalImpactReading(
+  impact: { body: string; aspect: string; natal_planet: string },
+  lang: Lang,
+): string {
+  const meaning = NATIONAL_PLANET_MEANINGS[impact.natal_planet]?.[lang] ?? impact.natal_planet;
+  const tone = NATIONAL_ASPECT_TONE[impact.aspect]?.[lang] ?? impact.aspect.toLowerCase();
+  const aspectLower = impact.aspect.toLowerCase();
+  return lang === "es"
+    ? `${impact.body} forma ${aspectLower} con el ${impact.natal_planet} de esta carta nacional. Esta configuración pone en foco ${meaning}, bajo ${tone}.`
+    : `${impact.body} forms a ${aspectLower} with this national chart's ${impact.natal_planet}. This configuration brings focus to ${meaning}, under ${tone}.`;
+}
+
 function signatureKey(config: { signature: Record<string, unknown> }): string | null {
   const sig = config.signature;
   if (Array.isArray(sig.pair) && typeof sig.aspect === "string") {

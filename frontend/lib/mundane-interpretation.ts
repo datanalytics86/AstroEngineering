@@ -9,9 +9,9 @@
  * afirma hechos geopolíticos concretos como predicción factual.
  */
 
-import type { MundaneConfiguration, MundaneAnalog, NatalImpact } from "./types";
+import type { MundaneConfiguration, MundaneAnalog, NatalImpact, NationalChartNote } from "./types";
 import { SIGN_NAMES } from "./wheel-geometry";
-import { getConfigNarrative, getEventNarrative, getThemeLabel, type Lang } from "./mundane-corpus";
+import { getConfigNarrative, getEventNarrative, getThemeLabel, getNationalImpactReading, type Lang } from "./mundane-corpus";
 import { getInterpretation, buildInterpretationKey } from "./interpretation-engine";
 
 export interface MundaneReading {
@@ -92,12 +92,19 @@ export function generateMundaneReading(params: {
   themes?: string[];
   year: number;
   natalMode: boolean;
+  /** Modo "impacto por país" (carta nacional en vez de carta personal). */
+  countryMode?: boolean;
+  countryName?: string;
+  nationalChartNote?: NationalChartNote | null;
   dateLabel: string; // fecha ya formateada según locale
   lang: Lang;
   /** Configuración lenta más cercana en el tiempo — solo se usa para disparadores (kind="trigger"). */
   nearbySlowConfig?: { kind: MundaneConfiguration["kind"]; bodies: string[] } | null;
 }): MundaneReading {
-  const { config, analogs, natalImpacts, natalMode, dateLabel, lang, nearbySlowConfig } = params;
+  const {
+    config, analogs, natalImpacts, natalMode, countryMode, countryName, nationalChartNote,
+    dateLabel, lang, nearbySlowConfig,
+  } = params;
   const themes = config.themes && config.themes.length > 0 ? config.themes : (params.themes ?? []);
   const es = lang === "es";
   const nar = getConfigNarrative(config, lang);
@@ -228,10 +235,24 @@ export function generateMundaneReading(params: {
     );
   }
 
-  // ── Nota natal / hook de placements ──
+  // ── Nota natal / hook de placements / lectura nacional ──
   let natalNote = "";
   const isEclipse = config.kind === "eclipse";
-  if (natalMode) {
+  if (countryMode) {
+    if (natalImpacts.length > 0) {
+      natalNote = natalImpacts.slice(0, 4).map((im) => getNationalImpactReading(im, lang)).join(" ");
+    } else {
+      natalNote = es
+        ? `Esta configuración no forma aspectos estrechos con la carta nacional${countryName ? ` de ${countryName}` : ""}.`
+        : `This configuration forms no tight aspects with${countryName ? ` ${countryName}'s` : " this"} national chart.`;
+    }
+    if (nationalChartNote) {
+      natalNote += ` ${nationalChartNote[lang]}`;
+    }
+    natalNote += es
+      ? " Lectura arquetípica de astrología mundial — no una predicción de hechos concretos sobre el país."
+      : " An archetypal mundane-astrology reading — not a prediction of concrete events for the country.";
+  } else if (natalMode) {
     if (natalImpacts.length > 0) {
       if (isEclipse) {
         // Los eclipses sobre planetas natales son el clásico "año marcado" de

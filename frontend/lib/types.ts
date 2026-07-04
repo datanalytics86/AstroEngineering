@@ -296,6 +296,19 @@ export interface CyclicIndexPoint {
   value: number;               // suma de separaciones angulares (0-180°) de los 10 pares lentos
 }
 
+// ── Impacto por país (cartas nacionales, tradición de Campion) ────────────────
+
+export interface CountryInfo {
+  id: string;
+  name_es: string;
+  name_en: string;
+}
+
+export interface NationalChartNote {
+  es: string;
+  en: string;
+}
+
 export interface MundaneResponse {
   start_date: string;
   end_date: string;
@@ -303,4 +316,7 @@ export interface MundaneResponse {
   probable_themes: string[];
   natal_impacts: NatalImpact[];
   cyclic_index: CyclicIndexPoint[];
+  national_impacts?: NatalImpact[];
+  national_planets?: PlanetPosition[];
+  national_chart_note?: NationalChartNote | null;
 }

@@ -1087,6 +1087,7 @@ def build_mundane_forecast(
     start_date_str: str,
     end_date_str: str,
     natal_planets: list[dict] | None = None,
+    national_planets: list[dict] | None = None,
 ) -> dict:
     """
     Orquesta el análisis mundial completo:
@@ -1095,11 +1096,15 @@ def build_mundane_forecast(
         match_historical_analogs) y temas propios por configuración
       - síntesis temática global agregando tags de análogos coincidentes
       - impactos natales si se proveen natal_planets
+      - impactos sobre una carta nacional si se proveen national_planets (modo
+        "impacto por país", ver astro/national.py) — misma maquinaria de
+        find_natal_impacts, mutuamente excluyente con natal_planets a nivel
+        de request (ver MundaneRequest en models.py)
       - índice cíclico de Barbault (compute_cyclic_index)
       - disparadores rápidos de Marte (find_mars_triggers) y eclipses
         (find_eclipses): se añaden a `configurations` pero no participan en
         `probable_themes` ni en el índice cíclico; sí participan en los
-        impactos natales (los eclipses solo vía aspectos duros, ver
+        impactos natales/nacionales (los eclipses solo vía aspectos duros, ver
         find_natal_impacts).
     """
     configs = find_mundane_configurations(start_date_str, end_date_str)
@@ -1160,6 +1165,10 @@ def build_mundane_forecast(
     if natal_planets:
         natal_impacts = find_natal_impacts(configs + triggers + eclipses, natal_planets)
 
+    national_impacts: list[dict] = []
+    if national_planets:
+        national_impacts = find_natal_impacts(configs + triggers + eclipses, national_planets)
+
     cyclic_index = compute_cyclic_index(start_date_str, end_date_str)
 
     return {
@@ -1169,4 +1178,5 @@ def build_mundane_forecast(
         "probable_themes": probable_themes,
         "natal_impacts": natal_impacts,
         "cyclic_index": cyclic_index,
+        "national_impacts": national_impacts,
     }

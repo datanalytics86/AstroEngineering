@@ -15,11 +15,12 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from astro.models import (
     BirthData, TransitRequest, ChartResponse, TransitResponse, SolarReturnRequest,
-    MundaneRequest, MundaneResponse,
+    MundaneRequest, MundaneResponse, CountryInfo,
 )
 from astro.chart import calculate_natal_chart, calculate_solar_return
 from astro.transits import calculate_transit_timeline
 from astro.mundane import build_mundane_forecast
+from astro.national import NATIONAL_CHARTS, compute_national_planets
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -138,6 +139,20 @@ async def get_solar_return(request: Request, body: SolarReturnRequest):
         raise HTTPException(status_code=500, detail="Error en retorno solar")
 
 
+@app.get("/api/mundane/countries", response_model=list[CountryInfo])
+@limiter.limit("10/minute")
+def get_mundane_countries(request: Request):
+    """
+    Lista los países disponibles para el modo "impacto por país" (cartas
+    nacionales, tradición de Campion) — fuente única de verdad para el
+    frontend, que la usa para poblar los chips de selección de país.
+    """
+    return [
+        {"id": c["id"], "name_es": c["name_es"], "name_en": c["name_en"]}
+        for c in NATIONAL_CHARTS.values()
+    ]
+
+
 @app.post("/api/mundane", response_model=MundaneResponse)
 @limiter.limit("5/minute")
 async def get_mundane(request: Request, body: MundaneRequest):
@@ -145,16 +160,28 @@ async def get_mundane(request: Request, body: MundaneRequest):
     Análisis de astrología mundial (geopolítica): configuraciones de cuerpos
     lentos (aspectos e ingresos de signo) en el rango dado, análogos históricos
     por firma astrológica, síntesis temática e impactos sobre una carta natal
-    si se proveen natal_planets. Interpretación analógica cíclica, no predicción
-    de hechos futuros.
+    si se proveen natal_planets, o sobre una carta nacional si se provee
+    country (mutuamente excluyentes). Interpretación analógica cíclica, no
+    predicción de hechos futuros.
     """
     try:
         natal_planets = [p.model_dump() for p in body.natal_planets]
+        national_planets = None
+        national_chart_note = None
+        if body.country:
+            chart = NATIONAL_CHARTS[body.country]
+            national_planets = compute_national_planets(body.country)
+            national_chart_note = {"es": chart["chart_note_es"], "en": chart["chart_note_en"]}
+
         result = build_mundane_forecast(
             start_date_str=body.start_date,
             end_date_str=body.end_date,
             natal_planets=natal_planets or None,
+            national_planets=national_planets,
         )
+        if national_planets is not None:
+            result["national_planets"] = national_planets
+            result["national_chart_note"] = national_chart_note
         return result
     except Exception as exc:
         logger.error("Mundane calculation error: %s", exc)

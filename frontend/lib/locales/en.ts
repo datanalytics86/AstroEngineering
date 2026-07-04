@@ -257,4 +257,14 @@ export const en = {
   "geo.eclipse.subtype.anular": "annular",
   "geo.eclipse.subtype.parcial": "partial",
   "geo.eclipse.subtype.penumbral": "penumbral",
+
+  // ── Impact by country (national charts, Campion's tradition) ──
+  "geo.mode.country": "Impact by country",
+  "geo.country.select": "Select a country",
+  "geo.country.loading": "Loading countries…",
+  "geo.country.method_note": "National charts follow Campion's tradition; only planetary positions are used (no Moon, no houses) to stay robust against uncertain historical birth times.",
+  "geo.country.impacts.title": "Impact on the national chart",
+  "geo.country.impacts.none": "This configuration forms no tight aspects with the national chart.",
+  "geo.country.chart_used": "Chart used",
+  "geo.country.wheel_caption": "National chart of",
 } as const;
