@@ -3,7 +3,7 @@ import type { ChartResponse, BirthData, TransitResponse, MundaneResponse } from 
 const PREFIX_CHART   = "astro_chart_";
 const PREFIX_TRANSIT = "astro_transit_";
 const PREFIX_BIRTH   = "astro_birth_";
-const PREFIX_MUNDANE = "astro_mundane_v4:";
+const PREFIX_MUNDANE = "astro_mundane_v5:";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -102,18 +102,25 @@ export function loadSolarReturn(id: string): ChartResponse | null {
 // corpus ampliado y verificado (52 eventos).
 // Caché v3: invalida v2 al añadir los disparadores rápidos de Marte (kind
 // "trigger", window_start/window_end) — la forma de la respuesta cambió.
+// Caché v4: invalida v3 al añadir eclipses (kind "eclipse").
+// Caché v5: invalida v4 al añadir el modo "impacto por país" (national_impacts
+// /national_planets/national_chart_note en la respuesta).
 
-function mundaneKey(year: number, mode: "world" | "natal", chartId: string | null): string {
-  return `${PREFIX_MUNDANE}${year}_${mode}_${chartId ?? "world"}`;
+export type MundaneMode = "world" | "natal" | "country";
+
+// `id` es la carta guardada (modo "natal") o el id de país (modo "country");
+// null/"" en modo "world".
+function mundaneKey(year: number, mode: MundaneMode, id: string | null): string {
+  return `${PREFIX_MUNDANE}${year}_${mode}_${id ?? "world"}`;
 }
 
 export function saveMundane(
   year: number,
-  mode: "world" | "natal",
-  chartId: string | null,
+  mode: MundaneMode,
+  id: string | null,
   data: MundaneResponse,
 ): void {
-  const key = mundaneKey(year, mode, chartId);
+  const key = mundaneKey(year, mode, id);
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch {
@@ -124,11 +131,11 @@ export function saveMundane(
 
 export function loadMundane(
   year: number,
-  mode: "world" | "natal",
-  chartId: string | null,
+  mode: MundaneMode,
+  id: string | null,
 ): MundaneResponse | null {
   try {
-    const str = localStorage.getItem(mundaneKey(year, mode, chartId));
+    const str = localStorage.getItem(mundaneKey(year, mode, id));
     return str ? JSON.parse(str) : null;
   } catch {
     return null;

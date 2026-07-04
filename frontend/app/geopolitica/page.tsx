@@ -7,13 +7,14 @@ import { format } from "date-fns";
 import type { Locale } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
-import type { MundaneResponse, MundaneConfiguration, ChartResponse, MundaneAnalog } from "@/lib/types";
+import type { MundaneResponse, MundaneConfiguration, ChartResponse, MundaneAnalog, CountryInfo, NatalImpact } from "@/lib/types";
 import { listCharts, loadChart, saveMundane, loadMundane, type SavedChartMeta } from "@/lib/storage";
 import { useT } from "@/lib/i18n";
 import {
   getConfigNarrative,
   getEventNarrative,
   getThemeLabel,
+  getNationalImpactReading,
   BIBLIOGRAPHY,
   type Lang,
 } from "@/lib/mundane-corpus";
@@ -27,7 +28,7 @@ const MundaneWheel = dynamic(() => import("@/components/MundaneWheel"), { ssr: f
 const MundaneTimelineChart = dynamic(() => import("@/components/MundaneTimelineChart"), { ssr: false });
 const CyclicIndexChart = dynamic(() => import("@/components/CyclicIndexChart"), { ssr: false });
 
-type Mode = "world" | "natal";
+type Mode = "world" | "natal" | "country";
 type FilterMode = "majors" | "all" | "precedents" | "triggers";
 type CompareMode = "overlay" | "era";
 
@@ -129,19 +130,52 @@ function GeopoliticaContent() {
   const [charts, setCharts] = useState<SavedChartMeta[]>([]);
   const [selectedChartId, setSelectedChartId] = useState<string>("");
 
+  // Country mode ("impacto por país" — cartas nacionales, tradición de Campion)
+  const [countries, setCountries] = useState<CountryInfo[]>([]);
+  const [selectedCountry, setSelectedCountry] = useState<string>("");
+
   useEffect(() => {
-    const m = searchParams.get("mode") === "natal" ? "natal" : "world";
+    const modeParam = searchParams.get("mode");
+    const m: Mode = modeParam === "natal" ? "natal" : modeParam === "country" ? "country" : "world";
     const y = Number(searchParams.get("year"));
     const yr = YEARS.includes(y) ? y : YEARS[0];
     const chart = searchParams.get("chart") ?? "";
+    const country = searchParams.get("country") ?? "";
     pendingConfigRef.current = searchParams.get("config");
     setMode(m);
     setYear(yr);
     setSelectedChartId(chart);
+    setSelectedCountry(country);
     setParamsApplied(true);
     // Solo al montar: los searchParams entrantes se aplican una única vez.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Carga la lista de países una vez, al entrar en el modo "country" (fuente
+  // única de verdad: GET /api/mundane/countries). Fallo silencioso — si no
+  // carga, la UI se queda mostrando el estado "cargando países".
+  useEffect(() => {
+    if (mode !== "country" || countries.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/mundane/countries");
+        if (res.ok && !cancelled) {
+          const list: CountryInfo[] = await res.json();
+          setCountries(list);
+        }
+      } catch {
+        /* se deja countries=[] — reintenta al re-entrar al modo */
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [mode, countries.length]);
+
+  function countryName(id: string): string {
+    const c = countries.find((x) => x.id === id);
+    if (!c) return id;
+    return lang === "en" ? c.name_en : c.name_es;
+  }
 
   // La carta natal se deriva SÍNCRONAMENTE del id seleccionado (no como estado con
   // retraso), para que la petición y la clave de caché siempre correspondan a la
@@ -168,13 +202,16 @@ function GeopoliticaContent() {
     setCharts(listCharts());
   }, []);
 
+  // id de caché: la carta guardada (natal), el país (country) o "world".
+  const cacheId = mode === "natal" ? selectedChartId : mode === "country" ? selectedCountry : "world";
   const cacheKey = useMemo(
-    () => `${mode}_${year}_${mode === "natal" ? selectedChartId : "world"}`,
-    [mode, year, selectedChartId],
+    () => `${mode}_${year}_${cacheId}`,
+    [mode, year, cacheId],
   );
 
   const fetchData = useCallback(async () => {
     if (mode === "natal" && !natalChart) return;
+    if (mode === "country" && !selectedCountry) return;
     setLoading(true);
     setError("");
 
@@ -183,6 +220,7 @@ function GeopoliticaContent() {
       end_date: `${year}-12-31`,
     };
     if (mode === "natal" && natalChart) body.natal_planets = natalChart.planets;
+    if (mode === "country" && selectedCountry) body.country = selectedCountry;
 
     // El backend (Render free tier) puede estar hibernando: la primera petición
     // tarda en despertar. Reintentamos una vez tras un fallo de cold start (503/502
@@ -198,7 +236,7 @@ function GeopoliticaContent() {
           if (res.ok) {
             const data: MundaneResponse = await res.json();
             setCache((prev) => ({ ...prev, [cacheKey]: data }));
-            saveMundane(year, mode, mode === "natal" ? selectedChartId : null, data);
+            saveMundane(year, mode, cacheId || null, data);
             setError("");
             return;
           }
@@ -222,17 +260,18 @@ function GeopoliticaContent() {
     } finally {
       setLoading(false);
     }
-  }, [mode, year, natalChart, cacheKey, t, selectedChartId]);
+  }, [mode, year, natalChart, cacheKey, t, cacheId]);
 
   useEffect(() => {
     if (cache[cacheKey]) return;
     if (mode === "natal" && !natalChart) return;
+    if (mode === "country" && !selectedCountry) return;
 
     // Caché persistente (localStorage) — evita re-pedir al backend (Render free
     // tier, cold start ~30s) datos ya calculados en una sesión anterior. El
     // botón "Reintentar" del panel de error llama a fetchData() directamente,
     // sin pasar por aquí, así que siempre salta esta caché.
-    const cached = loadMundane(year, mode, mode === "natal" ? selectedChartId : null);
+    const cached = loadMundane(year, mode, cacheId || null);
     if (cached) {
       setCache((prev) => ({ ...prev, [cacheKey]: cached }));
       return;
@@ -240,8 +279,9 @@ function GeopoliticaContent() {
 
     if (mode === "world") void fetchData();
     if (mode === "natal" && natalChart) void fetchData();
+    if (mode === "country" && selectedCountry) void fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cacheKey, mode, natalChart, year, selectedChartId]);
+  }, [cacheKey, mode, natalChart, year, cacheId, selectedCountry]);
 
   const data = cache[cacheKey] ?? null;
   const configs = data?.configurations ?? [];
@@ -310,10 +350,13 @@ function GeopoliticaContent() {
     if (mode === "natal") {
       params.set("mode", "natal");
       if (selectedChartId) params.set("chart", selectedChartId);
+    } else if (mode === "country") {
+      params.set("mode", "country");
+      if (selectedCountry) params.set("country", selectedCountry);
     }
     if (selectedConfigId) params.set("config", selectedConfigId);
     router.replace(`/geopolitica?${params.toString()}`, { scroll: false });
-  }, [paramsApplied, year, mode, selectedChartId, selectedConfigId, router]);
+  }, [paramsApplied, year, mode, selectedChartId, selectedCountry, selectedConfigId, router]);
 
   // Meses del índice cíclico que contienen configuraciones mayores → marcadores
   // clicables sobre la línea del índice (ata la gráfica de Barbault al timeline).
@@ -394,6 +437,10 @@ function GeopoliticaContent() {
           onClick={() => setMode("natal")}
           className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "natal" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
         >⊕ {t("geo.mode.natal")}</button>
+        <button
+          onClick={() => setMode("country")}
+          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "country" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+        >🏳️ {t("geo.mode.country")}</button>
       </div>
 
       {/* Natal chart selector */}
@@ -419,6 +466,27 @@ function GeopoliticaContent() {
         </div>
       )}
 
+      {/* Country selector (modo "impacto por país") */}
+      {mode === "country" && (
+        <div className="mb-6 space-y-2">
+          {countries.length === 0 ? (
+            <p className="text-sm text-slate-400 font-mono">{t("geo.country.loading")}</p>
+          ) : (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.country.select")}</span>
+              {countries.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setSelectedCountry(c.id)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${selectedCountry === c.id ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+                >{lang === "en" ? c.name_en : c.name_es}</button>
+              ))}
+            </div>
+          )}
+          <p className="text-[11px] text-slate-400 font-mono">{t("geo.country.method_note")}</p>
+        </div>
+      )}
+
       {/* Year tabs */}
       <div className="flex flex-wrap gap-2 mb-8">
         {YEARS.map((y) => (
@@ -433,6 +501,8 @@ function GeopoliticaContent() {
       {/* Content */}
       {mode === "natal" && !natalChart ? (
         <p className="text-slate-400 font-mono text-sm text-center py-12">{t("geo.select_chart")}</p>
+      ) : mode === "country" && !selectedCountry ? (
+        <p className="text-slate-400 font-mono text-sm text-center py-12">{t("geo.country.select")}</p>
       ) : loading ? (
         <Spinner label={`${t("geo.calculating")} ${year}…`} />
       ) : error && !data ? (
@@ -553,13 +623,19 @@ function GeopoliticaContent() {
                 );
               } catch { /* keep */ }
               const configImpacts = data.natal_impacts.filter((i) => i.config_id === selectedConfig.id);
+              const countryImpacts: NatalImpact[] = (data.national_impacts ?? []).filter(
+                (i) => i.config_id === selectedConfig.id,
+              );
               const reading = generateMundaneReading({
                 config: selectedConfig,
                 analogs: selectedConfig.analogs,
-                natalImpacts: configImpacts,
+                natalImpacts: mode === "country" ? countryImpacts : configImpacts,
                 themes: data.probable_themes,
                 year,
                 natalMode: mode === "natal",
+                countryMode: mode === "country",
+                countryName: mode === "country" ? countryName(selectedCountry) : undefined,
+                nationalChartNote: data.national_chart_note,
                 dateLabel: readingDate,
                 lang: L,
                 nearbySlowConfig,
@@ -653,7 +729,15 @@ function GeopoliticaContent() {
                             : selectedConfig.aspect
                         }
                         highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
-                        natalPlanets={mode === "natal" && !showAnalog ? natalChart?.planets : undefined}
+                        natalPlanets={
+                          showAnalog
+                            ? undefined
+                            : mode === "natal"
+                              ? natalChart?.planets
+                              : mode === "country"
+                                ? data.national_planets
+                                : undefined
+                        }
                         overlaySky={overlaySky}
                       />
                       <p className="text-xs text-slate-400 font-mono text-center">
@@ -668,6 +752,11 @@ function GeopoliticaContent() {
                       {selectedConfig.kind === "trigger" && selectedConfig.window_start && selectedConfig.window_end && (
                         <p className="text-xs text-red-500 font-mono text-center">
                           {t("geo.trigger.window_label")}: {formatGeoDate(selectedConfig.window_start, dateLocale)} – {formatGeoDate(selectedConfig.window_end, dateLocale)}
+                        </p>
+                      )}
+                      {mode === "country" && selectedCountry && !showAnalog && (
+                        <p className="text-xs text-indigo-400 font-mono text-center">
+                          {t("geo.country.wheel_caption")} {countryName(selectedCountry)}
                         </p>
                       )}
                     </div>
@@ -765,7 +854,32 @@ function GeopoliticaContent() {
                     );
                   })()}
 
-                  {/* Puente hacia la cronología personal (bloque C) */}
+                  {/* National impacts (modo "impacto por país") — lectura mundialista,
+                      no la personal-psicológica de interpretation-engine.ts. */}
+                  {mode === "country" && (data.national_impacts?.length ?? 0) > 0 && (() => {
+                    const impacts = (data.national_impacts ?? []).filter((i) => i.config_id === selectedConfig.id);
+                    return (
+                      <div className="bg-white border border-slate-200 rounded-2xl p-5">
+                        <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.country.impacts.title")}</p>
+                        {impacts.length === 0 ? (
+                          <p className="text-sm text-slate-400">{t("geo.country.impacts.none")}</p>
+                        ) : (
+                          <div className="space-y-1.5">
+                            {impacts.map((im, i) => (
+                              <NationalImpactRow key={i} impact={im} lang={L} />
+                            ))}
+                          </div>
+                        )}
+                        {data.national_chart_note && (
+                          <p className="text-[11px] text-slate-400 font-mono pt-2 mt-2 border-t border-slate-100">
+                            {t("geo.country.chart_used")}: {data.national_chart_note[L]}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Puente hacia la cronología personal (bloque C) — no aplica en modo país */}
                   {mode === "natal" && selectedChartId && (
                     <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 space-y-2">
                       <p className="text-sm font-semibold text-indigo-900">{t("geo.personal_cta.title")}</p>
@@ -870,6 +984,51 @@ function NatalImpactRow({ impact, lang }: { impact: import("@/lib/types").NatalI
             {t("geo.natal_impacts.collapse")}
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+// ── Fila de impacto sobre una carta NACIONAL (modo "impacto por país") ──────
+// A diferencia de NatalImpactRow, NO reutiliza interpretation-engine.ts (esas
+// ~270 interpretaciones son psicológico-personales); compone su propia
+// lectura mundialista con getNationalImpactReading (mundane-corpus.ts).
+function NationalImpactRow({ impact, lang }: { impact: NatalImpact; lang: Lang }) {
+  const { t } = useT();
+  const [expanded, setExpanded] = useState(false);
+  const reading = useMemo(() => getNationalImpactReading(impact, lang), [impact, lang]);
+
+  return (
+    <div className="border-b border-slate-100 last:border-0 pb-1.5 last:pb-0">
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="w-full flex items-center gap-2 text-sm font-mono text-slate-700 text-left cursor-pointer"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
+        <span>{impact.body} {impact.aspect} {impact.natal_planet} nacional</span>
+        <span className="ml-auto text-xs text-slate-400 uppercase">{impact.importance}</span>
+      </button>
+      {expanded && (
+        <p className="text-xs text-slate-500 leading-relaxed pl-3.5 mt-0.5">
+          {reading}
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="ml-1.5 text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+          >
+            {t("geo.natal_impacts.collapse")}
+          </button>
+        </p>
+      )}
+      {!expanded && (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="pl-3.5 mt-0.5 text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+        >
+          {t("geo.natal_impacts.expand")}
+        </button>
       )}
     </div>
   );

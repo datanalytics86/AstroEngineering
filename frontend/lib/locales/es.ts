@@ -257,6 +257,16 @@ export const es = {
   "geo.eclipse.subtype.anular": "anular",
   "geo.eclipse.subtype.parcial": "parcial",
   "geo.eclipse.subtype.penumbral": "penumbral",
+
+  // ── Impacto por país (cartas nacionales, tradición de Campion) ──
+  "geo.mode.country": "Impacto por país",
+  "geo.country.select": "Selecciona un país",
+  "geo.country.loading": "Cargando países…",
+  "geo.country.method_note": "Cartas nacionales según la tradición de Campion; se usan solo posiciones planetarias (sin Luna ni casas) para ser robustos ante horas históricas inciertas.",
+  "geo.country.impacts.title": "Impacto en la carta nacional",
+  "geo.country.impacts.none": "Esta configuración no forma aspectos estrechos con la carta nacional.",
+  "geo.country.chart_used": "Carta usada",
+  "geo.country.wheel_caption": "Carta nacional de",
 } as const;
 
 export type TranslationKeys = keyof typeof es;
