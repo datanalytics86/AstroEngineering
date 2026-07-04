@@ -40,6 +40,9 @@ const TRIGGER_MARKER_R = 6; // ~60% del tamaño del marcador mayor
 const TRIGGER_COLOR = "#EF4444";
 const TRIGGER_MUTED_COLOR = "#F87171"; // rojo apagado — los disparadores no deben competir con los mayores
 const TRIGGER_BAND_H = 22; // carril propio pegado al eje, reservado para disparadores
+const ECLIPSE_MARKER_R = 12; // más grande que un marcador mayor normal — los eclipses SON mayores
+const ECLIPSE_FILL_COLOR = "#0F172A"; // slate-900
+const ECLIPSE_RING_COLOR = "#F59E0B"; // anillo dorado
 
 function dayOfYearFraction(dateStr: string, year: number): number {
   const d = parseLocalDate(dateStr);
@@ -51,6 +54,7 @@ function dayOfYearFraction(dateStr: string, year: number): number {
 }
 
 function configLabel(c: MundaneConfiguration): string {
+  if (c.kind === "eclipse") return c.eclipse_type === "lunar" ? "☾" : "☉";
   if ((c.kind === "aspect" || c.kind === "trigger") && c.bodies.length === 2) {
     const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
     const symbolB = c.sky.find((s) => s.name === c.bodies[1])?.symbol ?? "";
@@ -66,6 +70,7 @@ function configLabel(c: MundaneConfiguration): string {
 }
 
 function configColor(c: MundaneConfiguration): string {
+  if (c.kind === "eclipse") return ECLIPSE_FILL_COLOR;
   if (c.kind === "trigger") return TRIGGER_MUTED_COLOR;
   if (c.kind === "ingress") return INGRESS_COLOR;
   return (c.aspect && ASPECT_LINE_COLOR[c.aspect]) || "#334155";
@@ -160,10 +165,12 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
           );
         })}
 
-        {/* Ciclos mayores + ingresos */}
+        {/* Ciclos mayores + ingresos + eclipses (los eclipses son mayores en esta tradición) */}
         {placedMajors.map(({ config: c, x, lane }) => {
           const y = majorsBaseY - 10 - lane * ROW_H;
           const color = configColor(c);
+          const isEclipse = c.kind === "eclipse";
+          const r = isEclipse ? ECLIPSE_MARKER_R : MARKER_R;
           const active = c.id === selectedId;
           const label = configLabel(c);
           return (
@@ -171,10 +178,11 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
               onMouseEnter={(e) => showTip(e, label, c.exact_date)}
               onMouseLeave={() => setTooltip(null)}>
               <line x1={x} y1={y} x2={x} y2={baseY} stroke={color} strokeWidth={1} opacity={0.35} />
-              {active && <circle cx={x} cy={y} r={MARKER_R + 4} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />}
-              <circle cx={x} cy={y} r={MARKER_R} fill={color} opacity={0.92} />
-              <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={9} fill="white" fontWeight="700" className="select-none pointer-events-none">
-                {label.length > 3 ? label.slice(0, 3) : label}
+              {active && <circle cx={x} cy={y} r={r + 4} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />}
+              {isEclipse && <circle cx={x} cy={y} r={r + 2.5} fill="none" stroke={ECLIPSE_RING_COLOR} strokeWidth={2} />}
+              <circle cx={x} cy={y} r={r} fill={color} opacity={0.92} />
+              <text x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize={isEclipse ? 11 : 9} fill="white" fontWeight="700" className="select-none pointer-events-none">
+                {isEclipse ? label : (label.length > 3 ? label.slice(0, 3) : label)}
               </text>
               {c.analogs.length > 0 && (
                 <g>
@@ -212,6 +220,13 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-slate-100">
         <LegendDot color="#334155" label={t("geo.timeline.legend.major")} />
         <LegendDot color={INGRESS_COLOR} label={t("geo.timeline.legend.ingress")} />
+        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: ECLIPSE_FILL_COLOR, boxShadow: `0 0 0 2px ${ECLIPSE_RING_COLOR}` }}
+          />
+          {t("geo.timeline.legend.eclipse")}
+        </span>
         <span className="flex items-center gap-1.5 text-xs text-slate-500">
           <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: TRIGGER_MUTED_COLOR, opacity: 0.7 }} />
           {t("geo.timeline.legend.trigger")}

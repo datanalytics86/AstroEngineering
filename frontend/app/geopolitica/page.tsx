@@ -59,6 +59,9 @@ function pairOrb(sky: { name: string; longitude: number }[], bodies: string[], a
 
 /** Glifos de cuerpo(s) + símbolo de aspecto/ingreso, para tarjetas y timeline. */
 function configGlyphs(c: MundaneConfiguration): { text: string; color: string } {
+  if (c.kind === "eclipse") {
+    return { text: "◐", color: "#0F172A" };
+  }
   if ((c.kind === "aspect" || c.kind === "trigger") && c.bodies.length === 2) {
     const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
     const symbolB = c.sky.find((s) => s.name === c.bodies[1])?.symbol ?? "";
@@ -251,7 +254,11 @@ function GeopoliticaContent() {
     if (filterMode === "triggers") return configs.filter((c) => c.kind === "trigger");
     if (filterMode === "precedents") return configs.filter((c) => c.analogs.length > 0);
     return configs.filter(
-      (c) => c.kind === "trigger" || c.kind === "ingress" || (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)),
+      (c) =>
+        c.kind === "trigger" ||
+        c.kind === "ingress" ||
+        c.kind === "eclipse" ||
+        (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)),
     );
   }, [configs, filterMode]);
 
@@ -332,7 +339,7 @@ function GeopoliticaContent() {
     let best: MundaneConfiguration | null = null;
     let bestDist = Infinity;
     for (const c of configs) {
-      if (c.kind === "trigger") continue;
+      if (c.kind === "trigger" || c.kind === "eclipse") continue;
       const dist = Math.abs(parseLocalDate(c.exact_date).getTime() - targetMs);
       if (dist < bestDist) {
         bestDist = dist;
@@ -507,7 +514,12 @@ function GeopoliticaContent() {
                           <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full shrink-0">{c.analogs.length}★</span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-400 font-mono">{dateStr}</span>
+                      <span className="text-xs text-slate-400 font-mono">
+                        {dateStr}
+                        {c.kind === "eclipse" && c.eclipse_subtype && (
+                          <span className="text-amber-600"> · {t(`geo.eclipse.subtype.${c.eclipse_subtype}`)}</span>
+                        )}
+                      </span>
                     </button>
                   );
                 })}
@@ -562,6 +574,11 @@ function GeopoliticaContent() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="font-semibold text-lg text-slate-900">{nar.title}</h2>
                     {nar.theme && <span className="text-xs font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">{nar.theme}</span>}
+                    {selectedConfig.kind === "eclipse" && selectedConfig.eclipse_subtype && (
+                      <span className="text-xs font-mono text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                        {t(`geo.eclipse.subtype.${selectedConfig.eclipse_subtype}`)}
+                      </span>
+                    )}
                   </div>
 
                   {/* Eco histórico (mini-strip) — los disparadores no tienen precedentes,
@@ -625,8 +642,16 @@ function GeopoliticaContent() {
                     <div className="space-y-2">
                       <MundaneWheel
                         sky={wheelSky}
-                        highlightBodies={(selectedConfig.kind === "aspect" || selectedConfig.kind === "trigger") ? selectedConfig.bodies : undefined}
-                        highlightAspect={selectedConfig.aspect}
+                        highlightBodies={
+                          (selectedConfig.kind === "aspect" || selectedConfig.kind === "trigger" || selectedConfig.kind === "eclipse")
+                            ? selectedConfig.bodies
+                            : undefined
+                        }
+                        highlightAspect={
+                          selectedConfig.kind === "eclipse"
+                            ? (selectedConfig.eclipse_type === "lunar" ? "Oposición" : "Conjunción")
+                            : selectedConfig.aspect
+                        }
                         highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
                         natalPlanets={mode === "natal" && !showAnalog ? natalChart?.planets : undefined}
                         overlaySky={overlaySky}
@@ -688,8 +713,8 @@ function GeopoliticaContent() {
                     );
                   })()}
 
-                  {/* Historical analogs list — oculto para disparadores (no tienen precedentes, ver nota de recurrencia arriba) */}
-                  {!showAnalog && selectedConfig.kind !== "trigger" && (
+                  {/* Historical analogs list — oculto para disparadores y eclipses (no tienen precedentes en este corpus) */}
+                  {!showAnalog && selectedConfig.kind !== "trigger" && selectedConfig.kind !== "eclipse" && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-5">
                       <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-3">{t("geo.analogs.title")}</p>
                       {selectedConfig.analogs.length === 0 ? (

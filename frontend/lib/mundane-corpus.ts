@@ -12,6 +12,8 @@
  * un generador compositivo cuando no hay texto curado.
  */
 
+import type { EclipseType, EclipseSubtype } from "./types";
+
 export type Lang = "es" | "en";
 
 interface Bilingual {
@@ -820,6 +822,72 @@ export function getTriggerNarrative(
   };
 }
 
+// ── Eclipses (el disparador clásico, Baigent/Campion/Harvey) ───────────────────
+// El eclipse solar es semilla/reinicio del principio solar en el grado tocado
+// ("apagón y renovación"): cierres y comienzos institucionales o colectivos. El
+// eclipse lunar es culminación/liberación emocional colectiva: lo oculto sale a
+// la luz. En ambos casos, el grado del eclipse queda "sensibilizado" durante
+// meses — los tránsitos posteriores que lo toquen reactivan su tema.
+const ECLIPSE_SUBTYPE_LABEL: Record<EclipseSubtype, Bilingual> = {
+  total: { es: "total", en: "total" },
+  anular: { es: "anular", en: "annular" },
+  parcial: { es: "parcial", en: "partial" },
+  penumbral: { es: "penumbral", en: "penumbral" },
+};
+
+interface EclipseEntry {
+  typeWord: Bilingual; // "solar" | "lunar" — usado para componer el título en el orden gramatical de cada idioma
+  theme: Bilingual;
+  synthesis: Bilingual;
+}
+
+function capitalize(s: string): string {
+  return s.length > 0 ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+const ECLIPSE_NARRATIVES: Record<EclipseType, EclipseEntry> = {
+  solar: {
+    typeWord: { es: "solar", en: "solar" },
+    theme: { es: "Semilla y reinicio de ciclo", en: "Seed and cycle reset" },
+    synthesis: {
+      es: "La Luna nueva tapa al Sol: un apagón simbólico y una renovación del principio solar (identidad, liderazgo, dirección) en el grado exacto donde ocurre. La tradición mundana lee estos puntos como semillas de ciclos institucionales o colectivos que germinan en los meses siguientes.",
+      en: "The new Moon covers the Sun: a symbolic blackout and a renewal of the solar principle (identity, leadership, direction) at the exact degree where it occurs. Mundane tradition reads these points as seeds of institutional or collective cycles that germinate in the following months.",
+    },
+  },
+  lunar: {
+    typeWord: { es: "lunar", en: "lunar" },
+    theme: { es: "Culminación y liberación colectiva", en: "Collective culmination and release" },
+    synthesis: {
+      es: "La Tierra se interpone entre el Sol y la Luna llena: una culminación emocional colectiva en la que lo que estaba oculto sale a la luz. La tradición mundana lo lee como cierre o liberación de un proceso que venía madurando.",
+      en: "The Earth stands between the Sun and the full Moon: a collective emotional culmination in which what was hidden comes to light. Mundane tradition reads it as the closing or release of a process that had been maturing.",
+    },
+  },
+};
+
+export function getEclipseNarrative(
+  config: { eclipse_type?: EclipseType | null; eclipse_subtype?: EclipseSubtype | null; sign?: string | null },
+  lang: Lang,
+): { title: string; theme: string; synthesis: string; source: string } {
+  const type: EclipseType = config.eclipse_type === "lunar" ? "lunar" : "solar";
+  const entry = ECLIPSE_NARRATIVES[type];
+  const subtypeWord = config.eclipse_subtype ? ECLIPSE_SUBTYPE_LABEL[config.eclipse_subtype]?.[lang] : "";
+  const typeWord = entry.typeWord[lang];
+  // Orden gramatical distinto por idioma: ES pospone el adjetivo ("Eclipse
+  // solar anular"), EN lo antepone ("Annular solar eclipse").
+  const base = lang === "es"
+    ? (subtypeWord ? `Eclipse ${typeWord} ${subtypeWord}` : `Eclipse ${typeWord}`)
+    : (subtypeWord ? `${capitalize(subtypeWord)} ${typeWord} eclipse` : `${capitalize(typeWord)} eclipse`);
+  const title = config.sign
+    ? (lang === "es" ? `${base} en ${config.sign}` : `${base} in ${config.sign}`)
+    : base;
+  return {
+    title,
+    theme: entry.theme[lang],
+    synthesis: entry.synthesis[lang],
+    source: SRC_BAIGENT[lang],
+  };
+}
+
 function signatureKey(config: { signature: Record<string, unknown> }): string | null {
   const sig = config.signature;
   if (Array.isArray(sig.pair) && typeof sig.aspect === "string") {
@@ -834,16 +902,21 @@ function signatureKey(config: { signature: Record<string, unknown> }): string | 
 
 export function getConfigNarrative(
   config: {
-    kind: "aspect" | "ingress" | "trigger";
+    kind: "aspect" | "ingress" | "trigger" | "eclipse";
     bodies: string[];
     aspect: string | null;
     sign: string | null;
     signature: Record<string, unknown>;
+    eclipse_type?: EclipseType | null;
+    eclipse_subtype?: EclipseSubtype | null;
   },
   lang: Lang,
 ): { title: string; theme: string; synthesis: string; source: string } {
   if (config.kind === "trigger") {
     return getTriggerNarrative(config, lang);
+  }
+  if (config.kind === "eclipse") {
+    return getEclipseNarrative(config, lang);
   }
 
   const key = signatureKey(config);
