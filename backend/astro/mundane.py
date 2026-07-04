@@ -46,6 +46,30 @@ def _slugify(text: str) -> str:
     return out.strip("_")
 
 
+def _sky_body(name: str, jd: float) -> dict | None:
+    """Posición de un solo cuerpo en un Julian Day dado, con la misma forma
+    que las entradas de `compute_mundane_sky`. Reutilizada para inyectar
+    cuerpos puntuales (ej. la Luna en el instante exacto de un eclipse)."""
+    pid = PLANET_IDS.get(name)
+    if pid is None:
+        return None
+    pos = calc_planet_position(jd, pid)
+    if pos is None:
+        return None
+    si = longitude_to_sign(pos["longitude"])
+    return {
+        "name": name,
+        "symbol": PLANET_SYMBOLS.get(name, ""),
+        "longitude": round(pos["longitude"], 4),
+        "sign": si["sign"],
+        "sign_symbol": si["sign_symbol"],
+        "degree_in_sign": round(si["degree_in_sign"], 4),
+        "degree_display": degrees_to_dms(si["degree_in_sign"]),
+        "retrograde": pos["retrograde"],
+        "speed": round(pos["speed"], 6),
+    }
+
+
 def compute_mundane_sky(date_str: str, include_mars: bool = False) -> list[dict]:
     """
     Posiciones de los cuerpos lentos (+ Sol) en una fecha dada (mediodía UT).
@@ -62,24 +86,9 @@ def compute_mundane_sky(date_str: str, include_mars: bool = False) -> list[dict]
     bodies = ["Sol"] + MUNDANE_BODIES + (["Marte"] if include_mars else [])
     sky: list[dict] = []
     for name in bodies:
-        pid = PLANET_IDS.get(name)
-        if pid is None:
-            continue
-        pos = calc_planet_position(jd, pid)
-        if pos is None:
-            continue
-        si = longitude_to_sign(pos["longitude"])
-        sky.append({
-            "name": name,
-            "symbol": PLANET_SYMBOLS.get(name, ""),
-            "longitude": round(pos["longitude"], 4),
-            "sign": si["sign"],
-            "sign_symbol": si["sign_symbol"],
-            "degree_in_sign": round(si["degree_in_sign"], 4),
-            "degree_display": degrees_to_dms(si["degree_in_sign"]),
-            "retrograde": pos["retrograde"],
-            "speed": round(pos["speed"], 6),
-        })
+        entry = _sky_body(name, jd)
+        if entry is not None:
+            sky.append(entry)
     return sky
 
 
@@ -425,6 +434,124 @@ def find_mars_triggers(start_date_str: str, end_date_str: str) -> list[dict]:
 
     triggers.sort(key=lambda c: c["exact_date"])
     return triggers
+
+
+# ── Eclipses (el disparador clásico, Barbault / Baigent-Campion-Harvey) ────────
+# Un eclipse marca un punto sensible del zodíaco (el grado del Sol en solares,
+# el de la Luna en lunares) que queda "cargado" durante meses: los tránsitos
+# posteriores sobre ese grado reactivan su tema. A diferencia de los
+# disparadores de Marte, los eclipses SÍ se tratan como configuración mayor.
+ECLIPSE_SUBTYPES_SOLAR = {"total", "anular", "parcial"}
+ECLIPSE_SUBTYPES_LUNAR = {"total", "parcial", "penumbral"}
+
+# Máximo de eclipses a escanear por tipo (evita loops infinitos si el rango
+# solicitado fuera absurdamente grande; ~1100 días como mucho da <10 de cada).
+_MAX_ECLIPSES_PER_TYPE = 40
+
+
+def _sol_eclipse_when_glob(jd: float) -> tuple[int, tuple]:
+    """Envoltorio de swe.sol_eclipse_when_glob con fallback Moshier (mismo
+    patrón que calc_planet_position)."""
+    for flags in (swe.FLG_SWIEPH, swe.FLG_MOSEPH):
+        try:
+            return swe.sol_eclipse_when_glob(jd, flags, 0, False)
+        except Exception:
+            continue
+    raise RuntimeError("No se pudo calcular el próximo eclipse solar")
+
+
+def _lun_eclipse_when(jd: float) -> tuple[int, tuple]:
+    """Envoltorio de swe.lun_eclipse_when con fallback Moshier."""
+    for flags in (swe.FLG_SWIEPH, swe.FLG_MOSEPH):
+        try:
+            return swe.lun_eclipse_when(jd, flags, 0, False)
+        except Exception:
+            continue
+    raise RuntimeError("No se pudo calcular el próximo eclipse lunar")
+
+
+def _eclipse_subtype(retflag: int, eclipse_type: str) -> str:
+    """Decodifica el subtipo del eclipse a partir de los bits de `retflag`
+    (AND de flags de swisseph). Los eclipses híbridos (ECL_ANNULAR_TOTAL) se
+    reportan como "total" (tienen tramo de totalidad)."""
+    if eclipse_type == "solar":
+        if retflag & swe.ECL_TOTAL:
+            return "total"
+        if retflag & swe.ECL_ANNULAR_TOTAL:
+            return "total"
+        if retflag & swe.ECL_ANNULAR:
+            return "anular"
+        return "parcial"
+    if retflag & swe.ECL_TOTAL:
+        return "total"
+    if retflag & swe.ECL_PARTIAL:
+        return "parcial"
+    return "penumbral"
+
+
+def find_eclipses(start_date_str: str, end_date_str: str) -> list[dict]:
+    """
+    Detecta eclipses solares y lunares dentro de [start, end] con las
+    funciones nativas de swisseph, avanzando de eclipse en eclipse
+    (`jd = tret[0] + 1`) desde el inicio del rango.
+
+    Cada eclipse se modela como una configuración `kind: "eclipse"` cuyo
+    "grado sensible" es la posición del Sol (solar) o de la Luna (lunar) en
+    el instante exacto del máximo del eclipse (`tret[0]`) — no al mediodía
+    del día calendario, para no perder precisión (la Luna se mueve ~13°/día).
+    El resto del cielo (`sky`) se completa con `compute_mundane_sky` al
+    mediodía de esa fecha (cuerpos lentos, cuyo movimiento en 12h es
+    despreciable) y se reemplaza únicamente la Luna por su posición exacta.
+    """
+    start_date = datetime.fromisoformat(start_date_str)
+    end_date = datetime.fromisoformat(end_date_str)
+    jd_start = to_julian_day(start_date.year, start_date.month, start_date.day, 0.0)
+    jd_end = to_julian_day(end_date.year, end_date.month, end_date.day, 23.999)
+
+    eclipses: list[dict] = []
+
+    for eclipse_type, next_fn in (("solar", _sol_eclipse_when_glob), ("lunar", _lun_eclipse_when)):
+        jd = jd_start
+        for _ in range(_MAX_ECLIPSES_PER_TYPE):
+            try:
+                retflag, tret = next_fn(jd)
+            except Exception:
+                break
+            eclipse_jd = tret[0]
+            if eclipse_jd > jd_end:
+                break
+
+            subtype = _eclipse_subtype(retflag, eclipse_type)
+            y, m, d, _h = swe.revjul(eclipse_jd)
+            exact_date = f"{int(y):04d}-{int(m):02d}-{int(d):02d}"
+
+            sun = _sky_body("Sol", eclipse_jd)
+            moon = _sky_body("Luna", eclipse_jd)
+            if sun is not None and moon is not None:
+                sensitive = sun if eclipse_type == "solar" else moon
+                sky = compute_mundane_sky(exact_date, include_mars=True)
+                sky = [b for b in sky if b["name"] != "Luna"] + [moon]
+
+                eclipses.append({
+                    "id": f"eclipse_{eclipse_type}_{subtype}_{exact_date.replace('-', '')}",
+                    "exact_date": exact_date,
+                    "kind": "eclipse",
+                    "eclipse_type": eclipse_type,
+                    "eclipse_subtype": subtype,
+                    "bodies": ["Sol", "Luna"],
+                    "aspect": None,
+                    "sign": sensitive["sign"],
+                    "longitudes": {"Sol": sun["longitude"], "Luna": moon["longitude"]},
+                    "signature": {"eclipse": eclipse_type},
+                    "sky": sky,
+                    "analogs": [],
+                    "themes": [],
+                })
+
+            jd = eclipse_jd + 1
+
+    eclipses.sort(key=lambda e: e["exact_date"])
+    return eclipses
 
 
 # ── Eventos históricos curados ────────────────────────────────────────────────
@@ -870,16 +997,31 @@ def match_historical_analogs(config: dict) -> list[dict]:
     return analogs
 
 
+# Eclipses: solo aspectos duros (☌ ☍ □) — el grado sensible del eclipse se
+# lee como un punto que "activa" cuando algo lo toca en tensión o unión
+# directa, no en armonía (Baigent/Campion/Harvey). TRANSIT_ORBS ya limita
+# estos tres a 3.0° exactos.
+ECLIPSE_NATAL_ASPECTS = ["Conjunción", "Oposición", "Cuadratura"]
+
+
 def find_natal_impacts(configs: list[dict], natal_planets: list[dict]) -> list[dict]:
     """
     Para cada configuración, detecta aspectos entre las longitudes de sus
     cuerpos y los planetas natales provistos. Usa los mismos pesos/orbes que
     los tránsitos normales (TRANSIT_ORBS, score_transit, importance_label).
+    Los eclipses (`kind == "eclipse"`) solo consideran aspectos duros.
     """
     impacts: list[dict] = []
-    aspect_angle_map = {a["name"]: a["angle"] for a in ASPECTS}
+    all_aspect_angle_map = {a["name"]: a["angle"] for a in ASPECTS}
+    eclipse_aspect_angle_map = {
+        name: angle for name, angle in all_aspect_angle_map.items()
+        if name in ECLIPSE_NATAL_ASPECTS
+    }
 
     for config in configs:
+        aspect_angle_map = (
+            eclipse_aspect_angle_map if config.get("kind") == "eclipse" else all_aspect_angle_map
+        )
         for body, lon in config["longitudes"].items():
             for np in natal_planets:
                 np_lon = np.get("longitude")
@@ -954,16 +1096,20 @@ def build_mundane_forecast(
       - síntesis temática global agregando tags de análogos coincidentes
       - impactos natales si se proveen natal_planets
       - índice cíclico de Barbault (compute_cyclic_index)
-      - disparadores rápidos de Marte (find_mars_triggers): se añaden a
-        `configurations` pero no participan en `probable_themes` ni en el
-        índice cíclico; sí participan en los impactos natales.
+      - disparadores rápidos de Marte (find_mars_triggers) y eclipses
+        (find_eclipses): se añaden a `configurations` pero no participan en
+        `probable_themes` ni en el índice cíclico; sí participan en los
+        impactos natales (los eclipses solo vía aspectos duros, ver
+        find_natal_impacts).
     """
     configs = find_mundane_configurations(start_date_str, end_date_str)
     triggers = find_mars_triggers(start_date_str, end_date_str)
+    eclipses = find_eclipses(start_date_str, end_date_str)
 
-    # Clamp: descarta configuraciones/disparadores cuya fecha exacta cayó
-    # fuera del rango solicitado (puede ocurrir cuando el refinamiento binario
-    # de una pasada retrógrada cercana al límite del rango converge fuera de él).
+    # Clamp: descarta configuraciones/disparadores/eclipses cuya fecha exacta
+    # cayó fuera del rango solicitado (puede ocurrir cuando el refinamiento
+    # binario de una pasada retrógrada cercana al límite del rango converge
+    # fuera de él).
     configs = [
         c for c in configs
         if start_date_str <= c["exact_date"] <= end_date_str
@@ -971,6 +1117,10 @@ def build_mundane_forecast(
     triggers = [
         t for t in triggers
         if start_date_str <= t["exact_date"] <= end_date_str
+    ]
+    eclipses = [
+        e for e in eclipses
+        if start_date_str <= e["exact_date"] <= end_date_str
     ]
 
     configurations_out = []
@@ -994,10 +1144,12 @@ def build_mundane_forecast(
             "themes": config_themes,
         })
 
-    # Los disparadores rápidos de Marte se añaden tal cual (ya traen
-    # analogs=[] y themes=[]): no aportan a probable_themes ni al índice
-    # cíclico, pero comparten estructura de configuración para el timeline.
+    # Los disparadores rápidos de Marte y los eclipses se añaden tal cual (ya
+    # traen analogs=[] y themes=[]): no aportan a probable_themes ni al
+    # índice cíclico, pero comparten estructura de configuración para el
+    # timeline.
     configurations_out.extend(triggers)
+    configurations_out.extend(eclipses)
     configurations_out.sort(key=lambda c: c["exact_date"])
 
     probable_themes = [
@@ -1006,7 +1158,7 @@ def build_mundane_forecast(
 
     natal_impacts: list[dict] = []
     if natal_planets:
-        natal_impacts = find_natal_impacts(configs + triggers, natal_planets)
+        natal_impacts = find_natal_impacts(configs + triggers + eclipses, natal_planets)
 
     cyclic_index = compute_cyclic_index(start_date_str, end_date_str)
 

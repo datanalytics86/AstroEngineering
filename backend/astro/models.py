@@ -25,8 +25,18 @@ class BirthData(BaseModel):
         return v
 
 
+class NatalPlanetIn(BaseModel):
+    """Validación mínima de un planeta natal recibido del frontend.
+    El frontend envía objetos `PlanetPosition` completos (symbol, sign, casa,
+    etc.); pydantic v2 ignora por defecto los campos extra no declarados aquí
+    (solo se usan `name`/`longitude` en el resto del backend), así que esos
+    objetos siguen pasando sin cambios en el consumidor."""
+    name: str = Field(min_length=1, max_length=50)
+    longitude: float = Field(ge=0, lt=360)
+
+
 class TransitRequest(BaseModel):
-    natal_planets: list[dict]
+    natal_planets: list[NatalPlanetIn]
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     latitude: float = Field(..., ge=-90, le=90)
@@ -49,7 +59,7 @@ class TransitRequest(BaseModel):
 class MundaneRequest(BaseModel):
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
-    natal_planets: list[dict] = []
+    natal_planets: list[NatalPlanetIn] = []
 
     @model_validator(mode="after")
     def validate_date_range(self) -> "MundaneRequest":
@@ -231,7 +241,7 @@ class NatalImpact(BaseModel):
 class MundaneConfiguration(BaseModel):
     id: str
     exact_date: str
-    kind: str  # "aspect" | "ingress" | "trigger"
+    kind: str  # "aspect" | "ingress" | "trigger" | "eclipse"
     bodies: list[str]
     aspect: Optional[str] = None
     sign: Optional[str] = None
@@ -242,6 +252,8 @@ class MundaneConfiguration(BaseModel):
     themes: list[str] = []  # temas agregados de los análogos de ESTA configuración
     window_start: Optional[str] = None  # disparadores: primer día con orbe <= orbe de detección
     window_end: Optional[str] = None    # disparadores: último día con orbe <= orbe de detección
+    eclipse_type: Optional[str] = None      # eclipses: "solar" | "lunar"
+    eclipse_subtype: Optional[str] = None   # eclipses: "total" | "anular" | "parcial" | "penumbral"
 
 
 class CyclicIndexPoint(BaseModel):

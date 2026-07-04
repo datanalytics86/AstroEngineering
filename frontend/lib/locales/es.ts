@@ -252,6 +252,11 @@ export const es = {
   "geo.timeline.legend.ingress": "Ingreso",
   "geo.timeline.legend.trigger": "Disparador de Marte",
   "geo.timeline.legend.precedents": "= precedentes históricos",
+  "geo.timeline.legend.eclipse": "Eclipse",
+  "geo.eclipse.subtype.total": "total",
+  "geo.eclipse.subtype.anular": "anular",
+  "geo.eclipse.subtype.parcial": "parcial",
+  "geo.eclipse.subtype.penumbral": "penumbral",
 } as const;
 
 export type TranslationKeys = keyof typeof es;

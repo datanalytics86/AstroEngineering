@@ -3,7 +3,7 @@ import type { ChartResponse, BirthData, TransitResponse, MundaneResponse } from 
 const PREFIX_CHART   = "astro_chart_";
 const PREFIX_TRANSIT = "astro_transit_";
 const PREFIX_BIRTH   = "astro_birth_";
-const PREFIX_MUNDANE = "astro_mundane_v3:";
+const PREFIX_MUNDANE = "astro_mundane_v4:";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);

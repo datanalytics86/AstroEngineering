@@ -252,4 +252,9 @@ export const en = {
   "geo.timeline.legend.ingress": "Ingress",
   "geo.timeline.legend.trigger": "Mars trigger",
   "geo.timeline.legend.precedents": "= historical precedents",
+  "geo.timeline.legend.eclipse": "Eclipse",
+  "geo.eclipse.subtype.total": "total",
+  "geo.eclipse.subtype.anular": "annular",
+  "geo.eclipse.subtype.parcial": "partial",
+  "geo.eclipse.subtype.penumbral": "penumbral",
 } as const;

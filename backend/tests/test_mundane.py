@@ -9,7 +9,9 @@ from astro.mundane import (
     compute_cyclic_index,
     build_mundane_forecast,
     find_mars_triggers,
+    find_eclipses,
 )
+from astro.aspects import angular_distance
 
 
 def test_find_configurations_includes_saturn_neptune_conjunction_2026():
@@ -130,3 +132,77 @@ def test_build_forecast_triggers_produce_natal_impacts_when_natal_planets_given(
     for impact in forecast["natal_impacts"]:
         if impact["config_id"] in trigger_ids:
             assert impact["importance"] in {"crítica", "alta", "media", "baja"}
+
+
+# ── Eclipses ────────────────────────────────────────────────────────────────
+
+def test_find_eclipses_2026_counts_two_to_three_per_type():
+    eclipses = find_eclipses("2026-01-01", "2026-12-31")
+    solar = [e for e in eclipses if e["eclipse_type"] == "solar"]
+    lunar = [e for e in eclipses if e["eclipse_type"] == "lunar"]
+    assert 2 <= len(solar) <= 3
+    assert 2 <= len(lunar) <= 3
+
+
+def test_find_eclipses_internal_astronomy_sun_moon_separation():
+    # Prueba astronómica auto-verificable: en un eclipse solar el Sol y la
+    # Luna deben estar casi en conjunción exacta (separación < 2°); en uno
+    # lunar, casi en oposición exacta (separación > 178°). Usa las propias
+    # longitudes que el motor calculó en el instante exacto del eclipse
+    # (tret[0] de swisseph), no valores de memoria.
+    eclipses = find_eclipses("2026-01-01", "2027-12-31")
+    assert len(eclipses) > 0
+    for e in eclipses:
+        sun_lon = e["longitudes"]["Sol"]
+        moon_lon = e["longitudes"]["Luna"]
+        sep = angular_distance(sun_lon, moon_lon)
+        if e["eclipse_type"] == "solar":
+            assert sep < 2.0
+        else:
+            assert sep > 178.0
+
+
+def test_find_eclipses_unique_ids_and_valid_subtypes():
+    eclipses = find_eclipses("2026-01-01", "2027-12-31")
+    ids = [e["id"] for e in eclipses]
+    assert len(ids) == len(set(ids))
+    for e in eclipses:
+        assert e["kind"] == "eclipse"
+        assert e["eclipse_type"] in {"solar", "lunar"}
+        assert e["eclipse_subtype"] in {"total", "anular", "parcial", "penumbral"}
+        assert e["bodies"] == ["Sol", "Luna"]
+        assert e["aspect"] is None
+        assert e["analogs"] == []
+        assert e["themes"] == []
+        assert any(b["name"] == "Luna" for b in e["sky"])
+        assert any(b["name"] == "Sol" for b in e["sky"])
+
+
+def test_build_forecast_includes_eclipses_sorted_with_rest():
+    forecast = build_mundane_forecast("2026-01-01", "2026-12-31")
+    kinds = {c["kind"] for c in forecast["configurations"]}
+    assert "eclipse" in kinds
+
+    dates = [c["exact_date"] for c in forecast["configurations"]]
+    assert dates == sorted(dates)
+
+    eclipse_configs = [c for c in forecast["configurations"] if c["kind"] == "eclipse"]
+    for ec in eclipse_configs:
+        assert ec["themes"] == []
+        assert "2026-01-01" <= ec["exact_date"] <= "2026-12-31"
+
+
+def test_eclipses_natal_impacts_only_hard_aspects():
+    # Sol natal muy cerca del grado del eclipse solar de 2026-02-17 (~28-29°
+    # Acuario) para forzar un impacto por conjunción y verificar que solo se
+    # reportan aspectos duros.
+    eclipses = find_eclipses("2026-01-01", "2026-12-31")
+    solar_feb = next(e for e in eclipses if e["exact_date"] == "2026-02-17")
+    sun_lon = solar_feb["longitudes"]["Sol"]
+
+    natal_planets = [{"name": "Sol", "longitude": sun_lon}]
+    forecast = build_mundane_forecast("2026-01-01", "2026-12-31", natal_planets=natal_planets)
+    impacts = [i for i in forecast["natal_impacts"] if i["config_id"] == solar_feb["id"]]
+    assert len(impacts) > 0
+    for impact in impacts:
+        assert impact["aspect"] in {"Conjunción", "Oposición", "Cuadratura"}

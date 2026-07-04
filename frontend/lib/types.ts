@@ -270,10 +270,13 @@ export interface NatalImpact {
   importance: ImportanceLevel;
 }
 
+export type EclipseType = "solar" | "lunar";
+export type EclipseSubtype = "total" | "anular" | "parcial" | "penumbral";
+
 export interface MundaneConfiguration {
   id: string;
   exact_date: string;         // "YYYY-MM-DD"
-  kind: "aspect" | "ingress" | "trigger";
+  kind: "aspect" | "ingress" | "trigger" | "eclipse";
   bodies: string[];
   aspect: string | null;
   sign: string | null;
@@ -284,6 +287,8 @@ export interface MundaneConfiguration {
   themes: string[];           // temas agregados de LOS ANÁLOGOS de esta configuración (máx 6)
   window_start?: string;      // disparadores rápidos de Marte: primer día con orbe <= 2°
   window_end?: string;        // disparadores rápidos de Marte: último día con orbe <= 2°
+  eclipse_type?: EclipseType | null;         // eclipses: "solar" | "lunar"
+  eclipse_subtype?: EclipseSubtype | null;   // eclipses: "total" | "anular" | "parcial" | "penumbral"
 }
 
 export interface CyclicIndexPoint {

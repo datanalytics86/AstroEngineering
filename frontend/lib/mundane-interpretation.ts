@@ -51,6 +51,18 @@ const BODY_MEANING: Record<string, { es: string; en: string }> = {
 // Velocidad relativa: el cuerpo más lento "manda" la firma.
 const SLOWNESS = ["Plutón", "Neptuno", "Urano", "Saturno", "Júpiter"];
 
+const ECLIPSE_TYPE_WORD: Record<string, { es: string; en: string }> = {
+  solar: { es: "solar", en: "solar" },
+  lunar: { es: "lunar", en: "lunar" },
+};
+
+const ECLIPSE_SUBTYPE_WORD: Record<string, { es: string; en: string }> = {
+  total: { es: "total", en: "total" },
+  anular: { es: "anular", en: "annular" },
+  parcial: { es: "parcial", en: "partial" },
+  penumbral: { es: "penumbral", en: "penumbral" },
+};
+
 function joinList(items: string[], lang: Lang): string {
   const clean = items.filter(Boolean);
   if (clean.length === 0) return "";
@@ -83,7 +95,7 @@ export function generateMundaneReading(params: {
   dateLabel: string; // fecha ya formateada según locale
   lang: Lang;
   /** Configuración lenta más cercana en el tiempo — solo se usa para disparadores (kind="trigger"). */
-  nearbySlowConfig?: { kind: "aspect" | "ingress" | "trigger"; bodies: string[] } | null;
+  nearbySlowConfig?: { kind: MundaneConfiguration["kind"]; bodies: string[] } | null;
 }): MundaneReading {
   const { config, analogs, natalImpacts, natalMode, dateLabel, lang, nearbySlowConfig } = params;
   const themes = config.themes && config.themes.length > 0 ? config.themes : (params.themes ?? []);
@@ -128,6 +140,17 @@ export function generateMundaneReading(params: {
         ? `El ${dateLabel}, Marte alcanza la ${aspectLower} exacta con ${slow} a ${posSlow} — un disparador rápido del período${windowNote}.`
         : `On ${dateLabel}, Mars reaches the exact ${aspectLower} with ${slow} at ${posSlow} — a fast trigger of the period${windowNote}.`,
     );
+  } else if (config.kind === "eclipse" && config.eclipse_type) {
+    const sensitiveBody = config.eclipse_type === "lunar" ? "Luna" : "Sol";
+    const sensSky = skyOf(config, sensitiveBody);
+    const posSens = sensSky ? `${Math.round(sensSky.degree_in_sign)}° ${sensSky.sign}` : (config.sign ?? "");
+    const typeWord = ECLIPSE_TYPE_WORD[config.eclipse_type]?.[lang] ?? config.eclipse_type;
+    const subtypeWord = config.eclipse_subtype ? ECLIPSE_SUBTYPE_WORD[config.eclipse_subtype]?.[lang] ?? "" : "";
+    paragraphs.push(
+      es
+        ? `El ${dateLabel}, eclipse ${typeWord}${subtypeWord ? ` ${subtypeWord}` : ""} a ${posSens}.`
+        : `On ${dateLabel}, a${subtypeWord ? ` ${subtypeWord}` : ""} ${typeWord} eclipse at ${posSens}.`,
+    );
   }
 
   // ── Párrafo 2: significado ──
@@ -154,6 +177,17 @@ export function generateMundaneReading(params: {
         : ` Around this time it acts on the ground of the ${slowPrimary} cycle active in that period.`;
     }
     paragraphs.push(synthesis);
+    paragraphs.push(
+      es
+        ? "Como el resto de este módulo, es una lectura analógica y arquetípica — no una predicción de hechos concretos."
+        : "Like the rest of this module, this is an analogical, archetypal reading — not a prediction of concrete events.",
+    );
+  } else if (config.kind === "eclipse") {
+    paragraphs.push(
+      es
+        ? `${nar.synthesis} Este grado queda "sensibilizado" durante meses: los tránsitos posteriores que lo toquen reactivan su tema.`
+        : `${nar.synthesis} This degree stays "sensitized" for months: later transits touching it reactivate its theme.`,
+    );
     paragraphs.push(
       es
         ? "Como el resto de este módulo, es una lectura analógica y arquetípica — no una predicción de hechos concretos."
@@ -196,23 +230,44 @@ export function generateMundaneReading(params: {
 
   // ── Nota natal / hook de placements ──
   let natalNote = "";
+  const isEclipse = config.kind === "eclipse";
   if (natalMode) {
     if (natalImpacts.length > 0) {
-      const items = Array.from(
-        new Map(
-          natalImpacts
-            .slice(0, 5)
-            .map((im) => [
-              `${im.natal_planet}-${im.aspect}-${im.body}`,
-              es
-                ? `tu ${im.natal_planet} (${im.aspect.toLowerCase()} de ${im.body})`
-                : `your ${im.natal_planet} (${im.body} ${im.aspect.toLowerCase()})`,
-            ]),
-        ).values(),
-      );
-      natalNote = es
-        ? `En tu carta, esta configuración toca ${joinList(items, lang)}. Ahí es donde el clima del período se vuelve personal.`
-        : `In your chart, this configuration touches ${joinList(items, lang)}. That is where the period's climate turns personal.`;
+      if (isEclipse) {
+        // Los eclipses sobre planetas natales son el clásico "año marcado" de
+        // la tradición mundana: frase propia en vez del fraseo genérico de aspecto.
+        const items = Array.from(
+          new Map(
+            natalImpacts
+              .slice(0, 5)
+              .map((im) => [
+                `${im.natal_planet}-${im.aspect}`,
+                es
+                  ? `tu ${im.natal_planet} (${im.aspect.toLowerCase()})`
+                  : `your ${im.natal_planet} (${im.aspect.toLowerCase()})`,
+              ]),
+          ).values(),
+        );
+        natalNote = es
+          ? `El eclipse cae sobre ${joinList(items, lang)} — el clásico "año marcado" que señala la tradición mundana.`
+          : `The eclipse falls on ${joinList(items, lang)} — the classic "marked year" that mundane tradition points to.`;
+      } else {
+        const items = Array.from(
+          new Map(
+            natalImpacts
+              .slice(0, 5)
+              .map((im) => [
+                `${im.natal_planet}-${im.aspect}-${im.body}`,
+                es
+                  ? `tu ${im.natal_planet} (${im.aspect.toLowerCase()} de ${im.body})`
+                  : `your ${im.natal_planet} (${im.body} ${im.aspect.toLowerCase()})`,
+              ]),
+          ).values(),
+        );
+        natalNote = es
+          ? `En tu carta, esta configuración toca ${joinList(items, lang)}. Ahí es donde el clima del período se vuelve personal.`
+          : `In your chart, this configuration touches ${joinList(items, lang)}. That is where the period's climate turns personal.`;
+      }
 
       // Si el impacto principal (mayor importancia) tiene interpretación en el
       // motor de tránsitos existente, añadimos una frase de su `summary` —
@@ -234,9 +289,12 @@ export function generateMundaneReading(params: {
   } else {
     // Modo mundial: hook genérico por grado + signos de la misma cruz.
     // En disparadores, bodies[0] es siempre "Marte": el protagonista es el lento.
+    // En eclipses, el punto sensible es el Sol (solar) o la Luna (lunar).
     const primary = isTrigger
       ? config.bodies[1] ?? config.bodies[0]
-      : config.bodies.slice().sort((a, b) => SLOWNESS.indexOf(a) - SLOWNESS.indexOf(b))[0];
+      : isEclipse
+        ? (config.eclipse_type === "lunar" ? "Luna" : "Sol")
+        : config.bodies.slice().sort((a, b) => SLOWNESS.indexOf(a) - SLOWNESS.indexOf(b))[0];
     const sp = skyOf(config, primary);
     if (sp) {
       const d = Math.round(sp.degree_in_sign);
