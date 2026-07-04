@@ -71,3 +71,51 @@ def test_mundane_endpoint_validation_error():
         "natal_planets": [],
     })
     assert resp.status_code == 422
+
+
+# ── A-5: validación estructural de natal_planets ─────────────────────────────
+
+TRANSIT_EXAMPLE = {
+    "natal_planets": [{"name": "Sol", "longitude": 54.62}],
+    "start_date": "2026-01-01",
+    "end_date": "2026-06-30",
+    "latitude": -33.4489,
+    "longitude": -70.6693,
+}
+
+
+def test_transits_endpoint_rejects_out_of_range_longitude():
+    bad = dict(TRANSIT_EXAMPLE)
+    bad["natal_planets"] = [{"name": "Sol", "longitude": 999}]
+    resp = client.post("/api/transits", json=bad)
+    assert resp.status_code == 422
+
+
+def test_transits_endpoint_rejects_empty_name():
+    bad = dict(TRANSIT_EXAMPLE)
+    bad["natal_planets"] = [{"name": "", "longitude": 54.62}]
+    resp = client.post("/api/transits", json=bad)
+    assert resp.status_code == 422
+
+
+def test_transits_endpoint_accepts_full_planet_position_payload():
+    # El frontend envía objetos PlanetPosition completos (con symbol, sign,
+    # casa, etc.); pydantic v2 debe ignorar los campos extra y seguir
+    # aceptando el payload real.
+    full = dict(TRANSIT_EXAMPLE)
+    full["natal_planets"] = [{
+        "name": "Sol", "symbol": "☉", "longitude": 54.62, "sign": "Géminis",
+        "sign_symbol": "♊", "degree_in_sign": 24.62, "degree_display": "24°37'",
+        "house": 10, "retrograde": False, "speed": 0.96,
+    }]
+    resp = client.post("/api/transits", json=full)
+    assert resp.status_code == 200
+
+
+def test_mundane_endpoint_rejects_invalid_natal_planet():
+    resp = client.post("/api/mundane", json={
+        "start_date": "2026-01-01",
+        "end_date": "2026-06-30",
+        "natal_planets": [{"name": "Sol", "longitude": -10}],
+    })
+    assert resp.status_code == 422

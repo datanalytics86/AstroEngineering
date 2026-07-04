@@ -309,6 +309,8 @@ En el frontend, mostrar mensaje: *"El cálculo puede tardar hasta 60s la primera
 
 ### A-5 · `natal_planets` en `TransitRequest` no tiene estructura validada
 
+> ✅ **RESUELTO (2026-07-04):** nuevo modelo `NatalPlanetIn` (`name` no vacío, `longitude` en `[0, 360)`) usado en `TransitRequest.natal_planets` y `MundaneRequest.natal_planets`; pydantic v2 ignora los campos extra por defecto, así que los objetos `PlanetPosition` completos que envía el frontend siguen pasando sin cambios. `main.py` convierte con `model_dump()` antes de pasarlos a `calculate_transit_timeline`/`build_mundane_forecast` (que siguen esperando `dict`). Payloads con `longitude` fuera de rango o `name` vacío ahora devuelven 422 en vez de crashear.
+
 **Archivo:** `backend/astro/models.py`  
 **Problema:** `natal_planets: list[dict]` acepta cualquier cosa. Si llega sin el campo `longitude`, la aplicación crashea con `KeyError` en lugar de dar un error descriptivo.
 

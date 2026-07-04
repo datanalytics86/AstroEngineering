@@ -104,7 +104,7 @@ async def get_transits(request: Request, body: TransitRequest):
     """
     try:
         result = calculate_transit_timeline(
-            natal_planets=body.natal_planets,
+            natal_planets=[p.model_dump() for p in body.natal_planets],
             start_date_str=body.start_date,
             end_date_str=body.end_date,
             lat=body.latitude,
@@ -149,10 +149,11 @@ async def get_mundane(request: Request, body: MundaneRequest):
     de hechos futuros.
     """
     try:
+        natal_planets = [p.model_dump() for p in body.natal_planets]
         result = build_mundane_forecast(
             start_date_str=body.start_date,
             end_date_str=body.end_date,
-            natal_planets=body.natal_planets or None,
+            natal_planets=natal_planets or None,
         )
         return result
     except Exception as exc:
