@@ -2,6 +2,8 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from typing import Optional
 from datetime import date
 
+from .national import NATIONAL_CHART_IDS
+
 
 # ── Input Models ──────────────────────────────────────────────────────────────
 
@@ -60,6 +62,16 @@ class MundaneRequest(BaseModel):
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     natal_planets: list[NatalPlanetIn] = []
+    # Modo "impacto por país": id de una carta nacional (ver astro/national.py).
+    # Mutuamente excluyente con natal_planets (ver validate_date_range abajo).
+    country: Optional[str] = None
+
+    @field_validator("country")
+    @classmethod
+    def validate_country(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in NATIONAL_CHART_IDS:
+            raise ValueError(f"País desconocido: {v}")
+        return v
 
     @model_validator(mode="after")
     def validate_date_range(self) -> "MundaneRequest":
@@ -72,6 +84,8 @@ class MundaneRequest(BaseModel):
             raise ValueError("end_date debe ser posterior a start_date")
         if (end - start).days > 1100:
             raise ValueError("Rango máximo de análisis mundial: ~3 años (1100 días)")
+        if self.country and self.natal_planets:
+            raise ValueError("country y natal_planets son mutuamente excluyentes")
         return self
 
 
@@ -261,6 +275,19 @@ class CyclicIndexPoint(BaseModel):
     value: float  # suma de separaciones angulares (0-180°) de los 10 pares lentos
 
 
+# ── Impacto por país (cartas nacionales, tradición de Campion) ────────────────
+
+class CountryInfo(BaseModel):
+    id: str
+    name_es: str
+    name_en: str
+
+
+class NationalChartNote(BaseModel):
+    es: str
+    en: str
+
+
 class MundaneResponse(BaseModel):
     start_date: str
     end_date: str
@@ -268,3 +295,9 @@ class MundaneResponse(BaseModel):
     probable_themes: list[str]
     natal_impacts: list[NatalImpact] = []
     cyclic_index: list[CyclicIndexPoint] = []
+    # Modo "impacto por país": impactos de las configuraciones sobre la carta
+    # nacional, sus posiciones planetarias (para el anillo de la rueda) y una
+    # nota bilingüe sobre la carta usada. Vacíos/None si no se pidió `country`.
+    national_impacts: list[NatalImpact] = []
+    national_planets: list[PlanetPosition] = []
+    national_chart_note: Optional[NationalChartNote] = None

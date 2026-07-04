@@ -119,3 +119,50 @@ def test_mundane_endpoint_rejects_invalid_natal_planet():
         "natal_planets": [{"name": "Sol", "longitude": -10}],
     })
     assert resp.status_code == 422
+
+
+# ── Modo "impacto por país" (cartas nacionales, tradición de Campion) ────────
+
+def test_mundane_countries_endpoint_lists_all_countries():
+    resp = client.get("/api/mundane/countries")
+    assert resp.status_code == 200
+    data = resp.json()
+    ids = {c["id"] for c in data}
+    assert "chile" in ids and "india" in ids
+    for c in data:
+        assert c["name_es"] and c["name_en"]
+
+
+def test_mundane_endpoint_country_mode_ok():
+    resp = client.post("/api/mundane", json={
+        "start_date": "2026-01-01",
+        "end_date": "2026-06-30",
+        "country": "chile",
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data["national_impacts"], list)
+    assert len(data["national_planets"]) == 9
+    assert data["national_chart_note"]["es"]
+    assert data["national_chart_note"]["en"]
+    # El modo país no calcula impactos natales personales.
+    assert data["natal_impacts"] == []
+
+
+def test_mundane_endpoint_rejects_invalid_country():
+    resp = client.post("/api/mundane", json={
+        "start_date": "2026-01-01",
+        "end_date": "2026-06-30",
+        "country": "narnia",
+    })
+    assert resp.status_code == 422
+
+
+def test_mundane_endpoint_rejects_country_and_natal_planets_together():
+    resp = client.post("/api/mundane", json={
+        "start_date": "2026-01-01",
+        "end_date": "2026-06-30",
+        "country": "chile",
+        "natal_planets": [{"name": "Sol", "longitude": 54.62}],
+    })
+    assert resp.status_code == 422
