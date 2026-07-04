@@ -231,7 +231,7 @@ class NatalImpact(BaseModel):
 class MundaneConfiguration(BaseModel):
     id: str
     exact_date: str
-    kind: str  # "aspect" | "ingress"
+    kind: str  # "aspect" | "ingress" | "trigger"
     bodies: list[str]
     aspect: Optional[str] = None
     sign: Optional[str] = None
@@ -240,6 +240,8 @@ class MundaneConfiguration(BaseModel):
     sky: list[MundaneSkyBody]
     analogs: list[MundaneAnalog] = []
     themes: list[str] = []  # temas agregados de los análogos de ESTA configuración
+    window_start: Optional[str] = None  # disparadores: primer día con orbe <= orbe de detección
+    window_end: Optional[str] = None    # disparadores: último día con orbe <= orbe de detección
 
 
 class CyclicIndexPoint(BaseModel):

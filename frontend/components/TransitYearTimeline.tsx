@@ -12,7 +12,7 @@
 import { useMemo } from "react";
 import { format } from "date-fns";
 import { es as esLocale, enUS } from "date-fns/locale";
-import type { TransitEvent, RetroPeriod } from "@/lib/types";
+import type { TransitEvent, RetroPeriod, ImportanceLevel } from "@/lib/types";
 import { ASPECT_COLORS } from "@/lib/zodiac-utils";
 import { parseLocalDate } from "@/lib/date-utils";
 import { useT } from "@/lib/i18n";
@@ -47,6 +47,15 @@ const BAR_GAP = 5;
 const ROW_PAD = 8;
 const ZOOM_ROW_H = 54;
 const ZOOM_BAR_H = 20;
+
+// Jerarquía visual por importancia (B/C): las barras críticas/altas destacan
+// a plena opacidad, media/baja se atenúan — antes todas pesaban igual y la
+// fila de Marte (con muchas pasadas de importancia baja) ahogaba el resto.
+function importanceOpacity(importance: ImportanceLevel): number {
+  if (importance === "crítica" || importance === "alta") return 1;
+  if (importance === "media") return 0.75;
+  return 0.5; // baja
+}
 
 function isLeapYear(year: number): boolean {
   return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
@@ -377,7 +386,13 @@ export default function TransitYearTimeline({
                 </text>
               );
               for (const { item: ev, lane } of row.placed) {
-                const barY = rowY + ROW_PAD + lane * (BAR_H + BAR_GAP);
+                const laneY = rowY + ROW_PAD + lane * (BAR_H + BAR_GAP);
+                // Barras de Marte más finas (~70% del alto): la fila de Marte
+                // acumula muchas pasadas de importancia baja y antes se veía
+                // como una muralla de mini-barras del mismo peso que el resto.
+                const isMars = row.planetName === "Marte";
+                const barHeight = isMars ? BAR_H * 0.7 : BAR_H;
+                const barY = laneY + (BAR_H - barHeight) / 2;
                 const x0 = xOf(clipYear(ev.enters_orb, year), year);
                 const x1 = xOf(clipYear(ev.leaves_orb, year), year);
                 const w = Math.max(x1 - x0, 2);
@@ -395,12 +410,12 @@ export default function TransitYearTimeline({
                       x={x0}
                       y={barY}
                       width={w}
-                      height={BAR_H}
+                      height={barHeight}
                       rx={3}
                       fill={color}
                       stroke={selected ? "#4F46E5" : "none"}
                       strokeWidth={selected ? 2 : 0}
-                      opacity={selected ? 1 : 0.82}
+                      opacity={selected ? 1 : importanceOpacity(ev.importance)}
                     >
                       <title>
                         {eventLabel(ev)} {ev.natal_planet} · {fmt(ev.enters_orb)} – {fmt(ev.leaves_orb)}
@@ -413,7 +428,7 @@ export default function TransitYearTimeline({
                     {showLabel && (
                       <text
                         x={(x0 + x1) / 2}
-                        y={barY + BAR_H / 2}
+                        y={barY + barHeight / 2}
                         textAnchor="middle"
                         dominantBaseline="central"
                         fontSize={10}

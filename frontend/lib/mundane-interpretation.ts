@@ -82,12 +82,15 @@ export function generateMundaneReading(params: {
   natalMode: boolean;
   dateLabel: string; // fecha ya formateada según locale
   lang: Lang;
+  /** Configuración lenta más cercana en el tiempo — solo se usa para disparadores (kind="trigger"). */
+  nearbySlowConfig?: { kind: "aspect" | "ingress" | "trigger"; bodies: string[] } | null;
 }): MundaneReading {
-  const { config, analogs, natalImpacts, natalMode, dateLabel, lang } = params;
+  const { config, analogs, natalImpacts, natalMode, dateLabel, lang, nearbySlowConfig } = params;
   const themes = config.themes && config.themes.length > 0 ? config.themes : (params.themes ?? []);
   const es = lang === "es";
   const nar = getConfigNarrative(config, lang);
   const paragraphs: string[] = [];
+  const isTrigger = config.kind === "trigger";
 
   // ── Párrafo 1: qué ocurre ──
   if (config.kind === "aspect" && config.aspect && config.bodies.length === 2) {
@@ -109,6 +112,22 @@ export function generateMundaneReading(params: {
         ? `El ${dateLabel}, ${body} ingresa en ${config.sign} y abre un ciclo largo que no se pisaba en años.`
         : `On ${dateLabel}, ${body} enters ${config.sign}, opening a long cycle unseen for years.`,
     );
+  } else if (isTrigger && config.aspect && config.bodies.length === 2) {
+    const slow = config.bodies[1];
+    const slowSky = skyOf(config, slow);
+    const posSlow = slowSky ? `${Math.round(slowSky.degree_in_sign)}° ${slowSky.sign}` : slow;
+    const aspectLower = config.aspect.toLowerCase();
+    const windowNote =
+      config.window_start && config.window_end
+        ? es
+          ? ` (ventana: ${config.window_start}–${config.window_end})`
+          : ` (window: ${config.window_start}–${config.window_end})`
+        : "";
+    paragraphs.push(
+      es
+        ? `El ${dateLabel}, Marte alcanza la ${aspectLower} exacta con ${slow} a ${posSlow} — un disparador rápido del período${windowNote}.`
+        : `On ${dateLabel}, Mars reaches the exact ${aspectLower} with ${slow} at ${posSlow} — a fast trigger of the period${windowNote}.`,
+    );
   }
 
   // ── Párrafo 2: significado ──
@@ -120,6 +139,25 @@ export function generateMundaneReading(params: {
       es
         ? `Se cruzan ${ma} (${a}) con ${mb} (${b}). ${nar.synthesis}`
         : `${ma} (${a}) crosses with ${mb} (${b}). ${nar.synthesis}`,
+    );
+  } else if (isTrigger) {
+    let synthesis = nar.synthesis;
+    synthesis += es
+      ? " En la tradición mundana, Marte actúa como un gatillo rápido que activa los ciclos lentos de fondo, sin ser él mismo un ciclo estructural."
+      : " In the mundane tradition, Mars acts as a fast trigger that activates the slower background cycles, without being a structural cycle itself.";
+    if (nearbySlowConfig) {
+      const slowPrimary =
+        nearbySlowConfig.bodies.slice().sort((a, b) => SLOWNESS.indexOf(a) - SLOWNESS.indexOf(b))[0] ??
+        nearbySlowConfig.bodies[0];
+      synthesis += es
+        ? ` En esta época actúa sobre el terreno del ciclo de ${slowPrimary} activo en esas fechas.`
+        : ` Around this time it acts on the ground of the ${slowPrimary} cycle active in that period.`;
+    }
+    paragraphs.push(synthesis);
+    paragraphs.push(
+      es
+        ? "Como el resto de este módulo, es una lectura analógica y arquetípica — no una predicción de hechos concretos."
+        : "Like the rest of this module, this is an analogical, archetypal reading — not a prediction of concrete events.",
     );
   } else {
     paragraphs.push(nar.synthesis);
@@ -195,8 +233,10 @@ export function generateMundaneReading(params: {
     }
   } else {
     // Modo mundial: hook genérico por grado + signos de la misma cruz.
-    const primary =
-      config.bodies.slice().sort((a, b) => SLOWNESS.indexOf(a) - SLOWNESS.indexOf(b))[0];
+    // En disparadores, bodies[0] es siempre "Marte": el protagonista es el lento.
+    const primary = isTrigger
+      ? config.bodies[1] ?? config.bodies[0]
+      : config.bodies.slice().sort((a, b) => SLOWNESS.indexOf(a) - SLOWNESS.indexOf(b))[0];
     const sp = skyOf(config, primary);
     if (sp) {
       const d = Math.round(sp.degree_in_sign);

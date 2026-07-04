@@ -46,16 +46,20 @@ def _slugify(text: str) -> str:
     return out.strip("_")
 
 
-def compute_mundane_sky(date_str: str) -> list[dict]:
+def compute_mundane_sky(date_str: str, include_mars: bool = False) -> list[dict]:
     """
     Posiciones de los cuerpos lentos (+ Sol) en una fecha dada (mediodía UT).
     Soporta fechas históricas (pre-1800 incluido) vía fallback Moshier automático
     en calc_planet_position. Omite cuerpos que no se puedan calcular.
+
+    `include_mars=True` añade Marte al cielo devuelto — usado por los
+    disparadores rápidos (Marte–lento), que necesitan la posición de Marte
+    disponible para que la rueda/interpretación pueda resaltarla.
     """
     year, month, day = map(int, date_str.split("-"))
     jd = to_julian_day(year, month, day, 12.0)
 
-    bodies = ["Sol"] + MUNDANE_BODIES
+    bodies = ["Sol"] + MUNDANE_BODIES + (["Marte"] if include_mars else [])
     sky: list[dict] = []
     for name in bodies:
         pid = PLANET_IDS.get(name)
@@ -298,6 +302,129 @@ def find_mundane_configurations(start_date_str: str, end_date_str: str) -> list[
 
     configs.sort(key=lambda c: c["exact_date"])
     return configs
+
+
+# ── Disparadores rápidos de Marte (déclencheur, doctrina de Barbault) ──────────
+# Marte queda fuera de MUNDANE_BODIES por diseño (es un cuerpo rápido, no
+# estructural), pero la tradición mundana lo trata como el gatillo que activa
+# los ciclos lentos de fondo. Solo aspectos duros: son los que la tradición
+# (Ebertin) asocia con descarga de tensión, no armonización.
+MARS_TRIGGER_ASPECTS = ["Conjunción", "Oposición", "Cuadratura"]
+
+# Orbe de detección de disparadores — más estrecho que MUNDANE_SCAN_ORB porque
+# Marte se mueve rápido (~0.5°/día) y su ventana de influencia es corta.
+MARS_TRIGGER_ORB = 2.0
+
+
+def find_mars_triggers(start_date_str: str, end_date_str: str) -> list[dict]:
+    """
+    Escanea Marte contra cada uno de los 5 cuerpos lentos buscando SOLO
+    aspectos duros (Conjunción, Oposición, Cuadratura) con orbe de detección
+    MARS_TRIGGER_ORB. Paso diario (Marte se mueve rápido, ~0.5°/día). Detecta
+    por mínimo local del orbe (mismo criterio que find_mundane_configurations)
+    y refina con _find_exact_mundane_date. También calcula la ventana del
+    disparador: primer/último día con orbe <= MARS_TRIGGER_ORB alrededor de la
+    fecha exacta.
+
+    A diferencia de las configuraciones lentas, los disparadores no acumulan
+    análogos históricos (recurren cada ~2 años, se leen por arquetipo) ni
+    aportan a `probable_themes` / al índice cíclico.
+    """
+    start_date = datetime.fromisoformat(start_date_str)
+    end_date = datetime.fromisoformat(end_date_str)
+
+    aspect_angle_map = {a["name"]: a["angle"] for a in ASPECTS if a["name"] in MARS_TRIGGER_ASPECTS}
+    mars_id = PLANET_IDS["Marte"]
+
+    triggers: list[dict] = []
+    seen_keys: set[tuple] = set()
+
+    for slow_body in MUNDANE_BODIES:
+        slow_id = PLANET_IDS[slow_body]
+
+        # 1) Muestreo diario del orbe de cada aspecto duro a lo largo del rango.
+        samples: dict[str, list[tuple[float, float]]] = {a: [] for a in MARS_TRIGGER_ASPECTS}
+        current = start_date
+        while current <= end_date:
+            jd = to_julian_day(current.year, current.month, current.day, 12.0)
+            pm = calc_planet_position(jd, mars_id)
+            ps = calc_planet_position(jd, slow_id)
+            if pm is not None and ps is not None:
+                angle = angular_distance(pm["longitude"], ps["longitude"])
+                for aspect_name in MARS_TRIGGER_ASPECTS:
+                    orb = abs(angle - aspect_angle_map[aspect_name])
+                    samples[aspect_name].append((jd, orb))
+            current += timedelta(days=1)
+
+        # 2) Mínimos locales dentro del orbe de detección → un disparador cada uno.
+        for aspect_name in MARS_TRIGGER_ASPECTS:
+            aspect_angle = aspect_angle_map[aspect_name]
+            seq = samples[aspect_name]
+            for i, (jd, orb) in enumerate(seq):
+                if orb > MARS_TRIGGER_ORB:
+                    continue
+                prev_orb = seq[i - 1][1] if i > 0 else None
+                next_orb = seq[i + 1][1] if i < len(seq) - 1 else None
+                is_local_min = (prev_orb is None or orb <= prev_orb) and (next_orb is None or orb <= next_orb)
+                if not is_local_min:
+                    continue
+
+                exact_date = _find_exact_mundane_date(mars_id, slow_id, aspect_angle, jd)
+
+                key = (slow_body, aspect_name, exact_date)
+                if key in seen_keys:
+                    continue
+                seen_keys.add(key)
+
+                sky = compute_mundane_sky(exact_date, include_mars=True)
+                mars_sky = next((s for s in sky if s["name"] == "Marte"), None)
+                slow_sky = next((s for s in sky if s["name"] == slow_body), None)
+                if mars_sky is None or slow_sky is None:
+                    continue
+
+                # Ventana del disparador: tramo CONTIGUO alrededor de este mínimo
+                # local con orbe <= orbe de detección (no todo el rango muestreado,
+                # que puede contener otras pasadas del mismo par/aspecto).
+                w_start_i = i
+                while w_start_i > 0 and seq[w_start_i - 1][1] <= MARS_TRIGGER_ORB:
+                    w_start_i -= 1
+                w_end_i = i
+                while w_end_i < len(seq) - 1 and seq[w_end_i + 1][1] <= MARS_TRIGGER_ORB:
+                    w_end_i += 1
+                window_start_jd = seq[w_start_i][0]
+                window_end_jd = seq[w_end_i][0]
+                wy, wm, wd, _ = swe.revjul(window_start_jd)
+                window_start = f"{int(wy):04d}-{int(wm):02d}-{int(wd):02d}"
+                wy2, wm2, wd2, _ = swe.revjul(window_end_jd)
+                window_end = f"{int(wy2):04d}-{int(wm2):02d}-{int(wd2):02d}"
+
+                bodies = ["Marte", slow_body]
+                trigger_id = (
+                    f"marte_{_slugify(slow_body)}_{_slugify(aspect_name)}_"
+                    f"{exact_date.replace('-', '')}"
+                )
+
+                triggers.append({
+                    "id": trigger_id,
+                    "exact_date": exact_date,
+                    "kind": "trigger",
+                    "bodies": bodies,
+                    "aspect": aspect_name,
+                    "sign": None,
+                    "longitudes": {
+                        "Marte": mars_sky["longitude"],
+                        slow_body: slow_sky["longitude"],
+                    },
+                    "signature": {"pair": bodies, "aspect": aspect_name},
+                    "sky": sky,
+                    "analogs": [],
+                    "themes": [],
+                    "window_start": window_start,
+                    "window_end": window_end,
+                })
+
+    triggers.sort(key=lambda c: c["exact_date"])
+    return triggers
 
 
 # ── Eventos históricos curados ────────────────────────────────────────────────
@@ -827,15 +954,23 @@ def build_mundane_forecast(
       - síntesis temática global agregando tags de análogos coincidentes
       - impactos natales si se proveen natal_planets
       - índice cíclico de Barbault (compute_cyclic_index)
+      - disparadores rápidos de Marte (find_mars_triggers): se añaden a
+        `configurations` pero no participan en `probable_themes` ni en el
+        índice cíclico; sí participan en los impactos natales.
     """
     configs = find_mundane_configurations(start_date_str, end_date_str)
+    triggers = find_mars_triggers(start_date_str, end_date_str)
 
-    # Clamp: descarta configuraciones cuya fecha exacta cayó fuera del rango
-    # solicitado (puede ocurrir cuando el refinamiento binario de una pasada
-    # retrógrada cercana al límite del rango converge fuera de él).
+    # Clamp: descarta configuraciones/disparadores cuya fecha exacta cayó
+    # fuera del rango solicitado (puede ocurrir cuando el refinamiento binario
+    # de una pasada retrógrada cercana al límite del rango converge fuera de él).
     configs = [
         c for c in configs
         if start_date_str <= c["exact_date"] <= end_date_str
+    ]
+    triggers = [
+        t for t in triggers
+        if start_date_str <= t["exact_date"] <= end_date_str
     ]
 
     configurations_out = []
@@ -859,13 +994,19 @@ def build_mundane_forecast(
             "themes": config_themes,
         })
 
+    # Los disparadores rápidos de Marte se añaden tal cual (ya traen
+    # analogs=[] y themes=[]): no aportan a probable_themes ni al índice
+    # cíclico, pero comparten estructura de configuración para el timeline.
+    configurations_out.extend(triggers)
+    configurations_out.sort(key=lambda c: c["exact_date"])
+
     probable_themes = [
         tag for tag, _ in sorted(theme_counts.items(), key=lambda kv: -kv[1])
     ][:8]
 
     natal_impacts: list[dict] = []
     if natal_planets:
-        natal_impacts = find_natal_impacts(configs, natal_planets)
+        natal_impacts = find_natal_impacts(configs + triggers, natal_planets)
 
     cyclic_index = compute_cyclic_index(start_date_str, end_date_str)
 

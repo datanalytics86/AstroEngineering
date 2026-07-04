@@ -3,7 +3,7 @@ import type { ChartResponse, BirthData, TransitResponse, MundaneResponse } from 
 const PREFIX_CHART   = "astro_chart_";
 const PREFIX_TRANSIT = "astro_transit_";
 const PREFIX_BIRTH   = "astro_birth_";
-const PREFIX_MUNDANE = "astro_mundane_v2:";
+const PREFIX_MUNDANE = "astro_mundane_v3:";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -100,6 +100,8 @@ export function loadSolarReturn(id: string): ChartResponse | null {
 // Caché v2: invalida las respuestas guardadas con el corpus histórico viejo
 // (16 eventos, sin match_type/themes/cyclic_index) cuando se despliega este
 // corpus ampliado y verificado (52 eventos).
+// Caché v3: invalida v2 al añadir los disparadores rápidos de Marte (kind
+// "trigger", window_start/window_end) — la forma de la respuesta cambió.
 
 function mundaneKey(year: number, mode: "world" | "natal", chartId: string | null): string {
   return `${PREFIX_MUNDANE}${year}_${mode}_${chartId ?? "world"}`;

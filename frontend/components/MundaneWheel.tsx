@@ -22,6 +22,7 @@ import {
   makeToAngle,
   polarXY,
   describeSector,
+  toRad,
 } from "@/lib/wheel-geometry";
 
 interface Props {
@@ -147,15 +148,34 @@ export default function MundaneWheel({
     [overlaySky],
   );
 
-  // Línea del aspecto definitorio entre los dos cuerpos protagonistas
+  // Línea del aspecto definitorio entre los dos cuerpos protagonistas. Para
+  // conjunciones la línea mediría ~0px (los dos cuerpos están en el mismo
+  // punto) — ver `highlightHalo` más abajo, que dibuja un halo en su lugar.
   const highlightLine = useMemo(() => {
-    if (!highlightBodies || highlightBodies.length !== 2) return null;
+    if (!highlightBodies || highlightBodies.length !== 2 || highlightAspect === "Conjunción") return null;
     const a = sky.find((b) => b.name === highlightBodies[0]);
     const b = sky.find((b2) => b2.name === highlightBodies[1]);
     if (!a || !b) return null;
     const p1 = polarXY(cx, cy, R_CORE, toAngle(a.longitude));
     const p2 = polarXY(cx, cy, R_CORE, toAngle(b.longitude));
     return { p1, p2, color: ASPECT_LINE_COLOR[highlightAspect ?? ""] ?? "#334155" };
+  }, [highlightBodies, highlightAspect, sky, toAngle]);
+
+  // Halo doble (anillo estático + pulso suave) en el punto medio del par,
+  // sobre el anillo de cuerpos mundiales — sustituye a la línea para
+  // conjunciones, donde ambos cuerpos caen prácticamente en el mismo punto.
+  const highlightHalo = useMemo(() => {
+    if (highlightAspect !== "Conjunción" || !highlightBodies || highlightBodies.length !== 2) return null;
+    const a = sky.find((b) => b.name === highlightBodies[0]);
+    const b = sky.find((b2) => b2.name === highlightBodies[1]);
+    if (!a || !b) return null;
+    const angA = toAngle(a.longitude);
+    const angB = toAngle(b.longitude);
+    const sinSum = Math.sin(toRad(angA)) + Math.sin(toRad(angB));
+    const cosSum = Math.cos(toRad(angA)) + Math.cos(toRad(angB));
+    const midAngle = (Math.atan2(sinSum, cosSum) * 180) / Math.PI;
+    const pos = polarXY(cx, cy, R_MU_GLYPH, midAngle);
+    return { pos, color: ASPECT_LINE_COLOR["Conjunción"] };
   }, [highlightBodies, highlightAspect, sky, toAngle]);
 
   // Sector resaltado para un ingreso de signo
@@ -240,6 +260,14 @@ export default function MundaneWheel({
             </g>
           );
         })}
+
+        {/* Halo de conjunción (ver comentario en highlightHalo más arriba) */}
+        {highlightHalo && (
+          <g className="pointer-events-none">
+            <circle cx={highlightHalo.pos.x} cy={highlightHalo.pos.y} r={R_SPHERE + 11} fill="none" stroke={highlightHalo.color} strokeWidth={2} opacity={0.3} className="animate-pulse" />
+            <circle cx={highlightHalo.pos.x} cy={highlightHalo.pos.y} r={R_SPHERE + 5} fill="none" stroke={highlightHalo.color} strokeWidth={2} opacity={0.6} />
+          </g>
+        )}
 
         <circle cx={cx} cy={cy} r={R_SEP} fill="white" stroke="#94A3B8" strokeWidth={natalPlanets || overlaySky ? 2 : 1} />
 

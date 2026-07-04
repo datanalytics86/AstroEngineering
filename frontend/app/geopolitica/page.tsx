@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useRef, useState, useCallback } from "rea
 import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { format } from "date-fns";
+import type { Locale } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import type { MundaneResponse, MundaneConfiguration, ChartResponse, MundaneAnalog } from "@/lib/types";
@@ -27,8 +28,11 @@ const MundaneTimelineChart = dynamic(() => import("@/components/MundaneTimelineC
 const CyclicIndexChart = dynamic(() => import("@/components/CyclicIndexChart"), { ssr: false });
 
 type Mode = "world" | "natal";
-type FilterMode = "majors" | "all" | "precedents";
+type FilterMode = "majors" | "all" | "precedents" | "triggers";
 type CompareMode = "overlay" | "era";
+
+// Disparadores rápidos de Marte: mismo rojo que MundaneWheel.BODY_COLORS.Marte
+const TRIGGER_COLOR = "#EF4444";
 
 const YEARS = [2026, 2027];
 const MAJOR_ASPECTS = new Set(["Conjunción", "Oposición", "Cuadratura"]);
@@ -55,10 +59,10 @@ function pairOrb(sky: { name: string; longitude: number }[], bodies: string[], a
 
 /** Glifos de cuerpo(s) + símbolo de aspecto/ingreso, para tarjetas y timeline. */
 function configGlyphs(c: MundaneConfiguration): { text: string; color: string } {
-  if (c.kind === "aspect" && c.bodies.length === 2) {
+  if ((c.kind === "aspect" || c.kind === "trigger") && c.bodies.length === 2) {
     const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
     const symbolB = c.sky.find((s) => s.name === c.bodies[1])?.symbol ?? "";
-    const color = (c.aspect && ASPECT_LINE_COLOR[c.aspect]) || "#334155";
+    const color = c.kind === "trigger" ? TRIGGER_COLOR : (c.aspect && ASPECT_LINE_COLOR[c.aspect]) || "#334155";
     return { text: `${symbolA} ${c.aspect ? ASPECT_SYMBOL[c.aspect] ?? "" : ""} ${symbolB}`, color };
   }
   if (c.kind === "ingress" && c.bodies.length === 1) {
@@ -68,6 +72,15 @@ function configGlyphs(c: MundaneConfiguration): { text: string; color: string } 
     return { text: `${symbolBody} → ${signSymbol}`, color: INGRESS_COLOR };
   }
   return { text: "", color: "#334155" };
+}
+
+/** Formatea una fecha "YYYY-MM-DD" con el locale dado; cae al string original si falla. */
+function formatGeoDate(dateStr: string, dateLocale: Locale): string {
+  try {
+    return format(parseLocalDate(dateStr), "d MMM yyyy", { locale: dateLocale });
+  } catch {
+    return dateStr;
+  }
 }
 
 function Spinner({ label }: { label: string }) {
@@ -96,20 +109,36 @@ function GeopoliticaContent() {
   const L = lang as Lang;
   const dateLocale = lang === "en" ? enUS : es;
 
-  // Deep-links: ?year=&mode=&chart=&config= — el estado inicial se lee de la
-  // URL para que una configuración concreta sea compartible por enlace.
-  const [mode, setMode] = useState<Mode>(() =>
-    searchParams.get("mode") === "natal" ? "natal" : "world",
-  );
-  const [year, setYear] = useState<number>(() => {
-    const y = Number(searchParams.get("year"));
-    return YEARS.includes(y) ? y : YEARS[0];
-  });
-  const pendingConfigRef = useRef<string | null>(searchParams.get("config"));
+  // Deep-links: ?year=&mode=&chart=&config= — el estado inicial usa siempre
+  // los valores neutros por defecto (nunca lee searchParams en el
+  // inicializador de useState) para que el primer render del cliente
+  // coincida con el HTML del servidor; los params entrantes se aplican en un
+  // useEffect de montaje (ver más abajo), evitando el error de hidratación.
+  const [mode, setMode] = useState<Mode>("world");
+  const [year, setYear] = useState<number>(YEARS[0]);
+  const pendingConfigRef = useRef<string | null>(null);
+  // Se vuelve true tras aplicar los searchParams entrantes una vez montado;
+  // hasta entonces, el efecto de sincronización de URL no debe ejecutarse
+  // (pisaría la URL con los valores neutros antes de leer los reales).
+  const [paramsApplied, setParamsApplied] = useState(false);
 
   // Natal mode
   const [charts, setCharts] = useState<SavedChartMeta[]>([]);
-  const [selectedChartId, setSelectedChartId] = useState<string>(() => searchParams.get("chart") ?? "");
+  const [selectedChartId, setSelectedChartId] = useState<string>("");
+
+  useEffect(() => {
+    const m = searchParams.get("mode") === "natal" ? "natal" : "world";
+    const y = Number(searchParams.get("year"));
+    const yr = YEARS.includes(y) ? y : YEARS[0];
+    const chart = searchParams.get("chart") ?? "";
+    pendingConfigRef.current = searchParams.get("config");
+    setMode(m);
+    setYear(yr);
+    setSelectedChartId(chart);
+    setParamsApplied(true);
+    // Solo al montar: los searchParams entrantes se aplican una única vez.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // La carta natal se deriva SÍNCRONAMENTE del id seleccionado (no como estado con
   // retraso), para que la petición y la clave de caché siempre correspondan a la
@@ -129,6 +158,8 @@ function GeopoliticaContent() {
   const [compareEra, setCompareEra] = useState<string | null>(null); // analog id being compared
   const [compareMode, setCompareMode] = useState<CompareMode>("era"); // cómo se muestra compareEra
   const [filterMode, setFilterMode] = useState<FilterMode>("majors");
+  const [disclaimerOpen, setDisclaimerOpen] = useState(false);
+  const [showAllConfigs, setShowAllConfigs] = useState(false); // móvil: "Ver todas (N)"
 
   useEffect(() => {
     setCharts(listCharts());
@@ -212,12 +243,31 @@ function GeopoliticaContent() {
   const data = cache[cacheKey] ?? null;
   const configs = data?.configurations ?? [];
 
-  // Filtro: "Mayores" (default) = ingresos + conjunción/oposición/cuadratura; "Todos"; "Con precedentes".
+  // Filtro: "Mayores" (default) = ingresos + conjunción/oposición/cuadratura de los
+  // lentos + disparadores de Marte (como marcadores menores); "Todos"; "Con
+  // precedentes"; "Disparadores" = solo los disparadores rápidos de Marte.
   const filteredConfigs = useMemo(() => {
     if (filterMode === "all") return configs;
+    if (filterMode === "triggers") return configs.filter((c) => c.kind === "trigger");
     if (filterMode === "precedents") return configs.filter((c) => c.analogs.length > 0);
-    return configs.filter((c) => c.kind === "ingress" || (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)));
+    return configs.filter(
+      (c) => c.kind === "trigger" || c.kind === "ingress" || (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)),
+    );
   }, [configs, filterMode]);
+
+  // Lista de tarjetas (columna izquierda): en el filtro "Mayores" se ocultan
+  // los disparadores de Marte (siguen visibles en el timeline, solo como
+  // marcadores menores) para no ahogar los ciclos lentos entre las tarjetas
+  // (B1). En "Todos"/"Con precedentes"/"Disparadores" se mantienen.
+  const cardConfigs = useMemo(
+    () => (filterMode === "majors" ? filteredConfigs.filter((c) => c.kind !== "trigger") : filteredConfigs),
+    [filteredConfigs, filterMode],
+  );
+
+  // Al cambiar de filtro, la lista móvil vuelve a mostrar solo las primeras N.
+  useEffect(() => {
+    setShowAllConfigs(false);
+  }, [filterMode]);
 
   // Default selected config = first con análogos dentro del filtro activo, si no el primero
   useEffect(() => {
@@ -244,7 +294,10 @@ function GeopoliticaContent() {
   }, [data, filterMode]);
 
   // Mantiene la URL sincronizada (replace, sin recargar) para compartir enlaces.
+  // Guardado por `paramsApplied`: si corriera antes de aplicar los searchParams
+  // entrantes, pisaría la URL con los valores neutros por defecto.
   useEffect(() => {
+    if (!paramsApplied) return;
     const params = new URLSearchParams();
     params.set("year", String(year));
     if (mode === "natal") {
@@ -253,7 +306,7 @@ function GeopoliticaContent() {
     }
     if (selectedConfigId) params.set("config", selectedConfigId);
     router.replace(`/geopolitica?${params.toString()}`, { scroll: false });
-  }, [year, mode, selectedChartId, selectedConfigId, router]);
+  }, [paramsApplied, year, mode, selectedChartId, selectedConfigId, router]);
 
   // Meses del índice cíclico que contienen configuraciones mayores → marcadores
   // clicables sobre la línea del índice (ata la gráfica de Barbault al timeline).
@@ -270,6 +323,25 @@ function GeopoliticaContent() {
 
   const selectedConfig: MundaneConfiguration | null =
     configs.find((c) => c.id === selectedConfigId) ?? null;
+
+  // Disparadores: la configuración lenta (no-trigger) más cercana en el tiempo,
+  // para que la lectura pueda mencionar genéricamente sobre qué ciclo de fondo actúa.
+  const nearbySlowConfig = useMemo(() => {
+    if (!selectedConfig || selectedConfig.kind !== "trigger") return null;
+    const targetMs = parseLocalDate(selectedConfig.exact_date).getTime();
+    let best: MundaneConfiguration | null = null;
+    let bestDist = Infinity;
+    for (const c of configs) {
+      if (c.kind === "trigger") continue;
+      const dist = Math.abs(parseLocalDate(c.exact_date).getTime() - targetMs);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = c;
+      }
+    }
+    const maxDistMs = 45 * 24 * 60 * 60 * 1000;
+    return best && bestDist <= maxDistMs ? best : null;
+  }, [selectedConfig, configs]);
 
   const comparedAnalog = selectedConfig?.analogs.find((a) => a.id === compareEra) ?? null;
 
@@ -291,9 +363,18 @@ function GeopoliticaContent() {
         </div>
       </div>
 
-      {/* Disclaimer */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6">
-        <p className="text-xs text-amber-800 leading-relaxed">{t("geo.disclaimer")}</p>
+      {/* Disclaimer — compacto, expandible al texto completo (B6) */}
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5 mb-6">
+        <p className="text-xs text-amber-800 leading-relaxed">
+          ⓘ {disclaimerOpen ? t("geo.disclaimer") : t("geo.disclaimer_short")}{" "}
+          <button
+            type="button"
+            onClick={() => setDisclaimerOpen((v) => !v)}
+            className="text-amber-900 underline underline-offset-2 hover:text-amber-950 font-medium"
+          >
+            {disclaimerOpen ? t("geo.disclaimer_less") : t("geo.disclaimer_more")}
+          </button>
+        </p>
       </div>
 
       {/* Mode buttons */}
@@ -354,49 +435,7 @@ function GeopoliticaContent() {
         </div>
       ) : data ? (
         <div className="space-y-6">
-          {/* Probable themes */}
-          {data.probable_themes.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-5">
-              <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.probable_themes")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                {data.probable_themes.map((th) => (
-                  <span key={th} className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full font-mono">{getThemeLabel(th, L)}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Cyclic index (Barbault) */}
-          {data.cyclic_index.length > 0 && (
-            <CyclicIndexChart
-              data={data.cyclic_index}
-              lang={L}
-              markers={indexMarkers}
-              onSelectConfig={(id) => {
-                setSelectedConfigId(id);
-                setCompareEra(null);
-                if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
-              }}
-            />
-          )}
-
-          {/* Filter chips */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.configs.title")}</span>
-            {([
-              ["majors", "geo.filter.majors"],
-              ["all", "geo.filter.all"],
-              ["precedents", "geo.filter.with_precedents"],
-            ] as [FilterMode, "geo.filter.majors" | "geo.filter.all" | "geo.filter.with_precedents"][]).map(([fm, key]) => (
-              <button
-                key={fm}
-                onClick={() => setFilterMode(fm)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${filterMode === fm ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
-              >{t(key)}</button>
-            ))}
-          </div>
-
-          {/* Timeline chart */}
+          {/* Cronología del año — el corazón de la página, primera pantalla (B5) */}
           <MundaneTimelineChart
             configs={filteredConfigs}
             year={year}
@@ -405,35 +444,83 @@ function GeopoliticaContent() {
             lang={L}
           />
 
+          {/* Filter chips */}
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.configs.title")}</span>
+            {([
+              ["majors", "geo.filter.majors"],
+              ["all", "geo.filter.all"],
+              ["precedents", "geo.filter.with_precedents"],
+              ["triggers", "geo.filter.triggers"],
+            ] as [FilterMode, "geo.filter.majors" | "geo.filter.all" | "geo.filter.with_precedents" | "geo.filter.triggers"][]).map(([fm, key]) => (
+              <button
+                key={fm}
+                onClick={() => setFilterMode(fm)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${filterMode === fm ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+              >{t(key)}</button>
+            ))}
+          </div>
+
           <div className="xl:grid xl:grid-cols-[300px_1fr] xl:gap-8">
-            {/* LEFT — config timeline */}
-            <div className="space-y-2 mb-6 xl:mb-0">
-              <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-1">{t("geo.configs.title")}</p>
-              {filteredConfigs.map((c) => {
-                const nar = getConfigNarrative(c, L);
-                const glyphs = configGlyphs(c);
-                let dateStr = c.exact_date;
-                try { dateStr = format(parseLocalDate(c.exact_date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
-                const active = c.id === selectedConfigId;
-                return (
-                  <button
-                    key={c.id}
-                    onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${active ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:border-indigo-200"}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
-                        <span className="font-mono text-xs" style={{ color: glyphs.color }}>{glyphs.text}</span>
-                        {nar.title}
-                      </span>
-                      {c.analogs.length > 0 && (
-                        <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full shrink-0">{c.analogs.length}★</span>
-                      )}
-                    </div>
-                    <span className="text-xs text-slate-400 font-mono">{dateStr}</span>
-                  </button>
-                );
-              })}
+            {/* LEFT — config list. Contenida (max-h + scroll) para que la página no
+                crezca con el número de configuraciones; en móvil solo se ven las
+                primeras 5 + "Ver todas (N)" (B2). */}
+            <div className="mb-6 xl:mb-0">
+              <div className="space-y-2 xl:max-h-[70vh] xl:overflow-y-auto xl:sticky xl:top-20 xl:pr-1">
+                {cardConfigs.map((c, idx) => {
+                  const nar = getConfigNarrative(c, L);
+                  const glyphs = configGlyphs(c);
+                  let dateStr = c.exact_date;
+                  try { dateStr = format(parseLocalDate(c.exact_date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
+                  const active = c.id === selectedConfigId;
+                  const hideOnMobile = !showAllConfigs && idx >= 5;
+
+                  // Disparadores: tarjeta compacta de una sola línea (B1) — solo
+                  // aparecen aquí en los filtros "Todos" y "Disparadores".
+                  if (c.kind === "trigger") {
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
+                        className={`w-full text-left px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-2 ${active ? "bg-red-50 border-red-200" : "bg-white border-slate-200 hover:border-red-200"} ${hideOnMobile ? "hidden xl:flex" : ""}`}
+                      >
+                        <span className="font-mono text-xs shrink-0" style={{ color: glyphs.color }}>{glyphs.text}</span>
+                        <span className="text-xs text-slate-700 truncate flex-1">{nar.title}</span>
+                        <span className="text-[10px] text-slate-400 font-mono shrink-0">{dateStr}</span>
+                        <span className="text-[9px] font-mono text-red-500 bg-red-50 px-1 py-0.5 rounded-full shrink-0">{t("geo.trigger.badge")}</span>
+                      </button>
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
+                      className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${active ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:border-indigo-200"} ${hideOnMobile ? "hidden xl:block" : ""}`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                          <span className="font-mono text-xs" style={{ color: glyphs.color }}>{glyphs.text}</span>
+                          {nar.title}
+                        </span>
+                        {c.analogs.length > 0 && (
+                          <span className="text-[10px] font-mono text-indigo-500 bg-indigo-100 px-1.5 py-0.5 rounded-full shrink-0">{c.analogs.length}★</span>
+                        )}
+                      </div>
+                      <span className="text-xs text-slate-400 font-mono">{dateStr}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {!showAllConfigs && cardConfigs.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllConfigs(true)}
+                  className="xl:hidden mt-2 w-full text-center text-xs font-mono text-indigo-600 border border-indigo-200 bg-indigo-50 rounded-lg py-2 hover:bg-indigo-100 transition-colors"
+                >
+                  {t("geo.configs.show_all")} ({cardConfigs.length})
+                </button>
+              )}
             </div>
 
             {/* RIGHT — detail */}
@@ -463,6 +550,7 @@ function GeopoliticaContent() {
                 natalMode: mode === "natal",
                 dateLabel: readingDate,
                 lang: L,
+                nearbySlowConfig,
               });
 
               const orbNow = pairOrb(selectedConfig.sky, selectedConfig.bodies, selectedConfig.aspect);
@@ -476,8 +564,13 @@ function GeopoliticaContent() {
                     {nar.theme && <span className="text-xs font-mono text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full">{nar.theme}</span>}
                   </div>
 
-                  {/* Eco histórico (mini-strip) */}
-                  {selectedConfig.analogs.length > 0 && (
+                  {/* Eco histórico (mini-strip) — los disparadores no tienen precedentes,
+                      recurren cada ~2 años y se leen por arquetipo. */}
+                  {selectedConfig.kind === "trigger" ? (
+                    <p className="text-xs text-slate-400 font-mono bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                      {t("geo.trigger.recurrence_note")}
+                    </p>
+                  ) : selectedConfig.analogs.length > 0 && (
                     <MundaneEchoStrip
                       analogs={selectedConfig.analogs}
                       year={year}
@@ -532,7 +625,7 @@ function GeopoliticaContent() {
                     <div className="space-y-2">
                       <MundaneWheel
                         sky={wheelSky}
-                        highlightBodies={selectedConfig.kind === "aspect" ? selectedConfig.bodies : undefined}
+                        highlightBodies={(selectedConfig.kind === "aspect" || selectedConfig.kind === "trigger") ? selectedConfig.bodies : undefined}
                         highlightAspect={selectedConfig.aspect}
                         highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
                         natalPlanets={mode === "natal" && !showAnalog ? natalChart?.planets : undefined}
@@ -547,6 +640,11 @@ function GeopoliticaContent() {
                             ? `${getEventNarrative(comparedAnalog!.id, L).title} · ${comparedAnalog!.date} · ${t("geo.wheel.caption_era")}`
                             : `${selectedConfig.exact_date} · ${t("geo.wheel.caption_now")}`}
                       </p>
+                      {selectedConfig.kind === "trigger" && selectedConfig.window_start && selectedConfig.window_end && (
+                        <p className="text-xs text-red-500 font-mono text-center">
+                          {t("geo.trigger.window_label")}: {formatGeoDate(selectedConfig.window_start, dateLocale)} – {formatGeoDate(selectedConfig.window_end, dateLocale)}
+                        </p>
+                      )}
                     </div>
 
                     {/* Lectura narrativa */}
@@ -590,8 +688,8 @@ function GeopoliticaContent() {
                     );
                   })()}
 
-                  {/* Historical analogs list */}
-                  {!showAnalog && (
+                  {/* Historical analogs list — oculto para disparadores (no tienen precedentes, ver nota de recurrencia arriba) */}
+                  {!showAnalog && selectedConfig.kind !== "trigger" && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-5">
                       <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-3">{t("geo.analogs.title")}</p>
                       {selectedConfig.analogs.length === 0 ? (
@@ -659,6 +757,32 @@ function GeopoliticaContent() {
               );
             })()}
           </div>
+
+          {/* Probable themes — sección compacta (B5) */}
+          {data.probable_themes.length > 0 && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+              <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.probable_themes")}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {data.probable_themes.map((th) => (
+                  <span key={th} className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full font-mono">{getThemeLabel(th, L)}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cyclic index (Barbault) — colapsable, no compite con la cronología (B4/B5) */}
+          {data.cyclic_index.length > 0 && (
+            <CyclicIndexChart
+              data={data.cyclic_index}
+              lang={L}
+              markers={indexMarkers}
+              onSelectConfig={(id) => {
+                setSelectedConfigId(id);
+                setCompareEra(null);
+                if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
+              }}
+            />
+          )}
 
           {/* Bibliography */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
