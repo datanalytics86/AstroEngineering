@@ -88,6 +88,8 @@ export const es = {
   "chart.loading_hint": "Este proceso tarda 15-30 segundos. No cierres la ventana.",
   "chart.error.transit": "Error al calcular tránsitos",
   "chart.error.solar": "Error retorno solar",
+  "chart.aspects.show_all": "Ver todos los aspectos",
+  "chart.aspects.show_less": "Ver menos",
 
   // ── Tránsitos page ──
   "transits.loading": "Cargando carta…",
@@ -201,6 +203,9 @@ export const es = {
   "geo.disclaimer_less": "menos",
   "geo.mode.world": "Análisis mundial",
   "geo.mode.natal": "Impacto en mi carta natal",
+  "geo.mode.world_short": "Mundial",
+  "geo.mode.natal_short": "Mi carta",
+  "geo.mode.country_short": "País",
   "geo.select_chart": "Selecciona una carta",
   "geo.no_charts": "No tienes cartas guardadas todavía.",
   "geo.no_charts_hint": "Crear una carta natal →",

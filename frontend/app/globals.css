@@ -20,6 +20,11 @@ body {
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
+/* Scrollbar fina para la lista de configuraciones de Geopolítica (B2) */
+.geo-config-scroll::-webkit-scrollbar { width: 4px; }
+.geo-config-scroll::-webkit-scrollbar-thumb { background: #C7D2FE; border-radius: 2px; }
+.geo-config-scroll::-webkit-scrollbar-thumb:hover { background: #A5B4FC; }
+
 /* Inter para todo texto */
 .font-mono  { font-family: "JetBrains Mono", monospace; }
 .font-serif { font-family: "Inter", sans-serif; }

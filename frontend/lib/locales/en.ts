@@ -88,6 +88,8 @@ export const en = {
   "chart.loading_hint": "This process takes 15–30 seconds. Do not close the window.",
   "chart.error.transit": "Error calculating transits",
   "chart.error.solar": "Solar return error",
+  "chart.aspects.show_all": "Show all aspects",
+  "chart.aspects.show_less": "Show less",
 
   // ── Tránsitos page ──
   "transits.loading": "Loading chart…",
@@ -201,6 +203,9 @@ export const en = {
   "geo.disclaimer_less": "less",
   "geo.mode.world": "World analysis",
   "geo.mode.natal": "Impact on my natal chart",
+  "geo.mode.world_short": "World",
+  "geo.mode.natal_short": "My chart",
+  "geo.mode.country_short": "Country",
   "geo.select_chart": "Select a chart",
   "geo.no_charts": "You don't have any saved charts yet.",
   "geo.no_charts_hint": "Create a natal chart →",
