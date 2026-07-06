@@ -36,10 +36,13 @@ export const en = {
     "12 planets, Placidus houses, exact aspects, and classical dignities with detailed interpretation.",
   "landing.features.transits.title": "Year-by-year transits",
   "landing.features.transits.desc":
-    "Daily scan of slow planets against your natal chart. Interactive monthly wheel and annual analysis.",
+    "Interactive timeline for every transit: when it enters orb, when it's exact, and when it leaves, with days of influence and interpretation.",
   "landing.features.solar.title": "Solar Return",
   "landing.features.solar.desc":
     "The chart for the exact moment the Sun returns to its natal position: the yearly horoscope.",
+  "landing.features.geo.title": "Geopolitical Analysis",
+  "landing.features.geo.desc":
+    "World cycles of slow planets, eclipses, and impact by country or on your own natal chart.",
   "landing.bottom_cta.title": "Start with your natal chart",
   "landing.bottom_cta.subtitle":
     "You only need date, time, and place of birth. The calculation takes less than 5 seconds.",
@@ -63,6 +66,7 @@ export const en = {
   "nueva.saved.title": "Saved charts",
   "nueva.saved.view": "View chart",
   "nueva.saved.transits": "✦ Transits",
+  "nueva.saved.geo": "🌍 Geo",
   "nueva.saved.confirm_delete": "Confirm",
   "nueva.saved.cancel": "Cancel",
   "nueva.features.ephemeris": "Swiss Ephemeris",
@@ -90,11 +94,13 @@ export const en = {
   "chart.error.solar": "Solar return error",
   "chart.aspects.show_all": "Show all aspects",
   "chart.aspects.show_less": "Show less",
+  "chart.nav.geo": "🌍 World cycles on your chart",
 
   // ── Tránsitos page ──
   "transits.loading": "Loading chart…",
   "transits.calculating": "Calculating transits for",
   "transits.title": "Your sky in motion",
+  "transits.orientation": "Each bar is a transit on your chart: from when it enters orb to when it leaves; ♦ = exact.",
   "transits.nav.home": "Home",
   "transits.nav.new": "New chart",
   "transits.nav.natal": "← Natal chart",

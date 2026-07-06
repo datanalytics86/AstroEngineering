@@ -589,6 +589,7 @@ export default function TransitosPage() {
             {t("transits.title")}
           </h1>
           <p className="text-slate-500 font-mono text-sm mt-1">{chart.name}</p>
+          <p className="text-slate-400 text-sm mt-2 max-w-xl">{t("transits.orientation")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton variant="secondary" accent="blue" onClick={() => router.push(`/carta/${id}`)}>

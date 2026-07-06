@@ -36,10 +36,13 @@ export const es = {
     "12 planetas, casas Placidus, aspectos exactos y dignidades clásicas con interpretación detallada.",
   "landing.features.transits.title": "Tránsitos año a año",
   "landing.features.transits.desc":
-    "Escaneo diario de planetas lentos contra tu carta natal. Rueda interactiva por mes y análisis anual.",
+    "Cronología interactiva de cada tránsito: cuándo entra en orbe, cuándo es exacto y cuándo sale, con días de influencia e interpretación.",
   "landing.features.solar.title": "Retorno Solar",
   "landing.features.solar.desc":
     "La carta del momento exacto en que el Sol regresa a su posición natal: el horóscopo del año.",
+  "landing.features.geo.title": "Análisis Geopolítico",
+  "landing.features.geo.desc":
+    "Ciclos mundiales de planetas lentos, eclipses e impacto por país o en tu propia carta natal.",
   "landing.bottom_cta.title": "Comienza con tu carta natal",
   "landing.bottom_cta.subtitle":
     "Solo necesitas fecha, hora y lugar de nacimiento. El cálculo tarda menos de 5 segundos.",
@@ -63,6 +66,7 @@ export const es = {
   "nueva.saved.title": "Cartas guardadas",
   "nueva.saved.view": "Ver carta",
   "nueva.saved.transits": "✦ Tránsitos",
+  "nueva.saved.geo": "🌍 Geo",
   "nueva.saved.confirm_delete": "Confirmar",
   "nueva.saved.cancel": "Cancelar",
   "nueva.features.ephemeris": "Swiss Ephemeris",
@@ -90,11 +94,13 @@ export const es = {
   "chart.error.solar": "Error retorno solar",
   "chart.aspects.show_all": "Ver todos los aspectos",
   "chart.aspects.show_less": "Ver menos",
+  "chart.nav.geo": "🌍 Ciclos mundiales sobre tu carta",
 
   // ── Tránsitos page ──
   "transits.loading": "Cargando carta…",
   "transits.calculating": "Calculando tránsitos de",
   "transits.title": "Tu cielo en movimiento",
+  "transits.orientation": "Cada barra es un tránsito sobre tu carta: de cuándo entra en orbe a cuándo sale; ♦ = exacto.",
   "transits.nav.home": "Inicio",
   "transits.nav.new": "Nueva carta",
   "transits.nav.natal": "← Carta natal",
