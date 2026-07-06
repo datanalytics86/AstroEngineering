@@ -9,6 +9,7 @@ import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
 import SolarReturnSummaryPanel from "@/components/SolarReturnSummaryPanel";
 import { generateSolarReturnSummary } from "@/lib/solar-return-summary";
+import ActionButton from "@/components/ActionButton";
 import { useT } from "@/lib/i18n";
 
 export default function RetornoPage() {
@@ -67,24 +68,12 @@ export default function RetornoPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => router.push("/")}
-            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-300 hover:text-blue-600 transition-colors font-mono"
-          >
-            {t("solar.nav.home")}
-          </button>
-          <button
-            onClick={() => router.push(`/carta/${id}`)}
-            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-amber-400 hover:text-amber-600 transition-colors font-mono"
-          >
+          <ActionButton variant="secondary" accent="amber" onClick={() => router.push(`/carta/${id}`)}>
             {t("solar.nav.natal")}
-          </button>
-          <button
-            onClick={() => router.push(`/transitos/${id}`)}
-            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
-          >
+          </ActionButton>
+          <ActionButton variant="secondary" accent="blue" onClick={() => router.push(`/transitos/${id}`)}>
             {t("solar.nav.transits")}
-          </button>
+          </ActionButton>
         </div>
       </div>
 

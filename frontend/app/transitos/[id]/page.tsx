@@ -35,6 +35,7 @@ import type { Locale } from "date-fns";
 import { es } from "date-fns/locale";
 import { enUS } from "date-fns/locale";
 import { useT } from "@/lib/i18n";
+import ActionButton from "@/components/ActionButton";
 
 const TransitZodiacWheel = dynamic(
   () => import("@/components/TransitZodiacWheel"),
@@ -231,7 +232,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
                 <button
                   type="button"
                   onClick={() => setExpanded(false)}
-                  className="text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+                  className="text-blue-500 hover:text-blue-700 font-mono text-[11px]"
                 >
                   {t("transits.timeline.detail.collapse")}
                 </button>
@@ -240,7 +241,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="text-indigo-500 hover:text-indigo-700 font-mono text-[11px]"
+                className="text-blue-500 hover:text-blue-700 font-mono text-[11px]"
               >
                 {t("transits.timeline.detail.expand")}
               </button>
@@ -590,24 +591,9 @@ export default function TransitosPage() {
           <p className="text-slate-500 font-mono text-sm mt-1">{chart.name}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => router.push("/")}
-            className="border border-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-300 hover:text-blue-600 transition-colors font-mono"
-          >
-            {t("transits.nav.home")}
-          </button>
-          <button
-            onClick={() => router.push("/nueva")}
-            className="border border-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-300 hover:text-blue-600 transition-colors font-mono"
-          >
-            {t("transits.nav.new")}
-          </button>
-          <button
-            onClick={() => router.push(`/carta/${id}`)}
-            className="border border-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-300 hover:text-blue-600 transition-colors font-mono"
-          >
+          <ActionButton variant="secondary" accent="blue" onClick={() => router.push(`/carta/${id}`)}>
             {t("transits.nav.natal")}
-          </button>
+          </ActionButton>
         </div>
       </div>
 
@@ -649,8 +635,8 @@ export default function TransitosPage() {
               onClick={() => setViewMode("timeline")}
               className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${
                 viewMode === "timeline"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
               }`}
             >
               {t("transits.view.toggle_timeline")}
@@ -659,8 +645,8 @@ export default function TransitosPage() {
               onClick={() => setViewMode("month")}
               className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${
                 viewMode === "month"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"
+                  ? "bg-blue-600 text-white shadow-sm"
+                  : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
               }`}
             >
               {t("transits.view.toggle_month")}
@@ -678,8 +664,8 @@ export default function TransitosPage() {
                   onClick={() => setPlanetFilter(null)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${
                     planetFilter === null
-                      ? "bg-slate-800 text-white"
-                      : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"
+                      ? "bg-blue-600 text-white"
+                      : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
                   }`}
                 >
                   {t("transits.timeline.all")}
@@ -691,7 +677,7 @@ export default function TransitosPage() {
                     className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors border ${
                       planetFilter === p
                         ? "text-white border-transparent"
-                        : "bg-white border-slate-200 text-slate-500 hover:border-indigo-300"
+                        : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
                     }`}
                     style={planetFilter === p ? { backgroundColor: PLANET_COLOR[p] ?? "#334155" } : undefined}
                   >

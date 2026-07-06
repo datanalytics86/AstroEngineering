@@ -402,15 +402,9 @@ function GeopoliticaContent() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-        <div>
-          <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{t("geo.title")}</h1>
-          <p className="text-slate-500 font-mono text-sm mt-1">{t("geo.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => router.push("/")} className="border border-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-indigo-300 hover:text-indigo-600 transition-colors font-mono">{t("nav.home")}</button>
-          <button onClick={() => router.push("/nueva")} className="border border-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-indigo-300 hover:text-indigo-600 transition-colors font-mono">{t("nav.new_chart")}</button>
-        </div>
+      <div className="mb-4">
+        <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{t("geo.title")}</h1>
+        <p className="text-slate-500 font-mono text-sm mt-1">{t("geo.subtitle")}</p>
       </div>
 
       {/* Disclaimer — compacto, expandible al texto completo (B6) */}

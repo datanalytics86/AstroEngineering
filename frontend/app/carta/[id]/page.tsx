@@ -11,6 +11,7 @@ import AspectTable from "@/components/AspectTable";
 import InterpretationModal from "@/components/InterpretationModal";
 import ChartSummaryModal from "@/components/ChartSummary";
 import { generateChartSummary } from "@/lib/chart-summary";
+import ActionButton from "@/components/ActionButton";
 import { useT } from "@/lib/i18n";
 
 export default function CartaPage() {
@@ -128,40 +129,21 @@ export default function CartaPage() {
             <span className="text-sky-500">{t("chart.mc")} {chart.midheaven.sign}</span>
           </p>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <button
-            onClick={() => router.push("/")}
-            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-300 hover:text-blue-600 transition-colors font-mono"
-          >
-            {t("chart.nav.home")}
-          </button>
-          <button
-            onClick={() => router.push("/nueva")}
-            className="border border-border text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-blue-400 hover:text-blue-600 transition-colors font-mono"
-          >
-            {t("chart.nav.new")}
-          </button>
-          <button
-            onClick={() => setShowSummary(true)}
-            className="border border-blue-200 text-blue-600 px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors font-mono flex items-center gap-1.5"
-          >
+        <div className="flex flex-wrap gap-2">
+          <ActionButton variant="secondary" accent="blue" onClick={() => setShowSummary(true)}>
             {t("chart.nav.summary")}
-          </button>
-          <button
-            onClick={handleSolarReturn}
-            disabled={loadingSR}
-            className="border border-amber-300 text-amber-600 px-4 py-2 rounded-lg text-sm hover:bg-amber-50 transition-colors font-mono flex items-center gap-1.5 disabled:opacity-50"
-          >
-            {loadingSR ? (
-              <span className="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-            ) : "☉"}
-            {t("chart.nav.solar")} {new Date().getFullYear()}
-          </button>
-          <button
-            onClick={handleCalcTransits}
-            disabled={loadingTransits}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 font-mono flex items-center gap-2"
-          >
+          </ActionButton>
+          <ActionButton variant="secondary" accent="blue" onClick={handleSolarReturn} disabled={loadingSR}>
+            <span className="inline-flex items-center justify-center w-3.5 text-amber-500">
+              {loadingSR ? (
+                <span className="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "☉"
+              )}
+            </span>
+            <span>{t("chart.nav.solar")} {new Date().getFullYear()}</span>
+          </ActionButton>
+          <ActionButton variant="primary" accent="blue" onClick={handleCalcTransits} disabled={loadingTransits}>
             {loadingTransits ? (
               <>
                 <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -170,7 +152,7 @@ export default function CartaPage() {
             ) : (
               t("chart.nav.transits")
             )}
-          </button>
+          </ActionButton>
         </div>
       </div>
 
