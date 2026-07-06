@@ -176,55 +176,49 @@ export default function PortadaPage() {
 
       {/* ── Features grid ── */}
       <section className="bg-white border-t border-border py-16">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
                 icon: "⊕",
                 titleKey: "landing.features.natal.title" as const,
                 descKey: "landing.features.natal.desc" as const,
+                href: "/nueva",
+                accent: "text-blue-600",
               },
               {
                 icon: "✦",
                 titleKey: "landing.features.transits.title" as const,
                 descKey: "landing.features.transits.desc" as const,
+                href: "/nueva",
+                accent: "text-blue-600",
               },
               {
                 icon: "☉",
                 titleKey: "landing.features.solar.title" as const,
                 descKey: "landing.features.solar.desc" as const,
+                href: "/nueva",
+                accent: "text-amber-600",
+              },
+              {
+                icon: "🌍",
+                titleKey: "landing.features.geo.title" as const,
+                descKey: "landing.features.geo.desc" as const,
+                href: "/geopolitica",
+                accent: "text-indigo-600",
               },
             ].map((f) => (
-              <div key={f.titleKey} className="text-center">
-                <div className="text-3xl mb-3 font-mono text-blue-600">{f.icon}</div>
+              <div
+                key={f.titleKey}
+                onClick={() => router.push(f.href)}
+                className="text-center cursor-pointer rounded-xl p-4 -m-4 hover:bg-slate-50 transition-colors"
+              >
+                <div className={`text-3xl mb-3 font-mono ${f.accent}`}>{f.icon}</div>
                 <h3 className="font-semibold text-slate-800 mb-2">{t(f.titleKey)}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{t(f.descKey)}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── Geopolítica banner ── */}
-      <section className="max-w-4xl mx-auto px-6 py-8">
-        <div
-          onClick={() => router.push("/geopolitica")}
-          className="bg-indigo-600 rounded-2xl p-8 shadow-card-md cursor-pointer hover:bg-indigo-700 transition-colors flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-        >
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">🌍</span>
-              <h3 className="font-semibold text-white text-lg">{t("geo.title")}</h3>
-            </div>
-            <p className="text-sm text-indigo-100 leading-relaxed max-w-xl">
-              {lang === "es"
-                ? "Astrología mundial: los grandes ciclos de planetas lentos de 2026–2027 y su eco en eventos históricos, mostrados en la rueda."
-                : "Mundane astrology: the great slow-planet cycles of 2026–2027 and their echo in historical events, shown on the wheel."}
-            </p>
-          </div>
-          <span className="text-sm font-mono text-white border border-indigo-400 rounded-lg px-4 py-2 shrink-0 hover:bg-indigo-500 transition-colors">
-            {lang === "es" ? "Explorar →" : "Explore →"}
-          </span>
         </div>
       </section>
 

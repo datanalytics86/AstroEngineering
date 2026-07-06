@@ -23,9 +23,9 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
             <th className="text-left px-4 py-2">Planeta</th>
             <th className="text-left px-4 py-2">Signo</th>
             <th className="text-left px-4 py-2">Posición</th>
-            <th className="text-center px-4 py-2">Casa</th>
-            <th className="text-center px-4 py-2">D</th>
-            <th className="text-center px-4 py-2">R</th>
+            <th className="hidden sm:table-cell text-center px-4 py-2">Casa</th>
+            <th className="hidden sm:table-cell text-center px-4 py-2">D</th>
+            <th className="hidden sm:table-cell text-center px-4 py-2">R</th>
           </tr>
         </thead>
         <tbody>
@@ -41,18 +41,38 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
                   : "hover:bg-slate-50"
               }`}
             >
-              <td className="px-4 py-2.5 flex items-center gap-2">
-                <span className="text-lg">{p.symbol}</span>
-                <span className="text-slate-700">{p.name}</span>
+              <td className="px-4 py-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">{p.symbol}</span>
+                  <span className="text-slate-700">{p.name}</span>
+                  {/* Móvil: ℞ y símbolo de dignidad inline junto al nombre (B5) — en
+                      sm+ ya se muestran en sus propias columnas. */}
+                  <span className="sm:hidden flex items-center gap-1">
+                    {dignity && (
+                      <span
+                        title={dignity.charAt(0).toUpperCase() + dignity.slice(1)}
+                        style={{ color: DIGNITY_COLOR[dignity] }}
+                        className="text-xs font-semibold"
+                      >
+                        {DIGNITY_SYMBOL[dignity]}
+                      </span>
+                    )}
+                    {p.retrograde && <span className="text-red-500 text-xs">℞</span>}
+                  </span>
+                </div>
               </td>
               <td className="px-4 py-2.5">
                 <span style={{ color: signColor(p.sign) }}>
                   {p.sign_symbol} {p.sign}
                 </span>
               </td>
-              <td className="px-4 py-2.5 text-slate-500">{p.degree_display}</td>
-              <td className="px-4 py-2.5 text-center text-blue-600 font-semibold">{p.house}</td>
-              <td className="px-4 py-2.5 text-center">
+              <td className="px-4 py-2.5 text-slate-500">
+                {p.degree_display}
+                {/* Móvil: casa como sufijo, ya que la columna dedicada se oculta (B5) */}
+                <span className="sm:hidden text-slate-400"> · C{p.house}</span>
+              </td>
+              <td className="hidden sm:table-cell px-4 py-2.5 text-center text-blue-600 font-semibold">{p.house}</td>
+              <td className="hidden sm:table-cell px-4 py-2.5 text-center">
                 {dignity ? (
                   <span
                     title={dignity.charAt(0).toUpperCase() + dignity.slice(1)}
@@ -65,7 +85,7 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
                   <span className="text-slate-300">—</span>
                 )}
               </td>
-              <td className="px-4 py-2.5 text-center">
+              <td className="hidden sm:table-cell px-4 py-2.5 text-center">
                 {p.retrograde ? (
                   <span className="text-red-500 text-xs">℞</span>
                 ) : (

@@ -402,15 +402,9 @@ function GeopoliticaContent() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
-        <div>
-          <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{t("geo.title")}</h1>
-          <p className="text-slate-500 font-mono text-sm mt-1">{t("geo.subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={() => router.push("/")} className="border border-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-indigo-300 hover:text-indigo-600 transition-colors font-mono">{t("nav.home")}</button>
-          <button onClick={() => router.push("/nueva")} className="border border-slate-200 text-slate-500 px-4 py-2 rounded-lg text-sm hover:border-indigo-300 hover:text-indigo-600 transition-colors font-mono">{t("nav.new_chart")}</button>
-        </div>
+      <div className="mb-4">
+        <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{t("geo.title")}</h1>
+        <p className="text-slate-500 font-mono text-sm mt-1">{t("geo.subtitle")}</p>
       </div>
 
       {/* Disclaimer — compacto, expandible al texto completo (B6) */}
@@ -427,20 +421,47 @@ function GeopoliticaContent() {
         </p>
       </div>
 
-      {/* Mode buttons */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setMode("world")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "world" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
-        >🌍 {t("geo.mode.world")}</button>
-        <button
-          onClick={() => setMode("natal")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "natal" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
-        >⊕ {t("geo.mode.natal")}</button>
-        <button
-          onClick={() => setMode("country")}
-          className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "country" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
-        >🏳️ {t("geo.mode.country")}</button>
+      {/* Mode buttons — en móvil, segmented control compacto de una fila (B4);
+          en sm+, los botones completos de siempre. */}
+      <div className="mb-4">
+        <div className="grid grid-cols-3 gap-1 sm:hidden bg-slate-100 rounded-lg p-1">
+          <button
+            onClick={() => setMode("world")}
+            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "world" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
+          >
+            <span>🌍</span>
+            <span>{t("geo.mode.world_short")}</span>
+          </button>
+          <button
+            onClick={() => setMode("natal")}
+            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "natal" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
+          >
+            <span>⊕</span>
+            <span>{t("geo.mode.natal_short")}</span>
+          </button>
+          <button
+            onClick={() => setMode("country")}
+            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "country" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
+          >
+            <span>🏳️</span>
+            <span>{t("geo.mode.country_short")}</span>
+          </button>
+        </div>
+
+        <div className="hidden sm:flex flex-wrap gap-2">
+          <button
+            onClick={() => setMode("world")}
+            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "world" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+          >🌍 {t("geo.mode.world")}</button>
+          <button
+            onClick={() => setMode("natal")}
+            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "natal" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+          >⊕ {t("geo.mode.natal")}</button>
+          <button
+            onClick={() => setMode("country")}
+            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "country" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+          >🏳️ {t("geo.mode.country")}</button>
+        </div>
       </div>
 
       {/* Natal chart selector */}
@@ -466,22 +487,38 @@ function GeopoliticaContent() {
         </div>
       )}
 
-      {/* Country selector (modo "impacto por país") */}
+      {/* Country selector (modo "impacto por país"): en móvil, <select> nativo
+          (16 chips no caben en una pantalla angosta, B3); en sm+, chips. */}
       {mode === "country" && (
         <div className="mb-6 space-y-2">
           {countries.length === 0 ? (
             <p className="text-sm text-slate-400 font-mono">{t("geo.country.loading")}</p>
           ) : (
-            <div className="flex flex-wrap gap-2 items-center">
-              <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.country.select")}</span>
-              {countries.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => setSelectedCountry(c.id)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${selectedCountry === c.id ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
-                >{lang === "en" ? c.name_en : c.name_es}</button>
-              ))}
-            </div>
+            <>
+              <div className="sm:hidden flex items-center gap-2">
+                <span className="text-xs font-mono text-slate-400 uppercase tracking-wide shrink-0">{t("geo.country.select")}</span>
+                <select
+                  value={selectedCountry}
+                  onChange={(e) => setSelectedCountry(e.target.value)}
+                  className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-mono border border-slate-200 bg-white text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+                >
+                  <option value="" disabled>{t("geo.country.select")}</option>
+                  {countries.map((c) => (
+                    <option key={c.id} value={c.id}>{lang === "en" ? c.name_en : c.name_es}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="hidden sm:flex flex-wrap gap-2 items-center">
+                <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.country.select")}</span>
+                {countries.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedCountry(c.id)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${selectedCountry === c.id ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+                  >{lang === "en" ? c.name_en : c.name_es}</button>
+                ))}
+              </div>
+            </>
           )}
           <p className="text-[11px] text-slate-400 font-mono">{t("geo.country.method_note")}</p>
         </div>
@@ -543,7 +580,8 @@ function GeopoliticaContent() {
                 crezca con el número de configuraciones; en móvil solo se ven las
                 primeras 5 + "Ver todas (N)" (B2). */}
             <div className="mb-6 xl:mb-0">
-              <div className="space-y-2 xl:max-h-[70vh] xl:overflow-y-auto xl:sticky xl:top-20 xl:pr-1">
+              <div className="relative xl:sticky xl:top-20">
+                <div className="space-y-2 xl:max-h-[70vh] xl:overflow-y-auto geo-config-scroll xl:pr-1">
                 {cardConfigs.map((c, idx) => {
                   const nar = getConfigNarrative(c, L);
                   const glyphs = configGlyphs(c);
@@ -593,6 +631,9 @@ function GeopoliticaContent() {
                     </button>
                   );
                 })}
+                </div>
+                {/* Fade inferior — affordance de que la lista sigue debajo del scroll (B2) */}
+                <div className="hidden xl:block pointer-events-none absolute bottom-0 inset-x-0 h-8 bg-gradient-to-t from-white to-transparent rounded-b-xl" />
               </div>
               {!showAllConfigs && cardConfigs.length > 5 && (
                 <button
