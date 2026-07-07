@@ -44,6 +44,12 @@ const ECLIPSE_MARKER_R = 12; // más grande que un marcador mayor normal — los
 const ECLIPSE_FILL_COLOR = "#0F172A"; // slate-900
 const ECLIPSE_RING_COLOR = "#F59E0B"; // anillo dorado
 
+// Alineamientos multi-planeta: banda propia en un carril superior (abarca
+// window_start→window_end) + marcador ✧ en su exact_date (máxima compacidad).
+const ALIGNMENT_COLOR = "#7C3AED"; // violeta — no se usa en ningún otro acento del módulo
+const ALIGNMENT_BAND_H = 28;
+const ALIGNMENT_TOP_MARGIN = ALIGNMENT_BAND_H + 12;
+
 function dayOfYearFraction(dateStr: string, year: number): number {
   const d = parseLocalDate(dateStr);
   const start = new Date(year, 0, 1);
@@ -55,6 +61,9 @@ function dayOfYearFraction(dateStr: string, year: number): number {
 
 function configLabel(c: MundaneConfiguration): string {
   if (c.kind === "eclipse") return c.eclipse_type === "lunar" ? "☾" : "☉";
+  if (c.kind === "alignment") {
+    return `✧ ${c.bodies.map((b) => c.sky.find((s) => s.name === b)?.symbol ?? "").join("")}`;
+  }
   if ((c.kind === "aspect" || c.kind === "trigger") && c.bodies.length === 2) {
     const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
     const symbolB = c.sky.find((s) => s.name === c.bodies[1])?.symbol ?? "";
@@ -90,9 +99,15 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
     });
   }, [year, dateLocale]);
 
+  // Alineamientos multi-planeta: banda propia (window_start→window_end) en un
+  // carril superior fijo, con marcador ✧ en la fecha de máxima compacidad.
+  const alignments = useMemo(() => configs.filter((c) => c.kind === "alignment"), [configs]);
+  const hasAlignments = alignments.length > 0;
+
   // Ciclos mayores + ingresos: carriles anti-solape apilados hacia arriba.
+  // Los alineamientos NO se dibujan aquí (tienen su propia banda arriba).
   const placedMajors = useMemo(() => {
-    const majors = configs.filter((c) => c.kind !== "trigger");
+    const majors = configs.filter((c) => c.kind !== "trigger" && c.kind !== "alignment");
     const sorted = [...majors].sort((a, b) => a.exact_date.localeCompare(b.exact_date));
     const lastXPerLane: number[] = [];
     const minGap = 24;
@@ -120,10 +135,13 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
 
   const maxLane = placedMajors.reduce((m, p) => Math.max(m, p.lane), 0);
   const triggerBand = placedTriggers.length > 0 ? TRIGGER_BAND_H : 0;
-  const height = AXIS_Y_OFFSET + triggerBand + (maxLane + 1) * ROW_H + 30;
+  const topMargin = hasAlignments ? ALIGNMENT_TOP_MARGIN : 0;
+  const height = topMargin + AXIS_Y_OFFSET + triggerBand + (maxLane + 1) * ROW_H + 30;
   const baseY = height - AXIS_Y_OFFSET - 6;
   const majorsBaseY = baseY - triggerBand;
   const triggerY = baseY - triggerBand / 2;
+  const alignmentBandY = 8;
+  const alignmentBandMidY = alignmentBandY + ALIGNMENT_BAND_H / 2;
 
   function showTip(e: React.MouseEvent<SVGElement>, title: string, date: string) {
     const rect = (e.target as SVGElement).closest("svg")!.getBoundingClientRect();
@@ -146,6 +164,31 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
             </text>
           </g>
         ))}
+
+        {/* Alineamientos multi-planeta — banda propia en el carril superior */}
+        {alignments.map((c) => {
+          const startStr = c.window_start ?? c.exact_date;
+          const endStr = c.window_end ?? c.exact_date;
+          const xStart = MARGIN_X + dayOfYearFraction(startStr, year) * (WIDTH - 2 * MARGIN_X);
+          const xEndRaw = MARGIN_X + dayOfYearFraction(endStr, year) * (WIDTH - 2 * MARGIN_X);
+          const xEnd = Math.max(xEndRaw, xStart + 6);
+          const xExact = MARGIN_X + dayOfYearFraction(c.exact_date, year) * (WIDTH - 2 * MARGIN_X);
+          const active = c.id === selectedId;
+          const label = configLabel(c) || "✧";
+          return (
+            <g key={c.id} className="cursor-pointer" onClick={() => onSelect(c.id)}
+              onMouseEnter={(e) => showTip(e, label, c.exact_date)}
+              onMouseLeave={() => setTooltip(null)}>
+              <rect
+                x={xStart} y={alignmentBandY} width={xEnd - xStart} height={ALIGNMENT_BAND_H}
+                rx={6} fill={ALIGNMENT_COLOR} fillOpacity={active ? 0.28 : 0.15}
+                stroke={ALIGNMENT_COLOR} strokeWidth={active ? 2 : 1.2}
+              />
+              <circle cx={xExact} cy={alignmentBandMidY} r={7} fill="white" stroke={ALIGNMENT_COLOR} strokeWidth={1.5} />
+              <text x={xExact} y={alignmentBandMidY} textAnchor="middle" dominantBaseline="central" fontSize={10} fill={ALIGNMENT_COLOR} fontWeight="700" className="select-none pointer-events-none">✧</text>
+            </g>
+          );
+        })}
 
         {/* Disparadores de Marte — carril propio pegado al eje, menores y apagados */}
         {placedTriggers.map(({ config: c, x }) => {
@@ -199,10 +242,16 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
         {tooltip && (() => {
           const firstMajor = placedMajors.find((p) => p.config.exact_date === tooltip.date);
           const firstTrigger = placedTriggers.find((p) => p.config.exact_date === tooltip.date);
-          const tx = Math.min(Math.max(firstMajor?.x ?? firstTrigger?.x ?? WIDTH / 2, 90), WIDTH - 90);
+          const firstAlignment = alignments.find((a) => a.exact_date === tooltip.date);
+          const alignmentX = firstAlignment
+            ? MARGIN_X + dayOfYearFraction(firstAlignment.exact_date, year) * (WIDTH - 2 * MARGIN_X)
+            : undefined;
+          const tx = Math.min(Math.max(firstMajor?.x ?? firstTrigger?.x ?? alignmentX ?? WIDTH / 2, 90), WIDTH - 90);
           const ty = firstMajor
             ? Math.max((majorsBaseY - 10 - firstMajor.lane * ROW_H) - 46, 4)
-            : Math.max(triggerY - 46, 4);
+            : firstAlignment
+              ? alignmentBandY + ALIGNMENT_BAND_H + 6
+              : Math.max(triggerY - 46, 4);
           let dateStr = tooltip.date;
           try { dateStr = format(parseLocalDate(tooltip.date), "d MMM yyyy", { locale: dateLocale }); } catch { /* keep */ }
           return (
@@ -220,6 +269,13 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-slate-100">
         <LegendDot color="#334155" label={t("geo.timeline.legend.major")} />
         <LegendDot color={INGRESS_COLOR} label={t("geo.timeline.legend.ingress")} />
+        <span className="flex items-center gap-1.5 text-xs text-slate-500">
+          <span
+            className="inline-block w-3 h-2.5 rounded-sm border"
+            style={{ backgroundColor: `${ALIGNMENT_COLOR}26`, borderColor: ALIGNMENT_COLOR }}
+          />
+          {t("geo.timeline.legend.alignment")}
+        </span>
         <span className="flex items-center gap-1.5 text-xs text-slate-500">
           <span
             className="inline-block w-2.5 h-2.5 rounded-full"

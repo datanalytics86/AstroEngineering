@@ -268,6 +268,8 @@ export const es = {
   "geo.eclipse.subtype.anular": "anular",
   "geo.eclipse.subtype.parcial": "parcial",
   "geo.eclipse.subtype.penumbral": "penumbral",
+  "geo.timeline.legend.alignment": "Alineamiento multi-planeta",
+  "geo.alignment.badge": "alineamiento",
 
   // ── Impacto por país (cartas nacionales, tradición de Campion) ──
   "geo.mode.country": "Impacto por país",

@@ -58,10 +58,18 @@ function pairOrb(sky: { name: string; longitude: number }[], bodies: string[], a
   return Math.abs(angle - exact);
 }
 
+// Violeta del alineamiento — distinto de todos los demás acentos del módulo
+// (indigo de ingresos, rojo de disparadores, ámbar de eclipses).
+const ALIGNMENT_COLOR = "#7C3AED";
+
 /** Glifos de cuerpo(s) + símbolo de aspecto/ingreso, para tarjetas y timeline. */
 function configGlyphs(c: MundaneConfiguration): { text: string; color: string } {
   if (c.kind === "eclipse") {
     return { text: "◐", color: "#0F172A" };
+  }
+  if (c.kind === "alignment") {
+    const symbols = c.bodies.map((b) => c.sky.find((s) => s.name === b)?.symbol ?? "").join(" ");
+    return { text: `✧ ${symbols}`, color: ALIGNMENT_COLOR };
   }
   if ((c.kind === "aspect" || c.kind === "trigger") && c.bodies.length === 2) {
     const symbolA = c.sky.find((s) => s.name === c.bodies[0])?.symbol ?? "";
@@ -298,6 +306,7 @@ function GeopoliticaContent() {
         c.kind === "trigger" ||
         c.kind === "ingress" ||
         c.kind === "eclipse" ||
+        c.kind === "alignment" ||
         (c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)),
     );
   }, [configs, filterMode]);
@@ -607,6 +616,27 @@ function GeopoliticaContent() {
                     );
                   }
 
+                  // Alineamientos multi-planeta: tarjeta destacada con borde
+                  // violeta y badge propio (B4 del bloque de alineamientos).
+                  if (c.kind === "alignment") {
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition-colors ${active ? "bg-violet-50 border-violet-400" : "bg-white border-violet-200 hover:border-violet-400"} ${hideOnMobile ? "hidden xl:block" : ""}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                            <span className="font-mono text-xs" style={{ color: glyphs.color }}>{glyphs.text}</span>
+                            {nar.title}
+                          </span>
+                          <span className="text-[9px] font-mono text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded-full shrink-0">{t("geo.alignment.badge")}</span>
+                        </div>
+                        <span className="text-xs text-slate-400 font-mono">{dateStr}</span>
+                      </button>
+                    );
+                  }
+
                   return (
                     <button
                       key={c.id}
@@ -770,6 +800,11 @@ function GeopoliticaContent() {
                             : selectedConfig.aspect
                         }
                         highlightSign={selectedConfig.kind === "ingress" ? selectedConfig.sign : undefined}
+                        highlightPairs={
+                          selectedConfig.kind === "alignment" && selectedConfig.components
+                            ? selectedConfig.components.map((comp) => ({ bodies: comp.bodies, aspect: comp.aspect }))
+                            : undefined
+                        }
                         natalPlanets={
                           showAnalog
                             ? undefined

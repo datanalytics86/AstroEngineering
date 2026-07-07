@@ -931,6 +931,105 @@ export function getNationalImpactReading(
     : `${impact.body} forms a ${aspectLower} with this national chart's ${impact.natal_planet}. This configuration brings focus to ${meaning}, under ${tone}.`;
 }
 
+// ── Alineamientos multi-planeta (kind="alignment") ─────────────────────────────
+// Cuando 3+ cuerpos lentos quedan entrelazados en aspectos simultáneos, la
+// doctrina de "concentración planetaria" de Barbault lee el período como de
+// mayor intensidad cíclica que un par aislado. Firma curada para julio 2026
+// (Júpiter-Urano-Neptuno-Plutón); cualquier otro alineamiento cae en el
+// generador de respaldo por elementos (fuego/tierra/aire/agua de los signos
+// tocados), sin afirmaciones factuales.
+interface AlignmentEntry {
+  title: Bilingual;
+  theme: Bilingual;
+  synthesis: Bilingual;
+  source: Bilingual;
+}
+
+const ELEMENT_BY_SIGN: Record<string, "fuego" | "tierra" | "aire" | "agua"> = {
+  Aries: "fuego", Leo: "fuego", Sagitario: "fuego",
+  Tauro: "tierra", Virgo: "tierra", Capricornio: "tierra",
+  Géminis: "aire", Libra: "aire", Acuario: "aire",
+  Cáncer: "agua", Escorpio: "agua", Piscis: "agua",
+};
+
+const ELEMENT_MEANING: Record<"fuego" | "tierra" | "aire" | "agua", Bilingual> = {
+  fuego: { es: "iniciativa, expansión y afirmación de voluntad", en: "initiative, expansion and the assertion of will" },
+  tierra: { es: "consolidación material y estructuras concretas", en: "material consolidation and concrete structures" },
+  aire: { es: "ideas, comunicación y vínculos colectivos", en: "ideas, communication and collective bonds" },
+  agua: { es: "emoción compartida, memoria y disolución de límites", en: "shared emotion, memory and the dissolution of limits" },
+};
+
+function alignmentKey(bodies: string[]): string {
+  return [...bodies].sort().join("+");
+}
+
+const ALIGNMENT_NARRATIVES: Record<string, AlignmentEntry> = {
+  "Júpiter+Neptuno+Plutón+Urano": {
+    title: {
+      es: "Alineamiento Júpiter–Urano–Neptuno–Plutón",
+      en: "Jupiter–Uranus–Neptune–Pluto alignment",
+    },
+    theme: {
+      es: "Concentración planetaria de julio 2026",
+      en: "July 2026 planetary concentration",
+    },
+    synthesis: {
+      es: "Los cuatro cuerpos lentos más externos (excluido Saturno) quedan entrelazados en una red de seis aspectos mayores simultáneos — la doctrina de concentración planetaria de Barbault lee estas redes densas como períodos de mayor intensidad cíclica que cualquiera de sus pares por separado. Urano en Géminis y Plutón en Acuario comparten el eje aéreo — ideas, comunicación y vínculos colectivos —, mientras Júpiter en Leo y Neptuno en Aries comparten el eje ígneo — iniciativa, expansión y afirmación de voluntad. Es un telón de fondo compositivo: ninguno de los seis aspectos que lo componen deja de leerse también por separado.",
+      en: "The four outermost slow bodies (Saturn excluded) end up woven into a network of six simultaneous major aspects — Barbault's planetary-concentration doctrine reads these dense networks as periods of greater cyclical intensity than any of their pairs taken alone. Uranus in Gemini and Pluto in Aquarius share the airy axis — ideas, communication and collective bonds —, while Jupiter in Leo and Neptune in Aries share the fiery axis — initiative, expansion and the assertion of will. It is a composite backdrop: none of the six aspects that make it up stops being read on its own as well.",
+    },
+    source: SRC_BARBAULT,
+  },
+};
+
+/**
+ * Narrativa de un alineamiento multi-planeta: firma curada si existe, o
+ * generador de respaldo por elementos (agrupa los signos de los cuerpos
+ * involucrados y describe el/los elemento(s) dominante(s)).
+ */
+export function getAlignmentNarrative(
+  config: { bodies: string[]; sky: { name: string; sign: string }[] },
+  lang: Lang,
+): { title: string; theme: string; synthesis: string; source: string } {
+  const key = alignmentKey(config.bodies);
+  const curated = ALIGNMENT_NARRATIVES[key];
+  if (curated) {
+    return { title: curated.title[lang], theme: curated.theme[lang], synthesis: curated.synthesis[lang], source: curated.source[lang] };
+  }
+
+  const elementCounts: Record<string, number> = {};
+  for (const body of config.bodies) {
+    const sky = config.sky.find((s) => s.name === body);
+    const el = sky ? ELEMENT_BY_SIGN[sky.sign] : undefined;
+    if (el) elementCounts[el] = (elementCounts[el] ?? 0) + 1;
+  }
+  const dominant = Object.entries(elementCounts).sort((a, b) => b[1] - a[1])[0]?.[0] as
+    | "fuego" | "tierra" | "aire" | "agua" | undefined;
+  const meaning = dominant ? ELEMENT_MEANING[dominant][lang] : (lang === "es" ? "un compás de fondo compartido" : "a shared background beat");
+  const bodyList = joinListSimple(config.bodies, lang);
+
+  const title = lang === "es"
+    ? `Alineamiento de ${config.bodies.length} cuerpos: ${config.bodies.join("–")}`
+    : `${config.bodies.length}-body alignment: ${config.bodies.join("–")}`;
+  const synthesis = lang === "es"
+    ? `${bodyList} quedan entrelazados en una red de aspectos mayores simultáneos. La doctrina de concentración planetaria (Barbault) lee estas redes densas como períodos de mayor intensidad cíclica; aquí el tono dominante remite a ${meaning}. Cada aspecto que compone esta red también se lee por separado.`
+    : `${bodyList} become woven into a network of simultaneous major aspects. The planetary-concentration doctrine (Barbault) reads these dense networks as periods of heightened cyclical intensity; here the dominant tone points to ${meaning}. Each aspect that makes up this network is also read on its own.`;
+
+  return {
+    title,
+    theme: lang === "es" ? "Concentración planetaria" : "Planetary concentration",
+    synthesis,
+    source: SRC_BARBAULT[lang],
+  };
+}
+
+function joinListSimple(items: string[], lang: Lang): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  const last = items[items.length - 1];
+  const head = items.slice(0, -1).join(", ");
+  return `${head} ${lang === "es" ? "y" : "and"} ${last}`;
+}
+
 function signatureKey(config: { signature: Record<string, unknown> }): string | null {
   const sig = config.signature;
   if (Array.isArray(sig.pair) && typeof sig.aspect === "string") {
@@ -945,13 +1044,14 @@ function signatureKey(config: { signature: Record<string, unknown> }): string | 
 
 export function getConfigNarrative(
   config: {
-    kind: "aspect" | "ingress" | "trigger" | "eclipse";
+    kind: "aspect" | "ingress" | "trigger" | "eclipse" | "alignment";
     bodies: string[];
     aspect: string | null;
     sign: string | null;
     signature: Record<string, unknown>;
     eclipse_type?: EclipseType | null;
     eclipse_subtype?: EclipseSubtype | null;
+    sky?: { name: string; sign: string }[];
   },
   lang: Lang,
 ): { title: string; theme: string; synthesis: string; source: string } {
@@ -960,6 +1060,9 @@ export function getConfigNarrative(
   }
   if (config.kind === "eclipse") {
     return getEclipseNarrative(config, lang);
+  }
+  if (config.kind === "alignment") {
+    return getAlignmentNarrative({ bodies: config.bodies, sky: config.sky ?? [] }, lang);
   }
 
   const key = signatureKey(config);

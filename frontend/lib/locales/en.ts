@@ -268,6 +268,8 @@ export const en = {
   "geo.eclipse.subtype.anular": "annular",
   "geo.eclipse.subtype.parcial": "partial",
   "geo.eclipse.subtype.penumbral": "penumbral",
+  "geo.timeline.legend.alignment": "Multi-planet alignment",
+  "geo.alignment.badge": "alignment",
 
   // ── Impact by country (national charts, Campion's tradition) ──
   "geo.mode.country": "Impact by country",

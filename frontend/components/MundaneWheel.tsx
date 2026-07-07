@@ -41,6 +41,13 @@ interface Props {
    * excluyente con `natalPlanets` (el llamador decide cuál mostrar).
    */
   overlaySky?: MundaneSkyBody[];
+  /**
+   * Alineamientos multi-planeta (kind="alignment"): dibuja TODAS las líneas
+   * de los aspectos de par que lo componen a la vez (reusa el mismo render
+   * de línea/halo que `highlightBodies`+`highlightAspect`, que sigue
+   * funcionando de forma independiente para configs de un solo par).
+   */
+  highlightPairs?: { bodies: string[]; aspect: string }[];
 }
 
 const SVG_SIZE = 560;
@@ -112,6 +119,7 @@ export default function MundaneWheel({
   highlightSign,
   natalPlanets,
   overlaySky,
+  highlightPairs,
 }: Props) {
   const [tooltip, setTooltip] = useState<Tooltip | null>(null);
   const toAngle = useMemo(() => makeToAngle(ASC_LON), []);
@@ -148,35 +156,64 @@ export default function MundaneWheel({
     [overlaySky],
   );
 
-  // Línea del aspecto definitorio entre los dos cuerpos protagonistas. Para
-  // conjunciones la línea mediría ~0px (los dos cuerpos están en el mismo
-  // punto) — ver `highlightHalo` más abajo, que dibuja un halo en su lugar.
-  const highlightLine = useMemo(() => {
-    if (!highlightBodies || highlightBodies.length !== 2 || highlightAspect === "Conjunción") return null;
-    const a = sky.find((b) => b.name === highlightBodies[0]);
-    const b = sky.find((b2) => b2.name === highlightBodies[1]);
-    if (!a || !b) return null;
-    const p1 = polarXY(cx, cy, R_CORE, toAngle(a.longitude));
-    const p2 = polarXY(cx, cy, R_CORE, toAngle(b.longitude));
-    return { p1, p2, color: ASPECT_LINE_COLOR[highlightAspect ?? ""] ?? "#334155" };
-  }, [highlightBodies, highlightAspect, sky, toAngle]);
+  // Unifica el par único (highlightBodies+highlightAspect) con la lista de
+  // pares de un alineamiento (highlightPairs) en una sola lista a dibujar.
+  const allHighlightPairs = useMemo(() => {
+    const pairs: { bodies: [string, string]; aspect: string }[] = [];
+    if (highlightBodies && highlightBodies.length === 2 && highlightAspect) {
+      pairs.push({ bodies: [highlightBodies[0], highlightBodies[1]], aspect: highlightAspect });
+    }
+    if (highlightPairs) {
+      for (const hp of highlightPairs) {
+        if (hp.bodies.length === 2) pairs.push({ bodies: [hp.bodies[0], hp.bodies[1]], aspect: hp.aspect });
+      }
+    }
+    return pairs;
+  }, [highlightBodies, highlightAspect, highlightPairs]);
 
-  // Halo doble (anillo estático + pulso suave) en el punto medio del par,
-  // sobre el anillo de cuerpos mundiales — sustituye a la línea para
-  // conjunciones, donde ambos cuerpos caen prácticamente en el mismo punto.
-  const highlightHalo = useMemo(() => {
-    if (highlightAspect !== "Conjunción" || !highlightBodies || highlightBodies.length !== 2) return null;
-    const a = sky.find((b) => b.name === highlightBodies[0]);
-    const b = sky.find((b2) => b2.name === highlightBodies[1]);
-    if (!a || !b) return null;
-    const angA = toAngle(a.longitude);
-    const angB = toAngle(b.longitude);
-    const sinSum = Math.sin(toRad(angA)) + Math.sin(toRad(angB));
-    const cosSum = Math.cos(toRad(angA)) + Math.cos(toRad(angB));
-    const midAngle = (Math.atan2(sinSum, cosSum) * 180) / Math.PI;
-    const pos = polarXY(cx, cy, R_MU_GLYPH, midAngle);
-    return { pos, color: ASPECT_LINE_COLOR["Conjunción"] };
-  }, [highlightBodies, highlightAspect, sky, toAngle]);
+  const highlightBodySet = useMemo(
+    () => new Set(allHighlightPairs.flatMap((p) => p.bodies)),
+    [allHighlightPairs],
+  );
+
+  // Líneas del/de los aspecto(s) definitorio(s) entre cuerpos protagonistas.
+  // Para conjunciones la línea mediría ~0px (los dos cuerpos están en el
+  // mismo punto) — ver `highlightHalos` más abajo, que dibuja un halo en su
+  // lugar.
+  const highlightLines = useMemo(() => {
+    return allHighlightPairs
+      .filter((p) => p.aspect !== "Conjunción")
+      .map((p) => {
+        const a = sky.find((b) => b.name === p.bodies[0]);
+        const b = sky.find((b2) => b2.name === p.bodies[1]);
+        if (!a || !b) return null;
+        const p1 = polarXY(cx, cy, R_CORE, toAngle(a.longitude));
+        const p2 = polarXY(cx, cy, R_CORE, toAngle(b.longitude));
+        return { key: `${p.bodies[0]}-${p.bodies[1]}`, p1, p2, color: ASPECT_LINE_COLOR[p.aspect] ?? "#334155" };
+      })
+      .filter((l): l is NonNullable<typeof l> => l !== null);
+  }, [allHighlightPairs, sky, toAngle]);
+
+  // Halo doble (anillo estático + pulso suave) en el punto medio de cada par
+  // en conjunción — sustituye a la línea, donde ambos cuerpos caen
+  // prácticamente en el mismo punto.
+  const highlightHalos = useMemo(() => {
+    return allHighlightPairs
+      .filter((p) => p.aspect === "Conjunción")
+      .map((p) => {
+        const a = sky.find((b) => b.name === p.bodies[0]);
+        const b = sky.find((b2) => b2.name === p.bodies[1]);
+        if (!a || !b) return null;
+        const angA = toAngle(a.longitude);
+        const angB = toAngle(b.longitude);
+        const sinSum = Math.sin(toRad(angA)) + Math.sin(toRad(angB));
+        const cosSum = Math.cos(toRad(angA)) + Math.cos(toRad(angB));
+        const midAngle = (Math.atan2(sinSum, cosSum) * 180) / Math.PI;
+        const pos = polarXY(cx, cy, R_MU_GLYPH, midAngle);
+        return { key: `${p.bodies[0]}-${p.bodies[1]}`, pos, color: ASPECT_LINE_COLOR["Conjunción"] };
+      })
+      .filter((h): h is NonNullable<typeof h> => h !== null);
+  }, [allHighlightPairs, sky, toAngle]);
 
   // Sector resaltado para un ingreso de signo
   const highlightSector = useMemo(() => {
@@ -238,7 +275,7 @@ export default function MundaneWheel({
         {muDots.map((p) => {
           const ang = toAngle(p.longitude);
           const col = BODY_COLORS[p.name] ?? "#3B82F6";
-          const isHi = highlightBodies?.includes(p.name);
+          const isHi = highlightBodySet.has(p.name);
           const gPos = polarXY(cx, cy, R_MU_GLYPH + p.rOffset, ang);
           const dPos = polarXY(cx, cy, R_MU_DEGREE + p.rOffset, ang);
           const nOut = polarXY(cx, cy, R_MU_NEEDLE_OUT, ang);
@@ -261,13 +298,13 @@ export default function MundaneWheel({
           );
         })}
 
-        {/* Halo de conjunción (ver comentario en highlightHalo más arriba) */}
-        {highlightHalo && (
-          <g className="pointer-events-none">
-            <circle cx={highlightHalo.pos.x} cy={highlightHalo.pos.y} r={R_SPHERE + 11} fill="none" stroke={highlightHalo.color} strokeWidth={2} opacity={0.3} className="animate-pulse" />
-            <circle cx={highlightHalo.pos.x} cy={highlightHalo.pos.y} r={R_SPHERE + 5} fill="none" stroke={highlightHalo.color} strokeWidth={2} opacity={0.6} />
+        {/* Halos de conjunción (ver comentario en highlightHalos más arriba) */}
+        {highlightHalos.map((h) => (
+          <g key={h.key} className="pointer-events-none">
+            <circle cx={h.pos.x} cy={h.pos.y} r={R_SPHERE + 11} fill="none" stroke={h.color} strokeWidth={2} opacity={0.3} className="motion-safe:animate-pulse" />
+            <circle cx={h.pos.x} cy={h.pos.y} r={R_SPHERE + 5} fill="none" stroke={h.color} strokeWidth={2} opacity={0.6} />
           </g>
-        )}
+        ))}
 
         <circle cx={cx} cy={cy} r={R_SEP} fill="white" stroke="#94A3B8" strokeWidth={natalPlanets || overlaySky ? 2 : 1} />
 
@@ -311,10 +348,10 @@ export default function MundaneWheel({
 
         {/* Núcleo + línea de aspecto definitorio */}
         <circle cx={cx} cy={cy} r={R_CORE} fill="white" stroke="#E2E8F0" strokeWidth={1} />
-        {highlightLine && (
-          <line x1={highlightLine.p1.x} y1={highlightLine.p1.y} x2={highlightLine.p2.x} y2={highlightLine.p2.y}
-            stroke={highlightLine.color} strokeWidth={2.2} opacity={0.85} />
-        )}
+        {highlightLines.map((l) => (
+          <line key={l.key} x1={l.p1.x} y1={l.p1.y} x2={l.p2.x} y2={l.p2.y}
+            stroke={l.color} strokeWidth={2.2} opacity={0.85} />
+        ))}
         <circle cx={cx} cy={cy} r={R_CENTER} fill="white" stroke="#E2E8F0" strokeWidth={1} />
 
         {tooltip && (() => {

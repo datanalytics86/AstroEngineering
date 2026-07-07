@@ -158,6 +158,19 @@ export function generateMundaneReading(params: {
         ? `El ${dateLabel}, eclipse ${typeWord}${subtypeWord ? ` ${subtypeWord}` : ""} a ${posSens}.`
         : `On ${dateLabel}, a${subtypeWord ? ` ${subtypeWord}` : ""} ${typeWord} eclipse at ${posSens}.`,
     );
+  } else if (config.kind === "alignment") {
+    const bodyList = joinList(config.bodies, lang);
+    const windowNote =
+      config.window_start && config.window_end
+        ? es
+          ? ` (ventana: ${config.window_start}–${config.window_end})`
+          : ` (window: ${config.window_start}–${config.window_end})`
+        : "";
+    paragraphs.push(
+      es
+        ? `Hacia el ${dateLabel}, ${bodyList} quedan entrelazados en su punto de máxima compacidad conjunta${windowNote}.`
+        : `Around ${dateLabel}, ${bodyList} become interlocked at their point of maximum joint compactness${windowNote}.`,
+    );
   }
 
   // ── Párrafo 2: significado ──
@@ -195,6 +208,28 @@ export function generateMundaneReading(params: {
         ? `${nar.synthesis} Este grado queda "sensibilizado" durante meses: los tránsitos posteriores que lo toquen reactivan su tema.`
         : `${nar.synthesis} This degree stays "sensitized" for months: later transits touching it reactivate its theme.`,
     );
+    paragraphs.push(
+      es
+        ? "Como el resto de este módulo, es una lectura analógica y arquetípica — no una predicción de hechos concretos."
+        : "Like the rest of this module, this is an analogical, archetypal reading — not a prediction of concrete events.",
+    );
+  } else if (config.kind === "alignment") {
+    paragraphs.push(nar.synthesis);
+    if (config.components && config.components.length > 0) {
+      const compList = config.components
+        .map((c) => `${c.bodies[0]}–${c.bodies[1]} (${c.aspect.toLowerCase()}, ${c.exact_date})`)
+        .join(" · ");
+      paragraphs.push(
+        es ? `Aspectos que lo componen: ${compList}.` : `Component aspects: ${compList}.`,
+      );
+    }
+    if (config.alignment_degree != null) {
+      paragraphs.push(
+        es
+          ? `Los cuerpos involucrados quedan cerca de un grado sensible común: ~${config.alignment_degree.toFixed(1)}° de los signos respectivos.`
+          : `The bodies involved sit close to a shared sensitive degree: ~${config.alignment_degree.toFixed(1)}° of their respective signs.`,
+      );
+    }
     paragraphs.push(
       es
         ? "Como el resto de este módulo, es una lectura analógica y arquetípica — no una predicción de hechos concretos."
