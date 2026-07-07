@@ -273,10 +273,17 @@ export interface NatalImpact {
 export type EclipseType = "solar" | "lunar";
 export type EclipseSubtype = "total" | "anular" | "parcial" | "penumbral";
 
+export interface AlignmentComponent {
+  bodies: string[];          // par de cuerpos, ej. ["Júpiter", "Urano"]
+  aspect: string;
+  exact_date: string;        // "YYYY-MM-DD" — fecha exacta de ESE par individual
+  orb: number;               // orbe recomputado en la exact_date del alineamiento
+}
+
 export interface MundaneConfiguration {
   id: string;
   exact_date: string;         // "YYYY-MM-DD"
-  kind: "aspect" | "ingress" | "trigger" | "eclipse";
+  kind: "aspect" | "ingress" | "trigger" | "eclipse" | "alignment";
   bodies: string[];
   aspect: string | null;
   sign: string | null;
@@ -285,10 +292,12 @@ export interface MundaneConfiguration {
   sky: MundaneSkyBody[];
   analogs: MundaneAnalog[];
   themes: string[];           // temas agregados de LOS ANÁLOGOS de esta configuración (máx 6)
-  window_start?: string;      // disparadores rápidos de Marte: primer día con orbe <= 2°
-  window_end?: string;        // disparadores rápidos de Marte: último día con orbe <= 2°
+  window_start?: string;      // disparadores: primer día con orbe <= 2° / alineamientos: 1ª fecha exacta componente
+  window_end?: string;        // disparadores: último día con orbe <= 2° / alineamientos: última fecha exacta componente
   eclipse_type?: EclipseType | null;         // eclipses: "solar" | "lunar"
   eclipse_subtype?: EclipseSubtype | null;   // eclipses: "total" | "anular" | "parcial" | "penumbral"
+  components?: AlignmentComponent[] | null;      // alineamientos: aspectos de par que lo componen
+  alignment_degree?: number | null;              // alineamientos: grado-en-signo común, si todos coinciden (±2.5°)
 }
 
 export interface CyclicIndexPoint {

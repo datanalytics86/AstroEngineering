@@ -118,10 +118,20 @@ export default function CyclicIndexChart({ data, lang, markers, onSelectConfig }
                       línea, para no leerse como una segunda serie de datos. */}
                   {(markers?.[p.month]?.length ?? 0) > 0 && (
                     <g
-                      className="cursor-pointer"
+                      className="cursor-pointer outline-none"
                       onClick={() => onSelectConfig?.(markers![p.month][0].id)}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`${markers![p.month].map((m) => m.title).join(", ")} · ${monthLabel(p.month)}`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onSelectConfig?.(markers![p.month][0].id);
+                        }
+                      }}
                       transform={`translate(${p.x} ${markerY}) rotate(45)`}
                     >
+                      <rect x={-6} y={-6} width={12} height={12} fill="transparent" />
                       <rect x={-4} y={-4} width={8} height={8} fill="#EEF2FF" stroke="#4F46E5" strokeWidth={1.3} />
                       <title>{markers![p.month].map((m) => m.title).join("\n")}</title>
                     </g>
