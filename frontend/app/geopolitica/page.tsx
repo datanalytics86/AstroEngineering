@@ -95,6 +95,168 @@ function formatGeoDate(dateStr: string, dateLocale: Locale): string {
   }
 }
 
+// Segmented controls (C4): mismo radio, misma familia de alturas y foco
+// visible para los tres grupos de control de la página (modo, año, filtros).
+// En móvil, altura mínima de 44px (target táctil); en sm+, más compacto.
+const SEG_BTN =
+  "min-h-[44px] sm:min-h-0 sm:h-9 px-4 sm:px-3 rounded-lg text-sm font-mono transition-colors " +
+  "flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 " +
+  "focus-visible:ring-indigo-500 focus-visible:ring-offset-1";
+const SEG_BTN_ACTIVE = "bg-indigo-600 text-white shadow-sm";
+const SEG_BTN_INACTIVE = "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300";
+
+function segClass(active: boolean, extra = ""): string {
+  return `${SEG_BTN} ${active ? SEG_BTN_ACTIVE : SEG_BTN_INACTIVE} ${extra}`;
+}
+
+// ── Recorrido de página (C2/C3): scroll suave a secciones/tarjetas, respetando
+// prefers-reduced-motion (Shneiderman: overview first, zoom & filter, details
+// on demand — con vistas enlazadas entre timeline/índice y lista/detalle). ──
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function scrollToSection(id: string) {
+  if (typeof document === "undefined") return;
+  document.getElementById(id)?.scrollIntoView({
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
+    block: "start",
+  });
+}
+
+const GEO_SECTIONS = [
+  { id: "geo-timeline", key: "geo.nav.timeline" as const },
+  { id: "geo-configs", key: "geo.nav.configs" as const },
+  { id: "geo-themes", key: "geo.nav.themes" as const },
+  { id: "geo-index", key: "geo.nav.index" as const },
+  { id: "geo-bibliography", key: "geo.nav.bibliography" as const },
+];
+
+/** Mini-nav sticky de anclas con IntersectionObserver para aria-current (C2). */
+function GeoSectionNav({ lang }: { lang: Lang }) {
+  const { t } = useT();
+  const [active, setActive] = useState<string>(GEO_SECTIONS[0].id);
+
+  useEffect(() => {
+    const els = GEO_SECTIONS
+      .map((s) => document.getElementById(s.id))
+      .filter((el): el is HTMLElement => el !== null);
+    if (els.length === 0) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length > 0) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-96px 0px -70% 0px", threshold: 0 },
+    );
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
+  return (
+    <nav
+      aria-label={t("geo.nav.label")}
+      className="sticky top-0 z-10 -mx-4 px-4 py-2 mb-4 bg-white/90 backdrop-blur border-b border-slate-100 overflow-x-auto"
+    >
+      <div className="flex gap-1.5 min-w-max">
+        {GEO_SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => scrollToSection(s.id)}
+            aria-current={active === s.id ? "true" : undefined}
+            className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${
+              active === s.id ? "bg-indigo-100 text-indigo-700" : "text-slate-500 hover:bg-slate-100"
+            }`}
+          >
+            {t(s.key)}
+          </button>
+        ))}
+      </div>
+    </nav>
+  );
+}
+
+// ── "El año de un vistazo" (C1): overview first — un puñado de stats
+// compactos antes del detalle, cada uno navega/selecciona on-demand. ──
+function GeoOverviewStrip({
+  configs,
+  year,
+  lang,
+  onSelectConfig,
+}: {
+  configs: MundaneConfiguration[];
+  year: number;
+  lang: Lang;
+  onSelectConfig: (id: string) => void;
+}) {
+  const { t } = useT();
+  const dateLocale = lang === "en" ? enUS : es;
+
+  const majors = useMemo(
+    () => configs.filter(
+      (c) => c.kind === "ingress" || c.kind === "eclipse" || c.kind === "alignment" ||
+        (c.kind === "aspect" && c.aspect !== null && MAJOR_ASPECTS.has(c.aspect)),
+    ),
+    [configs],
+  );
+  const eclipseCount = useMemo(() => configs.filter((c) => c.kind === "eclipse").length, [configs]);
+  const alignmentOfYear = useMemo(() => configs.find((c) => c.kind === "alignment") ?? null, [configs]);
+  const nextEvent = useMemo(() => {
+    if (majors.length === 0) return null;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const upcoming = majors.find((c) => c.exact_date >= todayStr);
+    return upcoming ?? majors[0];
+  }, [majors]);
+
+  const stats: { key: string; label: string; value: string; onClick?: () => void }[] = [
+    { key: "majors", label: t("geo.overview.majors"), value: String(majors.length) },
+    {
+      key: "next",
+      label: t("geo.overview.next_event"),
+      value: nextEvent ? formatGeoDate(nextEvent.exact_date, dateLocale) : "—",
+      onClick: nextEvent ? () => onSelectConfig(nextEvent.id) : undefined,
+    },
+    { key: "eclipses", label: t("geo.overview.eclipses"), value: String(eclipseCount) },
+  ];
+  if (alignmentOfYear) {
+    stats.push({
+      key: "alignment",
+      label: t("geo.overview.alignment"),
+      value: formatGeoDate(alignmentOfYear.exact_date, dateLocale),
+      onClick: () => onSelectConfig(alignmentOfYear.id),
+    });
+  }
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-2xl p-4">
+      <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-3">{t("geo.overview.title")} {year}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {stats.map((s) => {
+          const Tag = s.onClick ? "button" : "div";
+          return (
+            <Tag
+              key={s.key}
+              type={s.onClick ? "button" : undefined}
+              onClick={s.onClick}
+              className={`text-left rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 min-h-[44px] ${
+                s.onClick ? "hover:border-indigo-300 hover:bg-indigo-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 cursor-pointer" : ""
+              }`}
+            >
+              <p className="text-[10px] font-mono text-slate-400 uppercase tracking-wide">{s.label}</p>
+              <p className="text-sm font-semibold text-slate-800 truncate">{s.value}</p>
+            </Tag>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Spinner({ label }: { label: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -404,6 +566,19 @@ function GeopoliticaContent() {
 
   const comparedAnalog = selectedConfig?.analogs.find((a) => a.id === compareEra) ?? null;
 
+  // Vistas enlazadas (C3): al cambiar la selección (desde el timeline, el
+  // índice cíclico o la propia lista), la tarjeta correspondiente en la lista
+  // y el panel de detalle quedan visibles si estaban fuera de viewport.
+  // "nearest" evita saltos cuando ya son visibles; respeta reduced-motion.
+  useEffect(() => {
+    if (!selectedConfigId) return;
+    const behavior = prefersReducedMotion() ? "auto" : "smooth";
+    const card = document.querySelector(`[data-config-id="${CSS.escape(selectedConfigId)}"]`);
+    card?.scrollIntoView({ behavior, block: "nearest" });
+    const detail = document.getElementById("geo-detail-panel");
+    detail?.scrollIntoView({ behavior, block: "nearest" });
+  }, [selectedConfigId]);
+
   function selectEra(id: string) {
     setCompareEra(id);
   }
@@ -433,42 +608,48 @@ function GeopoliticaContent() {
       {/* Mode buttons — en móvil, segmented control compacto de una fila (B4);
           en sm+, los botones completos de siempre. */}
       <div className="mb-4">
-        <div className="grid grid-cols-3 gap-1 sm:hidden bg-slate-100 rounded-lg p-1">
+        <div className="grid grid-cols-3 gap-1 sm:hidden bg-slate-100 rounded-lg p-1" role="group" aria-label={t("geo.mode.world")}>
           <button
             onClick={() => setMode("world")}
-            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "world" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
+            aria-pressed={mode === "world"}
+            className={`min-h-[44px] px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center justify-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "world" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
           >
             <span>🌍</span>
             <span>{t("geo.mode.world_short")}</span>
           </button>
           <button
             onClick={() => setMode("natal")}
-            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "natal" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
+            aria-pressed={mode === "natal"}
+            className={`min-h-[44px] px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center justify-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "natal" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
           >
             <span>⊕</span>
             <span>{t("geo.mode.natal_short")}</span>
           </button>
           <button
             onClick={() => setMode("country")}
-            className={`px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "country" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
+            aria-pressed={mode === "country"}
+            className={`min-h-[44px] px-2 py-2 rounded-md text-xs font-medium transition-colors flex flex-col items-center justify-center gap-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1 ${mode === "country" ? "bg-indigo-600 text-white shadow-sm" : "text-slate-500"}`}
           >
             <span>🏳️</span>
             <span>{t("geo.mode.country_short")}</span>
           </button>
         </div>
 
-        <div className="hidden sm:flex flex-wrap gap-2">
+        <div className="hidden sm:flex flex-wrap gap-2" role="group" aria-label={t("geo.mode.world")}>
           <button
             onClick={() => setMode("world")}
-            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "world" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+            aria-pressed={mode === "world"}
+            className={segClass(mode === "world", "px-5")}
           >🌍 {t("geo.mode.world")}</button>
           <button
             onClick={() => setMode("natal")}
-            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "natal" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+            aria-pressed={mode === "natal"}
+            className={segClass(mode === "natal", "px-5")}
           >⊕ {t("geo.mode.natal")}</button>
           <button
             onClick={() => setMode("country")}
-            className={`px-5 py-2.5 rounded-lg text-sm font-medium transition-colors ${mode === "country" ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+            aria-pressed={mode === "country"}
+            className={segClass(mode === "country", "px-5")}
           >🏳️ {t("geo.mode.country")}</button>
         </div>
       </div>
@@ -534,15 +715,19 @@ function GeopoliticaContent() {
       )}
 
       {/* Year tabs */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="flex flex-wrap gap-2 mb-4" role="group" aria-label={t("geo.select_chart")}>
         {YEARS.map((y) => (
           <button
             key={y}
             onClick={() => setYear(y)}
-            className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${year === y ? "bg-indigo-600 text-white shadow-sm" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+            aria-pressed={year === y}
+            className={segClass(year === y)}
           >{y}</button>
         ))}
       </div>
+
+      {/* Mini-nav de anclas — sticky bajo los tabs de año, recorrido de página (C2) */}
+      {data && <GeoSectionNav lang={L} />}
 
       {/* Content */}
       {mode === "natal" && !natalChart ? (
@@ -558,17 +743,33 @@ function GeopoliticaContent() {
         </div>
       ) : data ? (
         <div className="space-y-6">
-          {/* Cronología del año — el corazón de la página, primera pantalla (B5) */}
-          <MundaneTimelineChart
-            configs={filteredConfigs}
+          {/* "El año de un vistazo" — overview compacto antes del detalle (C1) */}
+          <GeoOverviewStrip
+            configs={configs}
             year={year}
-            selectedId={selectedConfigId}
-            onSelect={(id) => { setSelectedConfigId(id); setCompareEra(null); }}
             lang={L}
+            onSelectConfig={(id) => {
+              setSelectedConfigId(id);
+              setCompareEra(null);
+              if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
+              scrollToSection("geo-configs");
+            }}
           />
 
+          {/* Cronología del año — el corazón de la página, primera pantalla (B5) */}
+          <section id="geo-timeline">
+            <MundaneTimelineChart
+              configs={filteredConfigs}
+              year={year}
+              selectedId={selectedConfigId}
+              onSelect={(id) => { setSelectedConfigId(id); setCompareEra(null); }}
+              lang={L}
+            />
+          </section>
+
+          <section id="geo-configs" className="space-y-6">
           {/* Filter chips */}
-          <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex flex-wrap gap-2 items-center" role="group" aria-label={t("geo.configs.title")}>
             <span className="text-xs font-mono text-slate-400 uppercase tracking-wide">{t("geo.configs.title")}</span>
             {([
               ["majors", "geo.filter.majors"],
@@ -579,7 +780,8 @@ function GeopoliticaContent() {
               <button
                 key={fm}
                 onClick={() => setFilterMode(fm)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-mono transition-colors ${filterMode === fm ? "bg-indigo-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:border-indigo-300"}`}
+                aria-pressed={filterMode === fm}
+                className={segClass(filterMode === fm, "text-xs")}
               >{t(key)}</button>
             ))}
           </div>
@@ -605,6 +807,7 @@ function GeopoliticaContent() {
                     return (
                       <button
                         key={c.id}
+                        data-config-id={c.id}
                         onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
                         className={`w-full text-left px-2.5 py-1.5 rounded-lg border transition-colors flex items-center gap-2 ${active ? "bg-red-50 border-red-200" : "bg-white border-slate-200 hover:border-red-200"} ${hideOnMobile ? "hidden xl:flex" : ""}`}
                       >
@@ -622,6 +825,7 @@ function GeopoliticaContent() {
                     return (
                       <button
                         key={c.id}
+                        data-config-id={c.id}
                         onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
                         className={`w-full text-left px-3 py-2.5 rounded-xl border-2 transition-colors ${active ? "bg-violet-50 border-violet-400" : "bg-white border-violet-200 hover:border-violet-400"} ${hideOnMobile ? "hidden xl:block" : ""}`}
                       >
@@ -640,7 +844,8 @@ function GeopoliticaContent() {
                   return (
                     <button
                       key={c.id}
-                      onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
+                      data-config-id={c.id}
+                        onClick={() => { setSelectedConfigId(c.id); setCompareEra(null); }}
                       className={`w-full text-left px-3 py-2.5 rounded-xl border transition-colors ${active ? "bg-indigo-50 border-indigo-300" : "bg-white border-slate-200 hover:border-indigo-200"} ${hideOnMobile ? "hidden xl:block" : ""}`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -716,7 +921,7 @@ function GeopoliticaContent() {
               const orbEra = showAnalog ? pairOrb(comparedAnalog!.sky, selectedConfig.bodies, selectedConfig.aspect) : null;
 
               return (
-                <div className="space-y-5">
+                <div id="geo-detail-panel" className="space-y-5">
                   {/* Title */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="font-semibold text-lg text-slate-900">{nar.title}</h2>
@@ -972,42 +1177,46 @@ function GeopoliticaContent() {
               );
             })()}
           </div>
+          </section>
 
           {/* Probable themes — sección compacta (B5) */}
           {data.probable_themes.length > 0 && (
-            <div className="bg-white border border-slate-200 rounded-2xl p-5">
+            <section id="geo-themes" className="bg-white border border-slate-200 rounded-2xl p-5">
               <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.probable_themes")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {data.probable_themes.map((th) => (
                   <span key={th} className="text-xs bg-indigo-50 text-indigo-600 border border-indigo-100 px-2 py-0.5 rounded-full font-mono">{getThemeLabel(th, L)}</span>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
           {/* Cyclic index (Barbault) — colapsable, no compite con la cronología (B4/B5) */}
           {data.cyclic_index.length > 0 && (
-            <CyclicIndexChart
-              data={data.cyclic_index}
-              lang={L}
-              markers={indexMarkers}
-              onSelectConfig={(id) => {
-                setSelectedConfigId(id);
-                setCompareEra(null);
-                if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
-              }}
-            />
+            <section id="geo-index">
+              <CyclicIndexChart
+                data={data.cyclic_index}
+                lang={L}
+                markers={indexMarkers}
+                onSelectConfig={(id) => {
+                  setSelectedConfigId(id);
+                  setCompareEra(null);
+                  if (!filteredConfigs.some((c) => c.id === id)) setFilterMode("all");
+                  scrollToSection("geo-configs");
+                }}
+              />
+            </section>
           )}
 
           {/* Bibliography */}
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+          <section id="geo-bibliography" className="bg-slate-50 border border-slate-200 rounded-2xl p-5">
             <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.bibliography.title")}</p>
             <ul className="space-y-1">
               {BIBLIOGRAPHY.map((b, i) => (
                 <li key={i} className="text-xs text-slate-500 leading-relaxed">• {b[L]}</li>
               ))}
             </ul>
-          </div>
+          </section>
         </div>
       ) : null}
     </div>

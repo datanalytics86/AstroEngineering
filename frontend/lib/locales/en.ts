@@ -270,6 +270,17 @@ export const en = {
   "geo.eclipse.subtype.penumbral": "penumbral",
   "geo.timeline.legend.alignment": "Multi-planet alignment",
   "geo.alignment.badge": "alignment",
+  "geo.nav.label": "Page navigation",
+  "geo.nav.timeline": "Timeline",
+  "geo.nav.configs": "Configurations",
+  "geo.nav.themes": "Themes",
+  "geo.nav.index": "Index",
+  "geo.nav.bibliography": "Bibliography",
+  "geo.overview.title": "The year at a glance",
+  "geo.overview.majors": "Major configurations",
+  "geo.overview.next_event": "Next event",
+  "geo.overview.eclipses": "Eclipses",
+  "geo.overview.alignment": "Alignment of the year",
 
   // ── Impact by country (national charts, Campion's tradition) ──
   "geo.mode.country": "Impact by country",

@@ -50,6 +50,14 @@ const ALIGNMENT_COLOR = "#7C3AED"; // violeta — no se usa en ningún otro acen
 const ALIGNMENT_BAND_H = 28;
 const ALIGNMENT_TOP_MARGIN = ALIGNMENT_BAND_H + 12;
 
+/** Enter/Espacio activan los marcadores SVG focusables (accesibilidad, C5). */
+function keyActivate(e: React.KeyboardEvent, fn: () => void) {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    fn();
+  }
+}
+
 function dayOfYearFraction(dateStr: string, year: number): number {
   const d = parseLocalDate(dateStr);
   const start = new Date(year, 0, 1);
@@ -176,9 +184,13 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
           const active = c.id === selectedId;
           const label = configLabel(c) || "✧";
           return (
-            <g key={c.id} className="cursor-pointer" onClick={() => onSelect(c.id)}
+            <g key={c.id} className="cursor-pointer outline-none" onClick={() => onSelect(c.id)}
               onMouseEnter={(e) => showTip(e, label, c.exact_date)}
-              onMouseLeave={() => setTooltip(null)}>
+              onMouseLeave={() => setTooltip(null)}
+              tabIndex={0} role="button" aria-label={`${label} · ${c.exact_date}`}
+              onFocus={() => setTooltip({ x: xExact, y: 0, title: label, date: c.exact_date })}
+              onBlur={() => setTooltip(null)}
+              onKeyDown={(e) => keyActivate(e, () => onSelect(c.id))}>
               <rect
                 x={xStart} y={alignmentBandY} width={xEnd - xStart} height={ALIGNMENT_BAND_H}
                 rx={6} fill={ALIGNMENT_COLOR} fillOpacity={active ? 0.28 : 0.15}
@@ -196,9 +208,13 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
           const active = c.id === selectedId;
           const label = configLabel(c);
           return (
-            <g key={c.id} className="cursor-pointer" onClick={() => onSelect(c.id)}
+            <g key={c.id} className="cursor-pointer outline-none" onClick={() => onSelect(c.id)}
               onMouseEnter={(e) => showTip(e, label, c.exact_date)}
-              onMouseLeave={() => setTooltip(null)}>
+              onMouseLeave={() => setTooltip(null)}
+              tabIndex={0} role="button" aria-label={`${label} · ${c.exact_date}`}
+              onFocus={() => setTooltip({ x, y: 0, title: label, date: c.exact_date })}
+              onBlur={() => setTooltip(null)}
+              onKeyDown={(e) => keyActivate(e, () => onSelect(c.id))}>
               {active && <circle cx={x} cy={triggerY} r={TRIGGER_MARKER_R + 3} fill="none" stroke={color} strokeWidth={1.5} opacity={0.6} />}
               <circle cx={x} cy={triggerY} r={TRIGGER_MARKER_R} fill={color} opacity={0.7} />
               <text x={x} y={triggerY} textAnchor="middle" dominantBaseline="central" fontSize={6.5} fill="white" fontWeight="700" className="select-none pointer-events-none">
@@ -217,9 +233,13 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
           const active = c.id === selectedId;
           const label = configLabel(c);
           return (
-            <g key={c.id} className="cursor-pointer" onClick={() => onSelect(c.id)}
+            <g key={c.id} className="cursor-pointer outline-none" onClick={() => onSelect(c.id)}
               onMouseEnter={(e) => showTip(e, label, c.exact_date)}
-              onMouseLeave={() => setTooltip(null)}>
+              onMouseLeave={() => setTooltip(null)}
+              tabIndex={0} role="button" aria-label={`${label} · ${c.exact_date}`}
+              onFocus={() => setTooltip({ x, y: 0, title: label, date: c.exact_date })}
+              onBlur={() => setTooltip(null)}
+              onKeyDown={(e) => keyActivate(e, () => onSelect(c.id))}>
               <line x1={x} y1={y} x2={x} y2={baseY} stroke={color} strokeWidth={1} opacity={0.35} />
               {active && <circle cx={x} cy={y} r={r + 4} fill="none" stroke={color} strokeWidth={2} opacity={0.6} />}
               {isEclipse && <circle cx={x} cy={y} r={r + 2.5} fill="none" stroke={ECLIPSE_RING_COLOR} strokeWidth={2} />}

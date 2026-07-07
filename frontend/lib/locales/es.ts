@@ -270,6 +270,17 @@ export const es = {
   "geo.eclipse.subtype.penumbral": "penumbral",
   "geo.timeline.legend.alignment": "Alineamiento multi-planeta",
   "geo.alignment.badge": "alineamiento",
+  "geo.nav.label": "Navegación de la página",
+  "geo.nav.timeline": "Cronología",
+  "geo.nav.configs": "Configuraciones",
+  "geo.nav.themes": "Temas",
+  "geo.nav.index": "Índice",
+  "geo.nav.bibliography": "Bibliografía",
+  "geo.overview.title": "El año de un vistazo",
+  "geo.overview.majors": "Configuraciones mayores",
+  "geo.overview.next_event": "Próximo evento",
+  "geo.overview.eclipses": "Eclipses",
+  "geo.overview.alignment": "Alineamiento del año",
 
   // ── Impacto por país (cartas nacionales, tradición de Campion) ──
   "geo.mode.country": "Impacto por país",
