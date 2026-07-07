@@ -291,6 +291,11 @@ function GeopoliticaContent() {
   const [mode, setMode] = useState<Mode>("world");
   const [year, setYear] = useState<number>(YEARS[0]);
   const pendingConfigRef = useRef<string | null>(null);
+  // true cuando el próximo cambio de selectedConfigId viene de una selección
+  // automática (carga de página, deep-link, cambio de filtro) y no de un
+  // clic interactivo — el efecto de vistas enlazadas (C3) lo consume y lo
+  // resetea para no auto-scrollear la página nada más cargar.
+  const autoSelectRef = useRef(false);
   // Se vuelve true tras aplicar los searchParams entrantes una vez montado;
   // hasta entonces, el efecto de sincronización de URL no debe ejecutarse
   // (pisaría la URL con los valores neutros antes de leer los reales).
@@ -495,12 +500,17 @@ function GeopoliticaContent() {
     const pending = pendingConfigRef.current;
     if (pending && configs.some((c) => c.id === pending)) {
       pendingConfigRef.current = null;
+      // Selección automática (carga de página / deep-link): NO debe disparar
+      // el scrollIntoView de vistas enlazadas (C3) — solo lo hacen las
+      // selecciones interactivas del usuario tras el primer render.
+      autoSelectRef.current = true;
       setSelectedConfigId(pending);
       if (!filteredConfigs.some((c) => c.id === pending)) setFilterMode("all");
       setCompareEra(null);
       setCompareMode("era");
       return;
     }
+    autoSelectRef.current = true;
     setSelectedConfigId((prev) => {
       if (prev && filteredConfigs.some((c) => c.id === prev)) return prev;
       const withAnalog = filteredConfigs.find((c) => c.analogs.length > 0);
@@ -572,6 +582,12 @@ function GeopoliticaContent() {
   // "nearest" evita saltos cuando ya son visibles; respeta reduced-motion.
   useEffect(() => {
     if (!selectedConfigId) return;
+    if (autoSelectRef.current) {
+      // Selección automática (carga de página, deep-link, cambio de filtro):
+      // no se auto-scrollea la página, solo las selecciones interactivas.
+      autoSelectRef.current = false;
+      return;
+    }
     const behavior = prefersReducedMotion() ? "auto" : "smooth";
     const card = document.querySelector(`[data-config-id="${CSS.escape(selectedConfigId)}"]`);
     card?.scrollIntoView({ behavior, block: "nearest" });
