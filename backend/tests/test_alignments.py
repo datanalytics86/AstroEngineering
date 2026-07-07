@@ -3,7 +3,7 @@ post-proceso sobre las configs kind="aspect" ya detectadas. Ninguna fecha se
 asume de memoria: cada aserción recomputa el cielo con las funciones del
 propio módulo."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi.testclient import TestClient
 
@@ -146,6 +146,43 @@ def test_alignment_endpoint_returns_valid_response_and_country_mode():
     assert "national_impacts" in data_country
     for impact in data_country["national_impacts"]:
         assert impact["importance"] in {"crítica", "alta", "media", "baja"}
+
+
+def test_narrow_range_around_compactness_date_keeps_full_alignment():
+    """Regresión: un rango estrecho que contiene la fecha de compacidad pero
+    NO todas las fechas exactas de los componentes debe devolver el
+    alineamiento COMPLETO (el escaneo de alineamientos se amplía más allá del
+    rango pedido), sin que las configs de par fuera de rango se cuelen en la
+    respuesta."""
+    full = build_mundane_forecast("2026-01-01", "2026-12-31")
+    full_alignment = next(
+        c for c in full["configurations"]
+        if c["kind"] == "alignment" and len(c["bodies"]) >= 4
+    )
+    exact = full_alignment["exact_date"]  # derivada del motor, no de memoria
+
+    # Rango de ±2 días alrededor de la compacidad: más corto que la ventana
+    # del alineamiento (window_start→window_end), así que deja componentes fuera.
+    center = datetime.fromisoformat(exact)
+    start = (center - timedelta(days=2)).strftime("%Y-%m-%d")
+    end = (center + timedelta(days=2)).strftime("%Y-%m-%d")
+    assert full_alignment["window_start"] < start or full_alignment["window_end"] > end
+
+    narrow = build_mundane_forecast(start, end)
+    narrow_alignment = next(
+        (c for c in narrow["configurations"]
+         if c["kind"] == "alignment" and set(c["bodies"]) == set(full_alignment["bodies"])),
+        None,
+    )
+    assert narrow_alignment is not None
+    assert narrow_alignment["exact_date"] == exact
+    assert len(narrow_alignment["components"]) == len(full_alignment["components"])
+
+    # Las configs de par del escaneo ampliado NO deben filtrarse a la respuesta
+    # si su fecha exacta cae fuera del rango pedido.
+    for c in narrow["configurations"]:
+        if c["kind"] != "alignment":
+            assert start <= c["exact_date"] <= end, c["id"]
 
 
 def test_full_suite_context_sanity():

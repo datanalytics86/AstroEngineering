@@ -562,6 +562,11 @@ def find_eclipses(start_date_str: str, end_date_str: str) -> list[dict]:
 # cada par individual (que se conservan intactas).
 ALIGNMENT_CLUSTER_WINDOW_DAYS = 20
 ALIGNMENT_SCAN_PADDING_DAYS = 5
+# Margen (días) con que se amplía el escaneo de aspectos SOLO para detectar
+# alineamientos: un componente puede tener su fecha exacta fuera del rango
+# pedido aunque la fecha de compacidad del alineamiento caiga dentro. Cubre
+# el encadenamiento del cluster (20) más el padding del escaneo de compacidad.
+ALIGNMENT_EDGE_MARGIN_DAYS = ALIGNMENT_CLUSTER_WINDOW_DAYS + ALIGNMENT_SCAN_PADDING_DAYS
 
 
 def _alignment_id(bodies: list[str], exact_date: str) -> str:
@@ -1315,24 +1320,39 @@ def build_mundane_forecast(
         impactos natales/nacionales (los eclipses solo vía aspectos duros, ver
         find_natal_impacts).
       - alineamientos multi-planeta (find_alignments): post-proceso sobre las
-        configs kind=="aspect" ya clampeadas al rango; las configs de par
-        individuales que los componen se conservan intactas como tarjetas
-        propias. No participan en `probable_themes` ni en el índice cíclico;
+        configs kind=="aspect" de un escaneo AMPLIADO (±ALIGNMENT_EDGE_MARGIN_DAYS),
+        para no perder componentes cuya fecha exacta cae fuera del rango pedido;
+        el alineamiento se filtra por su propia fecha de compacidad. Las configs
+        de par individuales que los componen se conservan intactas como tarjetas
+        propias (clampeadas al rango). No participan en `probable_themes` ni en el índice cíclico;
         sí participan en los impactos natales/nacionales. NOTA: si una config
         componente ya generó un impacto natal por su cuenta, el alineamiento
         puede reportar un impacto adicional/ligeramente distinto para el mismo
         planeta natal (no se deduplica contra las configs componentes).
     """
-    configs = find_mundane_configurations(start_date_str, end_date_str)
+    # El escaneo de aspectos/ingresos se hace sobre una ventana AMPLIADA
+    # (±ALIGNMENT_EDGE_MARGIN_DAYS): los alineamientos necesitan ver componentes
+    # cuya fecha exacta cae fuera del rango pedido aunque su fecha de compacidad
+    # caiga dentro (find_alignments ya filtra el alineamiento sintetizado por su
+    # propia exact_date). Las configs de par se clampean al rango DESPUÉS, así
+    # que la respuesta no cambia de forma.
+    scan_start = (
+        datetime.fromisoformat(start_date_str) - timedelta(days=ALIGNMENT_EDGE_MARGIN_DAYS)
+    ).strftime("%Y-%m-%d")
+    scan_end = (
+        datetime.fromisoformat(end_date_str) + timedelta(days=ALIGNMENT_EDGE_MARGIN_DAYS)
+    ).strftime("%Y-%m-%d")
+    configs_expanded = find_mundane_configurations(scan_start, scan_end)
     triggers = find_mars_triggers(start_date_str, end_date_str)
     eclipses = find_eclipses(start_date_str, end_date_str)
 
+    alignments = find_alignments(configs_expanded, start_date_str, end_date_str)
+
     # Clamp: descarta configuraciones/disparadores/eclipses cuya fecha exacta
-    # cayó fuera del rango solicitado (puede ocurrir cuando el refinamiento
-    # binario de una pasada retrógrada cercana al límite del rango converge
-    # fuera de él).
+    # cayó fuera del rango solicitado (las configs del escaneo ampliado, y las
+    # pasadas cuyo refinamiento binario cerca del límite converge fuera de él).
     configs = [
-        c for c in configs
+        c for c in configs_expanded
         if start_date_str <= c["exact_date"] <= end_date_str
     ]
     triggers = [
@@ -1343,7 +1363,6 @@ def build_mundane_forecast(
         e for e in eclipses
         if start_date_str <= e["exact_date"] <= end_date_str
     ]
-    alignments = find_alignments(configs, start_date_str, end_date_str)
 
     configurations_out = []
     theme_counts: dict[str, int] = {}
