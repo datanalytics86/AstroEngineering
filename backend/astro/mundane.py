@@ -554,6 +554,209 @@ def find_eclipses(start_date_str: str, end_date_str: str) -> list[dict]:
     return eclipses
 
 
+# ── Alineamientos multi-planeta (post-proceso sobre configs kind=="aspect") ────
+# Cuando 3+ cuerpos lentos forman una red de aspectos mayores concentrada en el
+# tiempo (doctrina de "concentración planetaria" de Barbault: cuantos más
+# cuerpos lentos entrelazados en aspectos simultáneos, mayor la intensidad
+# cíclica del período), se sintetiza como UNA figura además de las tarjetas de
+# cada par individual (que se conservan intactas).
+ALIGNMENT_CLUSTER_WINDOW_DAYS = 20
+ALIGNMENT_SCAN_PADDING_DAYS = 5
+
+
+def _alignment_id(bodies: list[str], exact_date: str) -> str:
+    return "alineamiento_" + "_".join(_slugify(b) for b in bodies) + "_" + exact_date.replace("-", "")
+
+
+def _orb_sum_for_group(
+    group_configs: list[dict],
+    aspect_angle_map: dict[str, float],
+    positions: dict[str, float],
+) -> float:
+    total = 0.0
+    for cfg in group_configs:
+        body_a, body_b = cfg["bodies"]
+        angle = angular_distance(positions[body_a], positions[body_b])
+        total += abs(angle - aspect_angle_map[cfg["aspect"]])
+    return total
+
+
+def _build_alignment(group_configs: list[dict], bodies: list[str]) -> dict:
+    """Dado un grupo de configs de aspecto (≥3 cuerpos conectados, dentro de la
+    misma ventana temporal), calcula la fecha de máxima compacidad (mínima
+    suma de orbes de todos los pares componentes) y sintetiza la figura."""
+    aspect_angle_map = {a["name"]: a["angle"] for a in ASPECTS}
+
+    component_dates = [datetime.fromisoformat(c["exact_date"]) for c in group_configs]
+    window_start_dt = min(component_dates)
+    window_end_dt = max(component_dates)
+
+    def scan(range_start: datetime, range_end: datetime) -> tuple[datetime | None, float]:
+        best_dt, best_sum = None, None
+        current = range_start
+        while current <= range_end:
+            jd = to_julian_day(current.year, current.month, current.day, 12.0)
+            positions: dict[str, float] = {}
+            ok = True
+            for body in bodies:
+                pos = calc_planet_position(jd, PLANET_IDS[body])
+                if pos is None:
+                    ok = False
+                    break
+                positions[body] = pos["longitude"]
+            if ok:
+                total = _orb_sum_for_group(group_configs, aspect_angle_map, positions)
+                if best_sum is None or total < best_sum:
+                    best_sum, best_dt = total, current
+            current += timedelta(days=1)
+        return best_dt, (best_sum if best_sum is not None else 999.0)
+
+    padded_start = window_start_dt - timedelta(days=ALIGNMENT_SCAN_PADDING_DAYS)
+    padded_end = window_end_dt + timedelta(days=ALIGNMENT_SCAN_PADDING_DAYS)
+    best_dt, _ = scan(padded_start, padded_end)
+
+    # Salvaguarda: la fecha de máxima compacidad debe caer dentro de la ventana
+    # de los propios componentes (window_start..window_end). Si el escaneo con
+    # margen la ubicó fuera (no debería ocurrir en la práctica, ver docstring),
+    # se re-escanea restringido a la ventana estricta.
+    if best_dt is None or not (window_start_dt <= best_dt <= window_end_dt):
+        strict_dt, _ = scan(window_start_dt, window_end_dt)
+        if strict_dt is not None:
+            best_dt = strict_dt
+
+    exact_date = best_dt.strftime("%Y-%m-%d")
+    jd_best = to_julian_day(best_dt.year, best_dt.month, best_dt.day, 12.0)
+    positions_best = {
+        body: calc_planet_position(jd_best, PLANET_IDS[body])["longitude"] for body in bodies
+    }
+
+    sky = compute_mundane_sky(exact_date)
+
+    components = []
+    for cfg in group_configs:
+        body_a, body_b = cfg["bodies"]
+        angle = angular_distance(positions_best[body_a], positions_best[body_b])
+        orb = abs(angle - aspect_angle_map[cfg["aspect"]])
+        components.append({
+            "bodies": cfg["bodies"],
+            "aspect": cfg["aspect"],
+            "exact_date": cfg["exact_date"],
+            "orb": round(orb, 4),
+        })
+
+    # alignment_degree: promedio del grado-en-signo si TODOS los cuerpos están
+    # dentro de tolerancia de 2.5° entre sí (mismo grado crítico, sin importar
+    # el signo — ej. todos a ~4° de su signo respectivo).
+    degrees_in_sign = []
+    for body in bodies:
+        entry = next((s for s in sky if s["name"] == body), None)
+        if entry is None:
+            degrees_in_sign = None
+            break
+        degrees_in_sign.append(entry["degree_in_sign"])
+
+    alignment_degree = None
+    if degrees_in_sign:
+        avg = sum(degrees_in_sign) / len(degrees_in_sign)
+        if all(abs(d - avg) <= 2.5 for d in degrees_in_sign):
+            alignment_degree = round(avg, 2)
+
+    return {
+        "id": _alignment_id(bodies, exact_date),
+        "exact_date": exact_date,
+        "kind": "alignment",
+        "bodies": bodies,
+        "aspect": None,
+        "sign": None,
+        "longitudes": positions_best,
+        "signature": {"alignment": bodies},
+        "sky": sky,
+        "analogs": [],
+        "themes": [],
+        "window_start": window_start_dt.strftime("%Y-%m-%d"),
+        "window_end": window_end_dt.strftime("%Y-%m-%d"),
+        "components": components,
+        "alignment_degree": alignment_degree,
+    }
+
+
+class _UnionFind:
+    def __init__(self) -> None:
+        self.parent: dict[str, str] = {}
+
+    def add(self, x: str) -> None:
+        self.parent.setdefault(x, x)
+
+    def find(self, x: str) -> str:
+        while self.parent[x] != x:
+            self.parent[x] = self.parent[self.parent[x]]
+            x = self.parent[x]
+        return x
+
+    def union(self, a: str, b: str) -> None:
+        ra, rb = self.find(a), self.find(b)
+        if ra != rb:
+            self.parent[ra] = rb
+
+
+def find_alignments(configurations: list[dict], start_date_str: str, end_date_str: str) -> list[dict]:
+    """
+    Post-proceso sobre las configs kind=="aspect" ya detectadas por
+    find_mundane_configurations: agrupa las que caen en una ventana móvil de
+    ≤ ALIGNMENT_CLUSTER_WINDOW_DAYS días (encadenamiento por vecino más
+    cercano, single-linkage) y cuyos cuerpos forman, dentro de ese grupo
+    temporal, un grafo conexo de ≥ 3 cuerpos (unión de pares vía union-find).
+    Cada componente conexa calificada se sintetiza como una configuración
+    kind=="alignment" (ver `_build_alignment`). Las configs de par originales
+    NO se modifican ni eliminan.
+    """
+    aspect_configs = sorted(
+        (c for c in configurations if c.get("kind") == "aspect"),
+        key=lambda c: c["exact_date"],
+    )
+    if not aspect_configs:
+        return []
+
+    # 1) Encadenamiento temporal: nueva ventana si el salto desde la última
+    #    fecha exacta del cluster actual excede ALIGNMENT_CLUSTER_WINDOW_DAYS.
+    clusters: list[list[dict]] = []
+    for cfg in aspect_configs:
+        if clusters:
+            last_date = datetime.fromisoformat(clusters[-1][-1]["exact_date"])
+            gap = (datetime.fromisoformat(cfg["exact_date"]) - last_date).days
+            if gap <= ALIGNMENT_CLUSTER_WINDOW_DAYS:
+                clusters[-1].append(cfg)
+                continue
+        clusters.append([cfg])
+
+    alignments: list[dict] = []
+    for cluster in clusters:
+        uf = _UnionFind()
+        for cfg in cluster:
+            for body in cfg["bodies"]:
+                uf.add(body)
+        for cfg in cluster:
+            body_a, body_b = cfg["bodies"]
+            uf.union(body_a, body_b)
+
+        groups: dict[str, list[dict]] = {}
+        for cfg in cluster:
+            root = uf.find(cfg["bodies"][0])
+            groups.setdefault(root, []).append(cfg)
+
+        for group_configs in groups.values():
+            bodies = sorted({b for cfg in group_configs for b in cfg["bodies"]})
+            if len(bodies) < 3:
+                continue
+            alignments.append(_build_alignment(group_configs, bodies))
+
+    alignments = [
+        a for a in alignments if start_date_str <= a["exact_date"] <= end_date_str
+    ]
+    alignments.sort(key=lambda a: a["exact_date"])
+    return alignments
+
+
 # ── Eventos históricos curados ────────────────────────────────────────────────
 # Firma = configuración recurrente que enlaza analógicamente con 2026-2027.
 # Cada evento puede tener una firma única (`signature`) o varias (`signatures`,
@@ -1009,7 +1212,10 @@ def find_natal_impacts(configs: list[dict], natal_planets: list[dict]) -> list[d
     Para cada configuración, detecta aspectos entre las longitudes de sus
     cuerpos y los planetas natales provistos. Usa los mismos pesos/orbes que
     los tránsitos normales (TRANSIT_ORBS, score_transit, importance_label).
-    Los eclipses (`kind == "eclipse"`) solo consideran aspectos duros.
+    Los eclipses (`kind == "eclipse"`) y los alineamientos (`kind ==
+    "alignment"`) solo consideran aspectos duros (☌ ☍ □, orbe ≤ 3° vía
+    TRANSIT_ORBS) — para el alineamiento, sobre cada uno de sus cuerpos
+    componentes.
     """
     impacts: list[dict] = []
     all_aspect_angle_map = {a["name"]: a["angle"] for a in ASPECTS}
@@ -1020,7 +1226,9 @@ def find_natal_impacts(configs: list[dict], natal_planets: list[dict]) -> list[d
 
     for config in configs:
         aspect_angle_map = (
-            eclipse_aspect_angle_map if config.get("kind") == "eclipse" else all_aspect_angle_map
+            eclipse_aspect_angle_map
+            if config.get("kind") in ("eclipse", "alignment")
+            else all_aspect_angle_map
         )
         for body, lon in config["longitudes"].items():
             for np in natal_planets:
@@ -1106,6 +1314,14 @@ def build_mundane_forecast(
         `probable_themes` ni en el índice cíclico; sí participan en los
         impactos natales/nacionales (los eclipses solo vía aspectos duros, ver
         find_natal_impacts).
+      - alineamientos multi-planeta (find_alignments): post-proceso sobre las
+        configs kind=="aspect" ya clampeadas al rango; las configs de par
+        individuales que los componen se conservan intactas como tarjetas
+        propias. No participan en `probable_themes` ni en el índice cíclico;
+        sí participan en los impactos natales/nacionales. NOTA: si una config
+        componente ya generó un impacto natal por su cuenta, el alineamiento
+        puede reportar un impacto adicional/ligeramente distinto para el mismo
+        planeta natal (no se deduplica contra las configs componentes).
     """
     configs = find_mundane_configurations(start_date_str, end_date_str)
     triggers = find_mars_triggers(start_date_str, end_date_str)
@@ -1127,6 +1343,7 @@ def build_mundane_forecast(
         e for e in eclipses
         if start_date_str <= e["exact_date"] <= end_date_str
     ]
+    alignments = find_alignments(configs, start_date_str, end_date_str)
 
     configurations_out = []
     theme_counts: dict[str, int] = {}
@@ -1155,6 +1372,7 @@ def build_mundane_forecast(
     # timeline.
     configurations_out.extend(triggers)
     configurations_out.extend(eclipses)
+    configurations_out.extend(alignments)
     configurations_out.sort(key=lambda c: c["exact_date"])
 
     probable_themes = [
@@ -1163,11 +1381,11 @@ def build_mundane_forecast(
 
     natal_impacts: list[dict] = []
     if natal_planets:
-        natal_impacts = find_natal_impacts(configs + triggers + eclipses, natal_planets)
+        natal_impacts = find_natal_impacts(configs + triggers + eclipses + alignments, natal_planets)
 
     national_impacts: list[dict] = []
     if national_planets:
-        national_impacts = find_natal_impacts(configs + triggers + eclipses, national_planets)
+        national_impacts = find_natal_impacts(configs + triggers + eclipses + alignments, national_planets)
 
     cyclic_index = compute_cyclic_index(start_date_str, end_date_str)
 

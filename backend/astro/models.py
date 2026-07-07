@@ -252,10 +252,18 @@ class NatalImpact(BaseModel):
     importance: str
 
 
+class AlignmentComponent(BaseModel):
+    """Uno de los aspectos de par que compone un alineamiento multi-planeta."""
+    bodies: list[str]
+    aspect: str
+    exact_date: str
+    orb: float
+
+
 class MundaneConfiguration(BaseModel):
     id: str
     exact_date: str
-    kind: str  # "aspect" | "ingress" | "trigger" | "eclipse"
+    kind: str  # "aspect" | "ingress" | "trigger" | "eclipse" | "alignment"
     bodies: list[str]
     aspect: Optional[str] = None
     sign: Optional[str] = None
@@ -264,10 +272,12 @@ class MundaneConfiguration(BaseModel):
     sky: list[MundaneSkyBody]
     analogs: list[MundaneAnalog] = []
     themes: list[str] = []  # temas agregados de los análogos de ESTA configuración
-    window_start: Optional[str] = None  # disparadores: primer día con orbe <= orbe de detección
-    window_end: Optional[str] = None    # disparadores: último día con orbe <= orbe de detección
+    window_start: Optional[str] = None  # disparadores/alineamientos: primer día/fecha exacta relevante
+    window_end: Optional[str] = None    # disparadores/alineamientos: último día/fecha exacta relevante
     eclipse_type: Optional[str] = None      # eclipses: "solar" | "lunar"
     eclipse_subtype: Optional[str] = None   # eclipses: "total" | "anular" | "parcial" | "penumbral"
+    components: Optional[list[AlignmentComponent]] = None  # alineamientos: aspectos de par que lo componen
+    alignment_degree: Optional[float] = None  # alineamientos: grado-en-signo común, si todos coinciden (±2.5°)
 
 
 class CyclicIndexPoint(BaseModel):
