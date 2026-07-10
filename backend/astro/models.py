@@ -334,17 +334,34 @@ class CalendarBodyPos(BaseModel):
     longitude: Optional[float] = None
 
 
+class CalendarFastPos(BaseModel):
+    name: str
+    sign: str
+    degree_in_sign: float
+    retrograde: bool = False
+
+
+class CalendarSlowSegment(BaseModel):
+    name: str
+    sign: str
+    from_date: str
+    to_date: str
+    retrograde_mid: bool = False
+
+
 class CalendarDay(BaseModel):
     date: str
     moon: CalendarBodyPos
     sun: CalendarBodyPos
     events: list[CalendarEvent] = []
+    fast: list[CalendarFastPos] = []
 
 
 class CalendarMonth(BaseModel):
     year: int
     month: int
     days: list[CalendarDay]
+    slow: list[CalendarSlowSegment] = []
 
 
 class CalendarResponse(BaseModel):

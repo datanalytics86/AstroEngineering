@@ -202,12 +202,30 @@ def compute_daily_calendar(year: int, month: int, months: int = 3) -> list[dict]
         sun_sign = today.get("Sol", {}).get("sign", "")
         sun_deg = today.get("Sol", {}).get("degree_in_sign", 0.0)
 
+        fast = []
+        for body in ["Luna"] + FAST_BODIES:
+            info = today.get(body)
+            if info is None:
+                continue
+            fast.append({
+                "name": body,
+                "sign": info["sign"],
+                "degree_in_sign": round(info["degree_in_sign"], 2),
+                "retrograde": info.get("speed", 0.0) < 0,
+            })
+
         days_out[iso] = {
             "date": iso,
             "moon": {"sign": moon_sign, "degree_in_sign": round(moon_deg, 2), "longitude": round(moon_lon, 4)},
             "sun": {"sign": sun_sign, "degree_in_sign": round(sun_deg, 2)},
             "events": events,
+            "fast": fast,
         }
+
+    # Índice de snapshots por fecha ISO para armar los segmentos lentos por mes
+    snapshot_by_date: dict[str, dict] = {}
+    for i, cur_date in enumerate([range_start + timedelta(days=k) for k in range(total_days)]):
+        snapshot_by_date[cur_date.isoformat()] = snapshots[i]
 
     # Agrupar por mes en orden
     months_out: list[dict] = []
@@ -215,14 +233,70 @@ def compute_daily_calendar(year: int, month: int, months: int = 3) -> list[dict]
     for _ in range(months):
         num_days = _pycalendar.monthrange(cursor_year, cursor_month)[1]
         month_days = []
+        month_dates = []
         for d in range(1, num_days + 1):
             iso = date(cursor_year, cursor_month, d).isoformat()
+            month_dates.append(iso)
             if iso in days_out:
                 month_days.append(days_out[iso])
-        months_out.append({"year": cursor_year, "month": cursor_month, "days": month_days})
+
+        slow_segments = []
+        for body in SLOW_BODIES:
+            segment_start = None
+            segment_sign = None
+            for iso in month_dates:
+                snap = snapshot_by_date.get(iso, {})
+                info = snap.get(body)
+                if info is None:
+                    continue
+                if segment_sign is None:
+                    segment_start = iso
+                    segment_sign = info["sign"]
+                elif info["sign"] != segment_sign:
+                    seg_end = _day_before(iso)
+                    slow_segments.append(_build_slow_segment(
+                        body, segment_sign, segment_start, seg_end, snapshot_by_date
+                    ))
+                    segment_start = iso
+                    segment_sign = info["sign"]
+            if segment_sign is not None:
+                seg_end = month_dates[-1]
+                slow_segments.append(_build_slow_segment(
+                    body, segment_sign, segment_start, seg_end, snapshot_by_date
+                ))
+
+        months_out.append({
+            "year": cursor_year,
+            "month": cursor_month,
+            "days": month_days,
+            "slow": slow_segments,
+        })
         cursor_month += 1
         if cursor_month > 12:
             cursor_month = 1
             cursor_year += 1
 
     return months_out
+
+
+def _day_before(iso: str) -> str:
+    d = date.fromisoformat(iso) - timedelta(days=1)
+    return d.isoformat()
+
+
+def _build_slow_segment(body: str, sign: str, from_date: str, to_date: str,
+                         snapshot_by_date: dict[str, dict]) -> dict:
+    start = date.fromisoformat(from_date)
+    end = date.fromisoformat(to_date)
+    mid = start + (end - start) // 2
+    mid_iso = mid.isoformat()
+    if mid_iso not in snapshot_by_date:
+        mid_iso = from_date
+    mid_info = snapshot_by_date.get(mid_iso, {}).get(body, {})
+    return {
+        "name": body,
+        "sign": sign,
+        "from_date": from_date,
+        "to_date": to_date,
+        "retrograde_mid": mid_info.get("speed", 0.0) < 0,
+    }

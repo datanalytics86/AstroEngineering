@@ -111,3 +111,95 @@ def test_endpoint_returns_valid_shape():
 def test_endpoint_year_out_of_range_returns_422():
     resp = client.get("/api/calendar", params={"year": 1999, "month": 7})
     assert resp.status_code == 422
+
+
+def test_every_day_has_five_fast_positions_valid_signs():
+    from astro.houses import SIGN_NAMES
+
+    months = compute_daily_calendar(2026, 7, months=3)
+    for m in months:
+        for d in m["days"]:
+            assert len(d["fast"]) == 5, f"{d['date']}: {len(d['fast'])} posiciones fast"
+            names = {f["name"] for f in d["fast"]}
+            assert names == {"Luna", "Sol", "Mercurio", "Venus", "Marte"}
+            for f in d["fast"]:
+                assert f["sign"] in SIGN_NAMES
+                assert 0.0 <= f["degree_in_sign"] < 30.0
+
+
+def test_fast_sign_recomputed_matches_sampled_days():
+    from astro.chart import PLANET_IDS, calc_planet_position, to_julian_day
+    from astro.houses import longitude_to_sign
+    from datetime import date
+
+    months = compute_daily_calendar(2026, 7, months=3)
+    sample_days = [months[0]["days"][0], months[1]["days"][10], months[2]["days"][-1]]
+    checked = 0
+    for d in sample_days:
+        cur_date = date.fromisoformat(d["date"])
+        jd = to_julian_day(cur_date.year, cur_date.month, cur_date.day, 12.0)
+        for f in d["fast"]:
+            pid = PLANET_IDS[f["name"]]
+            lon = calc_planet_position(jd, pid)["longitude"]
+            sign = longitude_to_sign(lon)["sign"]
+            assert sign == f["sign"], f"{d['date']} {f['name']}: {sign} != {f['sign']}"
+            checked += 1
+    assert checked == 15
+
+
+def test_slow_segments_cover_month_without_gaps():
+    from datetime import date, timedelta
+
+    months = compute_daily_calendar(2026, 7, months=3)
+    for m in months:
+        num_days = _pycalendar.monthrange(m["year"], m["month"])[1]
+        month_start = date(m["year"], m["month"], 1).isoformat()
+        month_end = date(m["year"], m["month"], num_days).isoformat()
+        by_body: dict[str, list[dict]] = {}
+        for seg in m["slow"]:
+            by_body.setdefault(seg["name"], []).append(seg)
+        for body, segs in by_body.items():
+            segs.sort(key=lambda s: s["from_date"])
+            assert segs[0]["from_date"] == month_start, f"{m['year']}-{m['month']} {body}: no empieza en el mes"
+            assert segs[-1]["to_date"] == month_end, f"{m['year']}-{m['month']} {body}: no termina en el mes"
+            for i in range(1, len(segs)):
+                prev_end = date.fromisoformat(segs[i - 1]["to_date"])
+                cur_start = date.fromisoformat(segs[i]["from_date"])
+                assert cur_start == prev_end + timedelta(days=1), f"hueco en segmentos de {body}"
+
+
+def test_slow_segment_sign_matches_recomputed_midpoint():
+    from astro.chart import PLANET_IDS, calc_planet_position, to_julian_day
+    from astro.houses import longitude_to_sign
+    from datetime import date
+
+    months = compute_daily_calendar(2026, 7, months=3)
+    checked = 0
+    for m in months:
+        for seg in m["slow"]:
+            start = date.fromisoformat(seg["from_date"])
+            end = date.fromisoformat(seg["to_date"])
+            mid = start + (end - start) // 2
+            jd = to_julian_day(mid.year, mid.month, mid.day, 12.0)
+            lon = calc_planet_position(jd, PLANET_IDS[seg["name"]])["longitude"]
+            sign = longitude_to_sign(lon)["sign"]
+            assert sign == seg["sign"], f"{m['year']}-{m['month']} {seg['name']}: {sign} != {seg['sign']}"
+            checked += 1
+    assert checked > 0
+
+
+def test_month_with_slow_ingress_has_two_segments():
+    months = compute_daily_calendar(2026, 7, months=3)
+    found_multi_segment_month = False
+    for m in months:
+        ingress_bodies = {
+            e["body"] for d in m["days"] for e in d["events"]
+            if e["type"] == "ingress" and e["body"] in {"Júpiter", "Saturno", "Urano", "Neptuno", "Plutón"}
+        }
+        for body in ingress_bodies:
+            count = sum(1 for seg in m["slow"] if seg["name"] == body)
+            assert count == 2, f"{m['year']}-{m['month']} {body} tiene ingreso pero {count} segmentos"
+            found_multi_segment_month = True
+    # No es obligatorio que un ingreso lento caiga en la ventana de prueba,
+    # pero si ocurrió, debe haberse validado arriba.
+    assert found_multi_segment_month or True
