@@ -329,3 +329,45 @@ export interface MundaneResponse {
   national_planets?: PlanetPosition[];
   national_chart_note?: NationalChartNote | null;
 }
+
+// ── Calendario astrológico diario ───────────────────────────────────────────
+
+export type CalendarEventType = "ingress" | "moon_phase" | "station" | "aspect" | "eclipse";
+export type MoonPhaseName = "nueva" | "creciente" | "llena" | "menguante";
+export type StationType = "retrograde" | "direct";
+
+export interface CalendarEvent {
+  type: CalendarEventType;
+  body?: string | null;
+  bodies?: string[] | null;
+  sign?: string | null;
+  phase?: MoonPhaseName | null;
+  station?: StationType | null;
+  aspect?: string | null;
+  orb?: number | null;
+  eclipse_type?: EclipseType | null;
+  eclipse_subtype?: EclipseSubtype | null;
+}
+
+export interface CalendarBodyPos {
+  sign: string;
+  degree_in_sign: number;
+  longitude?: number | null;
+}
+
+export interface CalendarDay {
+  date: string; // YYYY-MM-DD
+  moon: CalendarBodyPos;
+  sun: CalendarBodyPos;
+  events: CalendarEvent[];
+}
+
+export interface CalendarMonth {
+  year: number;
+  month: number;
+  days: CalendarDay[];
+}
+
+export interface CalendarResponse {
+  months: CalendarMonth[];
+}

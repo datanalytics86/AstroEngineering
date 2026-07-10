@@ -177,7 +177,7 @@ export default function PortadaPage() {
       {/* ── Features grid ── */}
       <section className="bg-white border-t border-border py-16">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
             {[
               {
                 icon: "⊕",
@@ -206,6 +206,13 @@ export default function PortadaPage() {
                 descKey: "landing.features.geo.desc" as const,
                 href: "/geopolitica",
                 accent: "text-indigo-600",
+              },
+              {
+                icon: "📅",
+                titleKey: "landing.features.calendar.title" as const,
+                descKey: "landing.features.calendar.desc" as const,
+                href: "/calendario",
+                accent: "text-teal-600",
               },
             ].map((f) => (
               <div

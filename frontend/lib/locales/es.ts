@@ -3,6 +3,7 @@ export const es = {
   "nav.home": "Inicio",
   "nav.new_chart": "Nueva carta",
   "nav.learn": "Aprende",
+  "nav.calendar": "Calendario",
 
   // ── Común ──
   "common.error.waking": "El servidor está despertando (puede tardar ~50s la primera vez). Reintentando…",
@@ -43,6 +44,9 @@ export const es = {
   "landing.features.geo.title": "Análisis Geopolítico",
   "landing.features.geo.desc":
     "Ciclos mundiales de planetas lentos, eclipses e impacto por país o en tu propia carta natal.",
+  "landing.features.calendar.title": "Calendario Astrológico",
+  "landing.features.calendar.desc":
+    "El cielo día a día: Luna, Sol y planetas rápidos con ingresos, fases, estaciones y aspectos exactos.",
   "landing.bottom_cta.title": "Comienza con tu carta natal",
   "landing.bottom_cta.subtitle":
     "Solo necesitas fecha, hora y lugar de nacimiento. El cálculo tarda menos de 5 segundos.",
@@ -101,6 +105,7 @@ export const es = {
   "transits.calculating": "Calculando tránsitos de",
   "transits.title": "Tu cielo en movimiento",
   "transits.orientation": "Cada barra es un tránsito sobre tu carta: de cuándo entra en orbe a cuándo sale; ♦ = exacto.",
+  "transits.calendar_cta": "📅 Ver el cielo día a día en el Calendario →",
   "transits.nav.home": "Inicio",
   "transits.nav.new": "Nueva carta",
   "transits.nav.natal": "← Carta natal",
@@ -291,6 +296,45 @@ export const es = {
   "geo.country.impacts.none": "Esta configuración no forma aspectos estrechos con la carta nacional.",
   "geo.country.chart_used": "Carta usada",
   "geo.country.wheel_caption": "Carta nacional de",
+  "geo.calendar_cta": "📅 El cielo día a día → Calendario astrológico",
+
+  // ── Calendario astrológico diario ──
+  "cal.title": "Calendario astrológico",
+  "cal.subtitle": "El cielo día a día: lectura analógica de clima cotidiano, no un pronóstico de hechos.",
+  "cal.today.label": "Hoy",
+  "cal.today.no_events": "sin eventos mayores",
+  "cal.month.today": "Este mes",
+  "cal.weekday.mon": "Lun",
+  "cal.weekday.tue": "Mar",
+  "cal.weekday.wed": "Mié",
+  "cal.weekday.thu": "Jue",
+  "cal.weekday.fri": "Vie",
+  "cal.weekday.sat": "Sáb",
+  "cal.weekday.sun": "Dom",
+  "cal.detail.title": "Detalle del día",
+  "cal.detail.moon": "Luna en",
+  "cal.detail.sun": "Sol en",
+  "cal.detail.no_events": "Día sin eventos destacados: la Luna sigue su recorrido habitual.",
+  "cal.legend.title": "Leyenda",
+  "cal.legend.ingress": "Ingreso de signo",
+  "cal.legend.moon_phase": "Fase lunar",
+  "cal.legend.station": "Estación retrógrada/directa",
+  "cal.legend.aspect": "Aspecto exacto",
+  "cal.legend.eclipse": "Eclipse",
+  "cal.event.ingress": "Ingreso",
+  "cal.event.moon_phase": "Fase lunar",
+  "cal.event.station": "Estación",
+  "cal.event.aspect": "Aspecto",
+  "cal.event.eclipse": "Eclipse",
+  "cal.list.title": "Días con eventos",
+  "cal.list.no_events_group": "Días sin eventos",
+  "cal.mobile.hint": "Vista de lista para pantallas pequeñas",
+  "cal.error.waking": "El servidor está despertando. Reintentando en unos segundos…",
+  "cal.error.retry": "Reintentar",
+  "cal.loading": "Cargando calendario…",
+  "cal.disclaimer": "Lectura analógica de clima diario, no predicción de hechos concretos.",
+  "cal.aria.day": "Luna en",
+  "cal.aria.events": "eventos",
 } as const;
 
 export type TranslationKeys = keyof typeof es;

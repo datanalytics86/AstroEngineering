@@ -1233,6 +1233,14 @@ function GeopoliticaContent() {
               ))}
             </ul>
           </section>
+
+          {/* Puente al calendario astrológico diario */}
+          <a
+            href="/calendario"
+            className="block bg-teal-50 border border-teal-200 rounded-2xl p-4 text-sm text-teal-800 hover:bg-teal-100 transition-colors"
+          >
+            {t("geo.calendar_cta")}
+          </a>
         </div>
       ) : null}
     </div>

@@ -37,3 +37,29 @@ export async function postWithWakingRetry(
   // Inalcanzable (el bucle siempre retorna o relanza), pero TypeScript no lo sabe.
   throw new Error("unreachable");
 }
+
+/** Variante GET del mismo patrón de tolerancia a cold start. */
+export async function getWithWakingRetry(
+  url: string,
+  onWaking?: () => void,
+): Promise<Response> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url);
+      if ((res.status === 503 || res.status === 502) && attempt === 0) {
+        onWaking?.();
+        await new Promise((r) => setTimeout(r, 5000));
+        continue;
+      }
+      return res;
+    } catch (e) {
+      if (attempt === 0) {
+        onWaking?.();
+        await new Promise((r) => setTimeout(r, 5000));
+        continue;
+      }
+      throw e;
+    }
+  }
+  throw new Error("unreachable");
+}
