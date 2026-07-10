@@ -263,6 +263,113 @@ export function getCalendarEclipseReading(
   return { title: narrative.title, text: narrative.synthesis };
 }
 
+// ── Tránsitos rápidos (posición del día, no evento puntual) ────────────────
+// Composición: arquetipo del planeta × tono corto del signo de destino.
+// Para la Luna se reusa LUNA_EN_SIGNO (ya curada, un texto completo por signo).
+
+const FAST_ARCHETYPE: Record<string, Bilingual> = {
+  Sol: { es: "la vitalidad y el foco", en: "vitality and focus" },
+  Mercurio: { es: "la mente y la comunicación", en: "the mind and communication" },
+  Venus: { es: "los vínculos y los valores", en: "bonds and values" },
+  Marte: { es: "la acción y el impulso", en: "action and drive" },
+};
+
+const SIGN_TONE: Record<string, Bilingual> = {
+  Aries: { es: "toma un tono directo e impaciente", en: "takes on a direct, impatient tone" },
+  Tauro: { es: "se vuelve más pausada y sensorial", en: "turns slower and more sensory" },
+  "Géminis": { es: "se dispersa en varias direcciones a la vez", en: "scatters in several directions at once" },
+  "Cáncer": { es: "se vuelve más sensible y protectora", en: "turns more sensitive and protective" },
+  Leo: { es: "busca brillar y ser vista", en: "seeks to shine and be seen" },
+  Virgo: { es: "se afina en el detalle y lo práctico", en: "sharpens around detail and the practical" },
+  Libra: { es: "busca equilibrio y acuerdo con el otro", en: "seeks balance and agreement with others" },
+  Escorpio: { es: "se intensifica y va al fondo de las cosas", en: "intensifies and digs beneath the surface" },
+  Sagitario: { es: "se abre al horizonte y al entusiasmo", en: "opens toward the horizon and enthusiasm" },
+  Capricornio: { es: "se vuelve seria y orientada a resultados", en: "turns serious and results-oriented" },
+  Acuario: { es: "se distancia un poco y mira lo colectivo", en: "steps back a little and looks to the collective" },
+  Piscis: { es: "difumina bordes y se vuelve intuitiva", en: "blurs edges and turns intuitive" },
+};
+
+export function getFastTransitReading(body: string, sign: string, lang: Lang): string {
+  if (body === "Luna") return getMoonSignReading(sign, lang);
+  const archetype = FAST_ARCHETYPE[body]?.[lang];
+  const tone = SIGN_TONE[sign]?.[lang];
+  if (!archetype || !tone) return "";
+  return lang === "es"
+    ? `${body} en ${sign}: ${archetype} ${tone}.`
+    : `${body} in ${sign}: ${archetype} ${tone}.`;
+}
+
+// ── Tránsitos lentos (telón de fondo del mes/época) ─────────────────────────
+// Textos curados para los placements vigentes 2026-2027 (tono mundano-
+// generacional, coherente con /geopolitica), más generador de respaldo por
+// elemento del signo para cualquier otro placement.
+
+const SLOW_CURATED: Record<string, Bilingual> = {
+  "Júpiter|Cáncer": {
+    es: "Júpiter en Cáncer expande lo que da cobijo: familia, raíces, memoria colectiva y pertenencia. Clima de crecimiento hacia adentro más que hacia afuera.",
+    en: "Jupiter in Cancer expands what shelters us: family, roots, collective memory and belonging. A climate of growth turned inward rather than outward.",
+  },
+  "Júpiter|Leo": {
+    es: "Júpiter en Leo expande la creatividad, el liderazgo y la necesidad de expresión personal. Clima de confianza y ganas de ocupar más espacio.",
+    en: "Jupiter in Leo expands creativity, leadership and the need for personal expression. A climate of confidence and a wish to take up more room.",
+  },
+  "Saturno|Aries": {
+    es: "Saturno en Aries pone estructura y límite a la iniciativa y la acción individual: aprender a sostener el impulso con disciplina, no solo con arranque.",
+    en: "Saturn in Aries brings structure and limit to individual initiative and action: learning to sustain drive with discipline, not just a burst of will.",
+  },
+  "Saturno|Piscis": {
+    es: "Saturno en Piscis pide estructura para lo intangible: límites concretos a lo espiritual, lo artístico y lo colectivo difuso.",
+    en: "Saturn in Pisces asks for structure around the intangible: concrete limits placed on the spiritual, the artistic and the diffusely collective.",
+  },
+  "Urano|Tauro": {
+    es: "Urano en Tauro sacude lo que parecía estable: dinero, recursos, tierra, cuerpo. Cambios imprevistos en lo que se creía permanente.",
+    en: "Uranus in Taurus shakes what seemed stable: money, resources, land, the body. Unforeseen change in what was assumed permanent.",
+  },
+  "Urano|Géminis": {
+    es: "Urano en Géminis acelera y descentraliza la información: nuevas formas de comunicar, aprender y conectar ideas, con más ruptura que continuidad.",
+    en: "Uranus in Gemini speeds up and decentralizes information: new ways of communicating, learning and connecting ideas, with more rupture than continuity.",
+  },
+  "Neptuno|Piscis": {
+    es: "Neptuno en su propio signo disuelve fronteras: imaginación, espiritualidad y confusión colectiva en su expresión más pura.",
+    en: "Neptune in its own sign dissolves boundaries: imagination, spirituality and collective confusion in their purest expression.",
+  },
+  "Neptuno|Aries": {
+    es: "Neptuno en Aries idealiza la acción y el impulso individual: causas, líderes y guerras se visten de ideal antes que de estrategia concreta.",
+    en: "Neptune in Aries idealizes action and individual drive: causes, leaders and conflicts get dressed in ideals rather than concrete strategy.",
+  },
+  "Plutón|Acuario": {
+    es: "Plutón en Acuario transforma lo colectivo: tecnología, redes, instituciones y el propio concepto de comunidad se reescriben en profundidad.",
+    en: "Pluto in Aquarius transforms the collective: technology, networks, institutions and the very concept of community are being rewritten at depth.",
+  },
+};
+
+const SLOW_ARCHETYPE: Record<string, Bilingual> = {
+  "Júpiter": { es: "expande y da confianza a", en: "expands and lends confidence to" },
+  Saturno: { es: "estructura y pone límite a", en: "structures and sets limits on" },
+  Urano: { es: "sacude e innova en", en: "shakes up and innovates within" },
+  Neptuno: { es: "disuelve fronteras e idealiza", en: "dissolves boundaries and idealizes" },
+  "Plutón": { es: "transforma en profundidad", en: "transforms at depth" },
+};
+
+const ELEMENT_TONE: Record<Element, Bilingual> = {
+  fuego: { es: "el ámbito de la iniciativa y la acción colectiva", en: "the realm of initiative and collective action" },
+  tierra: { es: "el ámbito de los recursos y las estructuras concretas", en: "the realm of resources and concrete structures" },
+  aire: { es: "el ámbito de las ideas y los vínculos sociales", en: "the realm of ideas and social bonds" },
+  agua: { es: "el ámbito emocional y colectivo", en: "the emotional and collective realm" },
+};
+
+export function getSlowTransitReading(body: string, sign: string, lang: Lang): string {
+  const curated = SLOW_CURATED[`${body}|${sign}`];
+  if (curated) return curated[lang];
+  const archetype = SLOW_ARCHETYPE[body]?.[lang];
+  const element = SIGN_ELEMENT[sign];
+  const tone = element ? ELEMENT_TONE[element]?.[lang] : undefined;
+  if (!archetype || !tone) return "";
+  return lang === "es"
+    ? `${body} en ${sign} ${archetype} ${tone}. Clima de fondo de la época, cambia cada varios años.`
+    : `${body} in ${sign} ${archetype} ${tone}. A background climate of the era, shifting every several years.`;
+}
+
 // ── Despacho por tipo de evento ─────────────────────────────────────────────
 
 export function getEventReading(event: CalendarEvent, lang: Lang): { title: string; text: string } {

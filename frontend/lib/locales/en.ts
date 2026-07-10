@@ -335,4 +335,11 @@ export const en = {
   "cal.disclaimer": "An analogical reading of daily weather, not a prediction of concrete events.",
   "cal.aria.day": "Moon in",
   "cal.aria.events": "events",
+  "cal.fast.title": "Fast transits",
+  "cal.events.title": "Events of the day",
+  "cal.slow.title": "Slow transits (background weather)",
+  "cal.slow.note": "They change sign every several years: this is the background climate of the era.",
+  "cal.slow.retro_mid": "retrograde at mid-month",
+  "cal.slow.collapse.show": "Show slow transits",
+  "cal.slow.collapse.hide": "Hide slow transits",
 } as const;
