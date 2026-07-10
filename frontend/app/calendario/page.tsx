@@ -285,9 +285,6 @@ export default function CalendarioPage() {
                 })}
               </div>
 
-              {/* Tránsitos lentos del mes (telón de fondo) */}
-              <SlowTransitsBlock month={activeMonth} lang={lang} t={t} />
-
               {/* Leyenda */}
               <div className="mt-4 border-t border-slate-100 pt-3 text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1">
                 <span className="font-mono uppercase text-[10px] text-slate-400">{t("cal.legend.title")}:</span>
@@ -312,6 +309,12 @@ export default function CalendarioPage() {
             <div>
               <DayDetail day={selectedDay} lang={lang} t={t} />
             </div>
+
+            {/* Tránsitos lentos del mes (telón de fondo) — fuera del wrapper
+                solo-desktop para que también monte en móvil (su botón de
+                colapso propio es sm:hidden); en xl cae en la columna izquierda,
+                bajo la grilla. */}
+            <SlowTransitsBlock month={activeMonth} lang={lang} t={t} />
           </div>
         </>
       )}
