@@ -311,3 +311,41 @@ class MundaneResponse(BaseModel):
     national_impacts: list[NatalImpact] = []
     national_planets: list[PlanetPosition] = []
     national_chart_note: Optional[NationalChartNote] = None
+
+
+# ── Calendario astrológico diario ────────────────────────────────────────────
+
+class CalendarEvent(BaseModel):
+    type: str  # "ingress" | "moon_phase" | "station" | "aspect" | "eclipse"
+    body: Optional[str] = None
+    bodies: Optional[list[str]] = None
+    sign: Optional[str] = None
+    phase: Optional[str] = None
+    station: Optional[str] = None  # "retrograde" | "direct"
+    aspect: Optional[str] = None
+    orb: Optional[float] = None
+    eclipse_type: Optional[str] = None
+    eclipse_subtype: Optional[str] = None
+
+
+class CalendarBodyPos(BaseModel):
+    sign: str
+    degree_in_sign: float
+    longitude: Optional[float] = None
+
+
+class CalendarDay(BaseModel):
+    date: str
+    moon: CalendarBodyPos
+    sun: CalendarBodyPos
+    events: list[CalendarEvent] = []
+
+
+class CalendarMonth(BaseModel):
+    year: int
+    month: int
+    days: list[CalendarDay]
+
+
+class CalendarResponse(BaseModel):
+    months: list[CalendarMonth]
