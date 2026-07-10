@@ -8,6 +8,7 @@ const NAV_LINKS = [
   { href: "/", key: "nav.home" as const },
   { href: "/nueva", key: "nav.new_chart" as const },
   { href: "/geopolitica", key: "nav.geopolitics" as const },
+  { href: "/calendario", key: "nav.calendar" as const },
   { href: "/glosario", key: "nav.learn" as const },
 ];
 

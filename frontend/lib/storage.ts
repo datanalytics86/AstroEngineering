@@ -1,9 +1,10 @@
-import type { ChartResponse, BirthData, TransitResponse, MundaneResponse } from "./types";
+import type { ChartResponse, BirthData, TransitResponse, MundaneResponse, CalendarResponse } from "./types";
 
 const PREFIX_CHART   = "astro_chart_";
 const PREFIX_TRANSIT = "astro_transit_";
 const PREFIX_BIRTH   = "astro_birth_";
 const PREFIX_MUNDANE = "astro_mundane_v6:";
+const PREFIX_CALENDAR = "astro_calendar_v1:";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
@@ -136,6 +137,31 @@ export function loadMundane(
 ): MundaneResponse | null {
   try {
     const str = localStorage.getItem(mundaneKey(year, mode, id));
+    return str ? JSON.parse(str) : null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Calendario astrológico diario ────────────────────────────────────────────
+
+function calendarKey(year: number, month: number): string {
+  return `${PREFIX_CALENDAR}${year}_${month}`;
+}
+
+export function saveCalendar(year: number, month: number, data: CalendarResponse): void {
+  const key = calendarKey(year, month);
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch {
+    pruneStorage();
+    try { localStorage.setItem(key, JSON.stringify(data)); } catch { /* sin espacio: se usará solo en memoria */ }
+  }
+}
+
+export function loadCalendar(year: number, month: number): CalendarResponse | null {
+  try {
+    const str = localStorage.getItem(calendarKey(year, month));
     return str ? JSON.parse(str) : null;
   } catch {
     return null;

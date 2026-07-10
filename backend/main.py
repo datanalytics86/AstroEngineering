@@ -15,12 +15,13 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from astro.models import (
     BirthData, TransitRequest, ChartResponse, TransitResponse, SolarReturnRequest,
-    MundaneRequest, MundaneResponse, CountryInfo,
+    MundaneRequest, MundaneResponse, CountryInfo, CalendarResponse,
 )
 from astro.chart import calculate_natal_chart, calculate_solar_return
 from astro.transits import calculate_transit_timeline
 from astro.mundane import build_mundane_forecast
 from astro.national import NATIONAL_CHARTS, compute_national_planets
+from astro.calendar import compute_daily_calendar
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -186,3 +187,22 @@ async def get_mundane(request: Request, body: MundaneRequest):
     except Exception as exc:
         logger.error("Mundane calculation error: %s", exc)
         raise HTTPException(status_code=500, detail="Error en análisis mundial")
+
+
+@app.get("/api/calendar", response_model=CalendarResponse)
+@limiter.limit("10/minute")
+def get_calendar(request: Request, year: int, month: int):
+    """
+    Calendario astrológico diario: mes solicitado + los 2 meses siguientes.
+    Resumen día a día (Luna, Sol, eventos) con astronomía computada en vivo.
+    """
+    if not (2020 <= year <= 2035):
+        raise HTTPException(status_code=422, detail="Año fuera del rango soportado (2020-2035)")
+    if not (1 <= month <= 12):
+        raise HTTPException(status_code=422, detail="Mes inválido (1-12)")
+    try:
+        months = compute_daily_calendar(year, month, months=3)
+        return {"months": months}
+    except Exception as exc:
+        logger.error("Calendar calculation error: %s", exc)
+        raise HTTPException(status_code=500, detail="Error en calendario astrológico")
