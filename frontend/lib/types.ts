@@ -355,17 +355,34 @@ export interface CalendarBodyPos {
   longitude?: number | null;
 }
 
+export interface CalendarFastPos {
+  name: string;
+  sign: string;
+  degree_in_sign: number;
+  retrograde: boolean;
+}
+
+export interface CalendarSlowSegment {
+  name: string;
+  sign: string;
+  from_date: string;
+  to_date: string;
+  retrograde_mid: boolean;
+}
+
 export interface CalendarDay {
   date: string; // YYYY-MM-DD
   moon: CalendarBodyPos;
   sun: CalendarBodyPos;
   events: CalendarEvent[];
+  fast: CalendarFastPos[];
 }
 
 export interface CalendarMonth {
   year: number;
   month: number;
   days: CalendarDay[];
+  slow: CalendarSlowSegment[];
 }
 
 export interface CalendarResponse {

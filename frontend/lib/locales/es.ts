@@ -335,6 +335,13 @@ export const es = {
   "cal.disclaimer": "Lectura analógica de clima diario, no predicción de hechos concretos.",
   "cal.aria.day": "Luna en",
   "cal.aria.events": "eventos",
+  "cal.fast.title": "Tránsitos rápidos",
+  "cal.events.title": "Eventos del día",
+  "cal.slow.title": "Tránsitos lentos (telón de fondo)",
+  "cal.slow.note": "Cambian de signo cada varios años: son el clima de fondo de la época.",
+  "cal.slow.retro_mid": "retrógrado a mitad de mes",
+  "cal.slow.collapse.show": "Mostrar tránsitos lentos",
+  "cal.slow.collapse.hide": "Ocultar tránsitos lentos",
 } as const;
 
 export type TranslationKeys = keyof typeof es;

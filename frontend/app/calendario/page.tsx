@@ -5,8 +5,8 @@ import { useT, type Lang } from "@/lib/i18n";
 import { getWithWakingRetry } from "@/lib/api-fetch";
 import { saveCalendar, loadCalendar } from "@/lib/storage";
 import { SIGN_SYMBOLS } from "@/lib/zodiac-utils";
-import { getEventReading, getMoonSignReading } from "@/lib/calendar-corpus";
-import type { CalendarResponse, CalendarMonth, CalendarDay, CalendarEvent } from "@/lib/types";
+import { getEventReading, getMoonSignReading, getFastTransitReading, getSlowTransitReading } from "@/lib/calendar-corpus";
+import type { CalendarResponse, CalendarMonth, CalendarDay, CalendarEvent, CalendarFastPos, CalendarSlowSegment } from "@/lib/types";
 
 const EVENT_ICON: Record<string, string> = {
   ingress: "→",
@@ -309,6 +309,12 @@ export default function CalendarioPage() {
             <div>
               <DayDetail day={selectedDay} lang={lang} t={t} />
             </div>
+
+            {/* Tránsitos lentos del mes (telón de fondo) — fuera del wrapper
+                solo-desktop para que también monte en móvil (su botón de
+                colapso propio es sm:hidden); en xl cae en la columna izquierda,
+                bajo la grilla. */}
+            <SlowTransitsBlock month={activeMonth} lang={lang} t={t} />
           </div>
         </>
       )}
@@ -405,41 +411,110 @@ function DayDetail({ day, lang, t }: { day: CalendarDay | null; lang: Lang; t: (
     month: "long",
     year: "numeric",
   });
+  // Luna primero, luego Sol/Mercurio/Venus/Marte (ya viene en ese orden del backend)
+  const fastList = day.fast ?? [];
   return (
     <div className="sticky top-20 bg-white border border-slate-200 rounded-2xl p-5">
       <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("cal.detail.title" as never)}</p>
-      <p className="font-semibold text-slate-800 capitalize mb-3">{dateLabel}</p>
-      <div className="space-y-1 mb-4 text-sm">
-        <p className="text-slate-600">
-          {t("cal.detail.moon" as never)} <span className="font-mono">{day.moon.sign} {SIGN_SYMBOLS[day.moon.sign]}</span>{" "}
-          <span className="text-slate-400">({day.moon.degree_in_sign.toFixed(1)}°)</span>
-        </p>
-        <p className="text-slate-600">
-          {t("cal.detail.sun" as never)} <span className="font-mono">{day.sun.sign} {SIGN_SYMBOLS[day.sun.sign]}</span>{" "}
-          <span className="text-slate-400">({day.sun.degree_in_sign.toFixed(1)}°)</span>
-        </p>
-        <p className="text-xs text-slate-400 italic mt-1">{getMoonSignReading(day.moon.sign, lang)}</p>
-      </div>
+      <p className="font-semibold text-slate-800 capitalize mb-4">{dateLabel}</p>
 
-      {day.events.length === 0 ? (
-        <p className="text-sm text-slate-400">{t("cal.detail.no_events" as never)}</p>
-      ) : (
-        <div className="space-y-3">
-          {day.events.map((e, i) => {
-            const reading = getEventReading(e, lang);
-            return (
-              <div key={i} className="border-t border-slate-100 pt-3 first:border-0 first:pt-0">
-                <p className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
-                  <span>{eventIcon(e)}</span> {reading.title}
-                </p>
-                <p className="text-xs text-slate-500 leading-relaxed mt-1">{reading.text}</p>
-              </div>
-            );
-          })}
+      {/* Tránsitos rápidos */}
+      {fastList.length > 0 && (
+        <div className="mb-5">
+          <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("cal.fast.title" as never)}</p>
+          <div className="space-y-2.5">
+            {fastList.map((f) => (
+              <FastPosRow key={f.name} pos={f} lang={lang} />
+            ))}
+          </div>
         </div>
       )}
 
+      {/* Eventos del día */}
+      <div className="mb-4">
+        <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("cal.events.title" as never)}</p>
+        {day.events.length === 0 ? (
+          <p className="text-sm text-slate-400">{t("cal.detail.no_events" as never)}</p>
+        ) : (
+          <div className="space-y-3">
+            {day.events.map((e, i) => {
+              const reading = getEventReading(e, lang);
+              return (
+                <div key={i} className="border-t border-slate-100 pt-3 first:border-0 first:pt-0">
+                  <p className="text-sm font-medium text-slate-800 flex items-center gap-1.5">
+                    <span>{eventIcon(e)}</span> {reading.title}
+                  </p>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1">{reading.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <p className="text-[11px] text-slate-300 mt-4 pt-3 border-t border-slate-100">{t("cal.disclaimer" as never)}</p>
+    </div>
+  );
+}
+
+function FastPosRow({ pos, lang }: { pos: CalendarFastPos; lang: Lang }) {
+  const reading = getFastTransitReading(pos.name, pos.sign, lang);
+  return (
+    <div className="text-sm">
+      <p className="text-slate-700 flex items-center gap-1.5">
+        <span>{SIGN_SYMBOLS[pos.sign] ?? ""}</span>
+        <span className="font-medium">
+          {pos.name} {lang === "es" ? "en" : "in"} {pos.sign}
+        </span>
+        <span className="text-slate-400 font-mono text-xs">({pos.degree_in_sign.toFixed(1)}°)</span>
+        {pos.retrograde && (
+          <span className="text-[10px] font-mono bg-red-50 text-red-600 border border-red-200 rounded px-1 py-0.5">℞</span>
+        )}
+      </p>
+      {reading && <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{reading}</p>}
+    </div>
+  );
+}
+
+function SlowTransitsBlock({ month, lang, t }: { month: CalendarMonth | undefined; lang: Lang; t: (k: never) => string }) {
+  const [open, setOpen] = useState(false);
+  if (!month || !month.slow || month.slow.length === 0) return null;
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="sm:hidden w-full min-h-[44px] flex items-center justify-between text-left text-xs font-mono uppercase tracking-wide text-slate-500 focus-visible:ring-2 focus-visible:ring-teal-500"
+      >
+        <span>{t("cal.slow.title" as never)}</span>
+        <span>{open ? t("cal.slow.collapse.hide" as never) : t("cal.slow.collapse.show" as never)}</span>
+      </button>
+      <p className="hidden sm:block text-xs font-mono uppercase tracking-wide text-slate-500 mb-1">{t("cal.slow.title" as never)}</p>
+      <div className={`${open ? "block" : "hidden"} sm:block mt-2`}>
+        <p className="text-[11px] text-slate-400 mb-2">{t("cal.slow.note" as never)}</p>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {month.slow.map((seg, i) => (
+            <SlowSegmentCard key={`${seg.name}-${i}`} seg={seg} lang={lang} t={t} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SlowSegmentCard({ seg, lang, t }: { seg: CalendarSlowSegment; lang: Lang; t: (k: never) => string }) {
+  const reading = getSlowTransitReading(seg.name, seg.sign, lang);
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <p className="text-sm font-medium text-slate-800 flex items-center gap-1.5 flex-wrap">
+        <span>{SIGN_SYMBOLS[seg.sign] ?? ""}</span>
+        <span>{seg.name} {lang === "es" ? "en" : "in"} {seg.sign}</span>
+        {seg.retrograde_mid && (
+          <span className="text-[10px] font-mono bg-red-50 text-red-600 border border-red-200 rounded px-1 py-0.5" title={t("cal.slow.retro_mid" as never)}>℞</span>
+        )}
+      </p>
+      <p className="text-[11px] font-mono text-slate-400 mt-0.5">{seg.from_date} → {seg.to_date}</p>
+      {reading && <p className="text-xs text-slate-500 leading-relaxed mt-1.5">{reading}</p>}
     </div>
   );
 }

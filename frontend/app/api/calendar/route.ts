@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     const upstream = await fetch(
       `${BACKEND}/api/calendar?year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`,
-      { method: "GET", signal: AbortSignal.timeout(55_000) },
+      { method: "GET", signal: AbortSignal.timeout(55_000), cache: "no-store" },
     );
 
     const text = await upstream.text();

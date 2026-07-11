@@ -4,7 +4,7 @@ const PREFIX_CHART   = "astro_chart_";
 const PREFIX_TRANSIT = "astro_transit_";
 const PREFIX_BIRTH   = "astro_birth_";
 const PREFIX_MUNDANE = "astro_mundane_v6:";
-const PREFIX_CALENDAR = "astro_calendar_v1:";
+const PREFIX_CALENDAR = "astro_calendar_v2:";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
