@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { captureException } from "@/lib/observability";
+
 export default function Error({
   error,
   reset,
@@ -7,6 +10,13 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    captureException(error, {
+      source: "error.tsx",
+      digest: error.digest ?? "",
+    });
+  }, [error]);
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="text-center max-w-md">
