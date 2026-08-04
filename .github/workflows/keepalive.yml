@@ -7,8 +7,9 @@ name: Keepalive backend
 # o está temporalmente caído (`|| true`): esto es solo un keepalive
 # best-effort, no un chequeo de salud con alertas.
 #
-# URL canónica de producción (2026-08): https://astroengine.onrender.com
-# (también responde https://astroengine-backend.onrender.com — alias Render).
+# Backend real de API (2026-08, verificado): https://astroengine-backend.onrender.com
+# NOTA: https://astroengine.onrender.com responde /health stub pero devuelve 404
+# en /api/* — NO usarlo como keepalive ni como NEXT_PUBLIC_API_URL.
 
 on:
   schedule:
@@ -20,5 +21,5 @@ jobs:
     name: Ping /health
     runs-on: ubuntu-latest
     steps:
-      - name: Curl backend health endpoint (canonical prod)
-        run: curl -sf -m 30 https://astroengine.onrender.com/health || true
+      - name: Curl backend health endpoint (API real)
+        run: curl -sf -m 30 https://astroengine-backend.onrender.com/health || true

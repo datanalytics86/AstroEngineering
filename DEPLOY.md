@@ -7,8 +7,10 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 | Capa | URL | Plataforma |
 |------|-----|------------|
 | Frontend | https://astro-engineering.vercel.app | Vercel (root dir: `frontend`) |
-| Backend  | https://astroengine.onrender.com | Render Docker (`render.yaml`) |
-| Alias BE | https://astroengine-backend.onrender.com | Mismo servicio (nombre Render) |
+| **Backend API (real)** | **https://astroengine-backend.onrender.com** | Render Docker (`render.yaml`, service name) |
+| Host corto (⚠️ stub) | https://astroengine.onrender.com | Responde `/health` `{"status":"ok"}` pero **404 en `/api/*`** (2026-08-03) |
+
+> **Verificación 2026-08:** el FE en Vercel proxya correctamente carta/calendario (200). El host API real es `astroengine-backend.onrender.com` (`{"status":"ok","service":"astroengine-backend"}` + `/api/calendar` 200). Si se desea el host corto como canónico, hay que apuntarlo al mismo servicio Render o deprecarlo.
 
 ## Variables de entorno
 
@@ -33,7 +35,7 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 
 | Variable | Valor | Notas |
 |----------|-------|-------|
-| `NEXT_PUBLIC_API_URL` | `https://astroengine.onrender.com` | **Sin trailing slash. No localhost en prod.** Root dir: `frontend`. |
+| `NEXT_PUBLIC_API_URL` | `https://astroengine-backend.onrender.com` | **Sin trailing slash. No localhost en prod.** Root dir: `frontend`. Debe ser el host que sirve `/api/*` (no el stub corto). |
 
 ### Vercel — opcionales
 
@@ -48,7 +50,7 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 ## Keepalive anti cold-start
 
 - Workflow: `.github/workflows/keepalive.yml`
-- Cron: cada 10 min → `GET https://astroengine.onrender.com/health`
+- Cron: cada 10 min → `GET https://astroengine-backend.onrender.com/health`
 - Best-effort (`|| true`): no alarma si falla
 
 ## Checklist pre-deploy
@@ -64,23 +66,23 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 ```bash
 # Infra
 curl -sI https://astro-engineering.vercel.app | head -n 20
-curl -s https://astroengine.onrender.com/health
+curl -s https://astroengine-backend.onrender.com/health
+# Esperado: {"status":"ok","service":"astroengine-backend"}
 
 # Headers de seguridad (FE)
 curl -sI https://astro-engineering.vercel.app | grep -iE "content-security-policy|x-content-type|x-frame|referrer-policy|permissions-policy"
 
-# CORS preflight (BE)
-curl -sI -X OPTIONS "https://astroengine.onrender.com/health" \
-  -H "Origin: https://astro-engineering.vercel.app" \
-  -H "Access-Control-Request-Method: GET"
-
-# Smoke API liviano
-curl -s -X POST "https://astroengine.onrender.com/api/chart" \
+# Smoke vía FE proxy (camino real del usuario)
+curl -s -X POST "https://astro-engineering.vercel.app/api/chart" \
   -H "Content-Type: application/json" \
-  -H "Origin: https://astro-engineering.vercel.app" \
   -d '{"name":"Smoke","birth_date":"1990-05-15","birth_time":"14:30","latitude":-33.4489,"longitude":-70.6693,"timezone_offset":-4}'
 
-curl -s "https://astroengine.onrender.com/api/calendar?year=2026&month=8"
+curl -s "https://astro-engineering.vercel.app/api/calendar?year=2026&month=8"
+
+# Smoke API directa (backend real)
+curl -s -X POST "https://astroengine-backend.onrender.com/api/chart" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Smoke","birth_date":"1990-05-15","birth_time":"14:30","latitude":-33.4489,"longitude":-70.6693,"timezone_offset":-4}'
 ```
 
 ### UI manual

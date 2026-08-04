@@ -49,7 +49,8 @@ cd frontend && npm install && npm run dev
 | Capa | Prod |
 |------|------|
 | Frontend | https://astro-engineering.vercel.app |
-| Backend  | https://astroengine.onrender.com |
+| Backend API (real) | https://astroengine-backend.onrender.com |
+| Backend host corto | https://astroengine.onrender.com (⚠️ stub `/health` only; no usar como API) |
 
 ### Backend en Render (gratuito)
 
@@ -60,7 +61,7 @@ cd frontend && npm install && npm run dev
 ### Frontend en Vercel (gratuito)
 
 1. New Project → Root Dir: `frontend`
-2. Env var: `NEXT_PUBLIC_API_URL=https://astroengine.onrender.com` (**sin** trailing slash)
+2. Env var: `NEXT_PUBLIC_API_URL=https://astroengine-backend.onrender.com` (**sin** trailing slash; host que sirve `/api/*`)
 3. (Opcional) `NEXT_PUBLIC_SENTRY_DSN` — fail-soft si falta
 
 `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLOY.md` son históricos; ver su sección **Estado 2026-08**. Documentación de producto: `CLAUDE.md`.

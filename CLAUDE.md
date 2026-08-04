@@ -265,11 +265,11 @@ EPHE_PATH=/usr/share/swisseph/ephe
 
 ### Producción — Vercel (frontend)
 ```bash
-NEXT_PUBLIC_API_URL=https://astroengine.onrender.com
+NEXT_PUBLIC_API_URL=https://astroengine-backend.onrender.com
 # Opcionales (fail-soft):
 # NEXT_PUBLIC_SENTRY_DSN=...
 # NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
-# BACKEND_URL=https://astroengine.onrender.com   # server-only en proxies
+# BACKEND_URL=https://astroengine-backend.onrender.com   # server-only en proxies
 ```
 
 ---
@@ -279,13 +279,15 @@ NEXT_PUBLIC_API_URL=https://astroengine.onrender.com
 | Componente | Plataforma | Costo | Prod |
 |-----------|-----------|-------|------|
 | Frontend | **Vercel** | Gratis siempre | https://astro-engineering.vercel.app |
-| Backend | **Render** | Gratis (cold start ~50s; keepalive cada 10 min) | https://astroengine.onrender.com |
+| Backend API | **Render** | Gratis (cold start ~50s; keepalive cada 10 min) | https://astroengine-backend.onrender.com |
+
+> ⚠️ `https://astroengine.onrender.com` solo devuelve un `/health` stub (404 en `/api/*`). Usar el host `astroengine-backend` para API y keepalive.
 
 **Pasos:**
 1. Render: New Web Service → repo → autoselecciona `render.yaml` en la raíz
 2. Render: configurar manualmente env var `FRONTEND_URL=https://astro-engineering.vercel.app`
 3. Vercel: New Project → repo → Root Dir: `frontend` → Next.js
-4. Vercel: agregar env var `NEXT_PUBLIC_API_URL=https://astroengine.onrender.com` (sin trailing slash)
+4. Vercel: agregar env var `NEXT_PUBLIC_API_URL=https://astroengine-backend.onrender.com` (sin trailing slash)
 
 > **Ops actual:** ver `DEPLOY.md`. `GAP_ANALYSIS_DEPLOY.md` / `AUDIT_DEPLOY.md` son históricos (sección Estado 2026-08 arriba).
 ---
