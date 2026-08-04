@@ -2,10 +2,14 @@ name: Keepalive backend
 
 # El backend corre en Render free tier, que hiberna tras ~15 min de
 # inactividad; el cold start tras hibernar toma ~50s y degrada la primera
-# visita real de un usuario (ver GAP_ANALYSIS_DEPLOY.md, A-4). Este workflow
-# hace un ping periódico a /health para mantenerlo despierto. No debe fallar
-# el workflow si el backend tarda o está temporalmente caído (`|| true`):
-# esto es solo un keepalive best-effort, no un chequeo de salud con alertas.
+# visita real de un usuario. Este workflow hace un ping periódico a /health
+# para mantenerlo despierto. No debe fallar el workflow si el backend tarda
+# o está temporalmente caído (`|| true`): esto es solo un keepalive
+# best-effort, no un chequeo de salud con alertas.
+#
+# Backend real de API (2026-08, verificado): https://astroengine-backend.onrender.com
+# NOTA: https://astroengine.onrender.com responde /health stub pero devuelve 404
+# en /api/* — NO usarlo como keepalive ni como NEXT_PUBLIC_API_URL.
 
 on:
   schedule:
@@ -17,5 +21,5 @@ jobs:
     name: Ping /health
     runs-on: ubuntu-latest
     steps:
-      - name: Curl backend health endpoint
+      - name: Curl backend health endpoint (API real)
         run: curl -sf -m 30 https://astroengine-backend.onrender.com/health || true
