@@ -1,9 +1,35 @@
 # AstroEngine Pro — Gap Analysis: Deploy 100% Seguro
 
-> ⚠️ Actualización 2026-06-17: La feature de astrología mundial (`/api/mundane`, cartas nacionales, `MundaneRequest`) fue ELIMINADA del proyecto. Por lo tanto, los hallazgos de este documento relativos a `mundane`/`country` (p. ej. A-4, M-4, B-2 y los tests del endpoint `/api/mundane`) ya no aplican.
+## Estado 2026-08: resuelto / pendiente
 
-> Revisión: 2026-04-28  
-> Estado del proyecto: funcional en Codespace, listo para deploy pero con brechas de seguridad y producción
+> **Fuente de verdad operativa actual:** [`DEPLOY.md`](./DEPLOY.md).  
+> Este archivo es **histórico** (revisión 2026-04-28 + notas 2026-06). No usar como checklist de deploy sin contrastar la tabla.
+
+| ID | Hallazgo original | Estado 2026-08 |
+|----|-------------------|----------------|
+| C-1 | Sin rate limiting | **RESUELTO** — `slowapi` en todos los endpoints (health 10, chart 20, transits 5, solar-return 10, mundane 5, countries 10, calendar 10) |
+| C-2 | Docker como root | **RESUELTO** — `USER astro` (uid 1000) en `backend/Dockerfile` |
+| C-3 | CORS `*.vercel.app` abierto | **RESUELTO** — production: solo `FRONTEND_URL` + `ALLOWED_ORIGINS` exactos; sin regex abierta |
+| C-4 | Stack traces al cliente | **RESUELTO** — `JSONResponse` genérico + logs server-side; sin filtrar `str(exc)` |
+| C-5 | timezone_offset RS | **REVISADO** — cálculo de casas usa lat/lon; UT con offset 0 es correcto en el flujo actual |
+| C-6 | Validación de fechas | **PARCIAL / RESUELTO en modelos** — Pydantic v2 + validadores en requests (ver tests) |
+| A-2 / A-6 | Headers seguridad FE | **RESUELTO** — nosniff, DENY, Referrer-Policy, Permissions-Policy + **CSP** pragmática (Tier-1 2026-08) |
+| A-4 | Cold start Render | **MITIGADO** — proxies `maxDuration=60` + `backend_waking` + keepalive cada 10 min + retry cliente |
+| M-4 / mundane | Feature eliminada (nota 2026-06) | **OBSOLETO** — reintroducida como `/geopolitica` + `POST /api/mundane` (2026-07); tests y rate limit activos |
+| Observabilidad | Sin Sentry | **RESUELTO (fail-soft)** — `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` opcionales; app no crashea sin ellos |
+| Docs desfasadas | GAP/AUDIT mienten | **RESUELTO** — esta sección + `DEPLOY.md` |
+
+### Pendiente humano (no automatizable sin secrets)
+
+- [ ] Confirmar en dashboard Render: `FRONTEND_URL=https://astro-engineering.vercel.app`
+- [ ] Confirmar en dashboard Vercel: `NEXT_PUBLIC_API_URL=https://astroengine.onrender.com` (sin trailing slash)
+- [ ] (Opcional) Crear proyecto Sentry y pegar DSN en Render + Vercel
+- [ ] Redeploy tras cambiar env vars
+
+> ⚠️ Actualización 2026-06-17 (histórica): se eliminó mundane; **luego se reintrodujo** (2026-07) como Geopolítica. Ignorar la nota de “ya no aplican” para endpoints mundane.
+
+> Revisión original: 2026-04-28  
+> Estado original del proyecto: funcional en Codespace, listo para deploy pero con brechas de seguridad y producción
 
 ---
 

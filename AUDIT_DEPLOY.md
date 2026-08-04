@@ -1,9 +1,28 @@
 # Audit: ¿Qué falta para deploy 100%?
 
-> ⚠️ Actualización 2026-06-17: La feature de astrología mundial (`/api/mundane`, cartas nacionales, `MundaneRequest`) fue ELIMINADA del proyecto. Por lo tanto, los hallazgos de este documento relativos a `mundane`/`country` (p. ej. A-4, M-4, B-2 y los tests del endpoint `/api/mundane`) ya no aplican.
+## Estado 2026-08: resuelto / pendiente
 
-> Auditoría: 2026-04-28 · Post Sprint 0
-> Estado: **Sprint 0 implementado pero con 2 bugs runtime que bloquean producción**
+> **Fuente de verdad operativa actual:** [`DEPLOY.md`](./DEPLOY.md).  
+> Este archivo es **histórico** (2026-04-28 post Sprint 0). Prod FE/BE están UP desde hace meses.
+
+| ID | Hallazgo original | Estado 2026-08 |
+|----|-------------------|----------------|
+| B-1 | Exception handlers devuelven `dict` | **RESUELTO** — `JSONResponse` + `_rate_limit_exceeded_handler` oficial de slowapi |
+| B-2 | `MundaneRequest.country` sin validar | **RESUELTO** — validador Pydantic + tests 422 (`narnia`, country+natal) |
+| D-1 | Build prod con localhost si falta API URL | **RESUELTO** — `next.config.mjs` lanza si `NODE_ENV=production` y falta `NEXT_PUBLIC_API_URL` |
+| D-2 | docker-compose + non-root | **ACEPTADO** — compose es dev; prod usa imagen Docker sin bind mount problemático |
+| D-3 | Falta `render.yaml` | **RESUELTO** — `render.yaml` en raíz con ENV, EPHE_PATH, FRONTEND_URL |
+| Runtime prod | Bugs bloquean producción | **RESUELTO** — prod responde FE 200 + BE `/health` ok (2026-08) |
+| mundane eliminado (nota 2026-06) | — | **OBSOLETO** — reintroducido como `/geopolitica` (2026-07) |
+
+### Pendiente humano
+
+Ver checklist en [`DEPLOY.md`](./DEPLOY.md) (env vars en dashboards + Sentry opcional).
+
+> ⚠️ Actualización 2026-06-17 (histórica): mundane eliminada; **reintroducida** en 2026-07. No usar esa nota como estado actual.
+
+> Auditoría original: 2026-04-28 · Post Sprint 0  
+> Estado original: **Sprint 0 implementado pero con 2 bugs runtime que bloquean producción** (ya no aplica)
 
 ---
 

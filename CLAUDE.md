@@ -255,32 +255,39 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 ### Producción — Render (backend)
 ```bash
 ENV=production
-FRONTEND_URL=https://tu-app.vercel.app
+FRONTEND_URL=https://astro-engineering.vercel.app
 EPHE_PATH=/usr/share/swisseph/ephe
+# Opcionales (fail-soft):
+# SENTRY_DSN=...
+# SENTRY_ENVIRONMENT=production
+# ALLOWED_ORIGINS=https://otro-origen-exacto.example
 ```
 
 ### Producción — Vercel (frontend)
 ```bash
-NEXT_PUBLIC_API_URL=https://tu-backend.onrender.com
+NEXT_PUBLIC_API_URL=https://astroengine.onrender.com
+# Opcionales (fail-soft):
+# NEXT_PUBLIC_SENTRY_DSN=...
+# NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
+# BACKEND_URL=https://astroengine.onrender.com   # server-only en proxies
 ```
 
 ---
 
 ## DEPLOYMENT (gratuito)
 
-| Componente | Plataforma | Costo |
-|-----------|-----------|-------|
-| Frontend | **Vercel** | Gratis siempre |
-| Backend | **Render** | Gratis (cold start ~30s tras inactividad) |
+| Componente | Plataforma | Costo | Prod |
+|-----------|-----------|-------|------|
+| Frontend | **Vercel** | Gratis siempre | https://astro-engineering.vercel.app |
+| Backend | **Render** | Gratis (cold start ~50s; keepalive cada 10 min) | https://astroengine.onrender.com |
 
 **Pasos:**
 1. Render: New Web Service → repo → autoselecciona `render.yaml` en la raíz
-2. Render: configurar manualmente env var `FRONTEND_URL=https://tu-app.vercel.app`
+2. Render: configurar manualmente env var `FRONTEND_URL=https://astro-engineering.vercel.app`
 3. Vercel: New Project → repo → Root Dir: `frontend` → Next.js
-4. Vercel: agregar env var `NEXT_PUBLIC_API_URL=https://tu-backend.onrender.com`
+4. Vercel: agregar env var `NEXT_PUBLIC_API_URL=https://astroengine.onrender.com` (sin trailing slash)
 
-> Ver `GAP_ANALYSIS_DEPLOY.md` para lista completa de brechas de seguridad pendientes (Sprint 1 y 2).
-
+> **Ops actual:** ver `DEPLOY.md`. `GAP_ANALYSIS_DEPLOY.md` / `AUDIT_DEPLOY.md` son históricos (sección Estado 2026-08 arriba).
 ---
 
 ## ENDPOINTS DEL BACKEND
@@ -322,8 +329,10 @@ NEXT_PUBLIC_API_URL=https://tu-backend.onrender.com
 6. **ChartWheel sin D3**: SVG puro React. `makeToAngle(ascLon)` rotaciona la rueda con el ASC a la izquierda (9 o'clock).
 7. **swe.jdut1_to_utc**: Devuelve 6 valores `(year, month, day, hour, minute, second)`, NO 4. Ya corregido en `chart.py`.
 8. **Rate limiting**: `slowapi` con límites por IP. En desarrollo local no aplica (localhost).
-9. **CORS en producción**: Requiere `FRONTEND_URL` como variable de entorno en Render. Sin ella, solo acepta localhost.
+9. **CORS en producción**: Solo `FRONTEND_URL` (+ `ALLOWED_ORIGINS` exactos). Sin localhost ni regex `*.vercel.app`. Sin `FRONTEND_URL` en prod → cero orígenes permitidos (warning en log).
 10. **Swagger docs**: Deshabilitados cuando `ENV=production`. En desarrollo siguen en `/docs`.
+11. **Sentry fail-soft**: sin `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` la app no crashea; un warning al arranque/cliente.
+12. **Proxies Next**: `frontend/lib/backend-proxy.ts` — timeout 55s, `cache: "no-store"`, 503 `backend_waking`.
 
 ---
 

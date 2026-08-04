@@ -32,26 +32,38 @@ cd frontend && npm install && npm run dev
 
 ## Endpoints
 
-| Método | Ruta              | Rate limit | Descripción                     |
-|--------|-------------------|------------|---------------------------------|
-| GET    | /health           | 10/min     | Health check                    |
-| POST   | /api/chart        | 20/min     | Carta natal                     |
-| POST   | /api/transits     | 5/min      | Tránsitos (año actual + 4 años) |
-| POST   | /api/solar-return | 10/min     | Retorno solar                   |
+| Método | Ruta                     | Rate limit | Descripción                          |
+|--------|--------------------------|------------|--------------------------------------|
+| GET    | /health                  | 10/min     | Health check                         |
+| POST   | /api/chart               | 20/min     | Carta natal                          |
+| POST   | /api/transits            | 5/min      | Tránsitos (año actual + 4 años)      |
+| POST   | /api/solar-return        | 10/min     | Retorno solar                        |
+| POST   | /api/mundane             | 5/min      | Geopolítica / astrología mundial     |
+| GET    | /api/mundane/countries   | 10/min     | Países (cartas nacionales)           |
+| GET    | /api/calendar            | 10/min     | Calendario diario (mes + 2 siguientes) |
 
 ## Deployment a producción
+
+**Guía actual:** [`DEPLOY.md`](./DEPLOY.md) (env vars, smoke tests, rollback).
+
+| Capa | Prod |
+|------|------|
+| Frontend | https://astro-engineering.vercel.app |
+| Backend  | https://astroengine.onrender.com |
 
 ### Backend en Render (gratuito)
 
 1. Conectar el repo a Render → autoselecciona `render.yaml`
-2. Configurar manualmente la env var `FRONTEND_URL` con la URL de Vercel
+2. Configurar manualmente `FRONTEND_URL=https://astro-engineering.vercel.app`
+3. (Opcional) `SENTRY_DSN` — fail-soft si falta
 
 ### Frontend en Vercel (gratuito)
 
 1. New Project → Root Dir: `frontend`
-2. Env var: `NEXT_PUBLIC_API_URL=https://tu-backend.onrender.com`
+2. Env var: `NEXT_PUBLIC_API_URL=https://astroengine.onrender.com` (**sin** trailing slash)
+3. (Opcional) `NEXT_PUBLIC_SENTRY_DSN` — fail-soft si falta
 
-Ver `CLAUDE.md` para documentación completa del proyecto y `GAP_ANALYSIS_DEPLOY.md` para el roadmap de seguridad.
+`GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLOY.md` son históricos; ver su sección **Estado 2026-08**. Documentación de producto: `CLAUDE.md`.
 
 ## Validación de precisión
 
