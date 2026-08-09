@@ -209,9 +209,6 @@ export default function CartaPage() {
             </span>
             <span>{t("chart.nav.solar")} {new Date().getFullYear()}</span>
           </ActionButton>
-          <ActionButton variant="secondary" accent="indigo" onClick={() => router.push(`/geopolitica?mode=natal&chart=${id}`)}>
-            {t("chart.nav.geo")}
-          </ActionButton>
           <ActionButton variant="primary" accent="blue" onClick={handleCalcTransits} disabled={loadingTransits}>
             {loadingTransits ? (
               <>

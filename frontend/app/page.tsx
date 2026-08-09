@@ -174,10 +174,10 @@ export default function PortadaPage() {
         </div>
       </section>
 
-      {/* ── Features grid ── */}
+      {/* ── Features: natal product only ── */}
       <section className="bg-white border-t border-border py-16">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
                 icon: "⊕",
@@ -185,6 +185,13 @@ export default function PortadaPage() {
                 descKey: "landing.features.natal.desc" as const,
                 href: "/nueva",
                 accent: "text-blue-600",
+              },
+              {
+                icon: "◈",
+                titleKey: "landing.features.topics.title" as const,
+                descKey: "landing.features.topics.desc" as const,
+                href: "/nueva",
+                accent: "text-indigo-600",
               },
               {
                 icon: "✦",
@@ -199,20 +206,6 @@ export default function PortadaPage() {
                 descKey: "landing.features.solar.desc" as const,
                 href: "/nueva",
                 accent: "text-amber-600",
-              },
-              {
-                icon: "🌍",
-                titleKey: "landing.features.geo.title" as const,
-                descKey: "landing.features.geo.desc" as const,
-                href: "/geopolitica",
-                accent: "text-indigo-600",
-              },
-              {
-                icon: "📅",
-                titleKey: "landing.features.calendar.title" as const,
-                descKey: "landing.features.calendar.desc" as const,
-                href: "/calendario",
-                accent: "text-teal-600",
               },
             ].map((f) => (
               <div

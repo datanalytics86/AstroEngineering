@@ -3,7 +3,6 @@ export const es = {
   "nav.home": "Inicio",
   "nav.new_chart": "Nueva carta",
   "nav.learn": "Aprende",
-  "nav.calendar": "Calendario",
 
   // ── Común ──
   "common.error.waking": "El servidor está despertando (puede tardar ~50s la primera vez). Reintentando…",
@@ -16,7 +15,7 @@ export const es = {
   "landing.hero.title_line1": "El mapa del cielo",
   "landing.hero.title_line2": "en tu momento de nacimiento",
   "landing.hero.subtitle":
-    "AstroEngine Pro calcula cartas natales con precisión astronómica real, detecta aspectos planetarios y genera pronósticos de tránsitos mes a mes para los próximos años.",
+    "Carta natal con precisión astronómica real: rueda, aspectos y temas de vida (amor, dinero, trabajo…). Tránsitos y retorno solar como soporte de tu lectura.",
   "landing.cta.primary": "Realizar carta natal →",
   "landing.cta.secondary": "Aprende los significados",
   "landing.what_is.title": "¿Qué es una carta natal?",
@@ -35,21 +34,31 @@ export const es = {
   "landing.features.natal.title": "Carta natal completa",
   "landing.features.natal.desc":
     "12 planetas, casas Placidus, aspectos exactos y dignidades clásicas con interpretación detallada.",
+  "landing.features.topics.title": "Temas de vida",
+  "landing.features.topics.desc":
+    "Amor, dinero, trabajo, salud, familia y crecimiento — lectura accesible gratis; capa técnica Pro opcional.",
   "landing.features.transits.title": "Tránsitos año a año",
   "landing.features.transits.desc":
     "Cronología interactiva de cada tránsito: cuándo entra en orbe, cuándo es exacto y cuándo sale, con días de influencia e interpretación.",
   "landing.features.solar.title": "Retorno Solar",
   "landing.features.solar.desc":
     "La carta del momento exacto en que el Sol regresa a su posición natal: el horóscopo del año.",
-  "landing.features.geo.title": "Análisis Geopolítico",
-  "landing.features.geo.desc":
-    "Ciclos mundiales de planetas lentos, eclipses e impacto por país o en tu propia carta natal.",
-  "landing.features.calendar.title": "Calendario Astrológico",
-  "landing.features.calendar.desc":
-    "El cielo día a día: Luna, Sol y planetas rápidos con ingresos, fases, estaciones y aspectos exactos.",
   "landing.bottom_cta.title": "Comienza con tu carta natal",
   "landing.bottom_cta.subtitle":
     "Solo necesitas fecha, hora y lugar de nacimiento. El cálculo tarda menos de 5 segundos.",
+
+  // ── Rutas archivadas (fuera del producto activo) ──
+  "archive.badge": "Función archivada",
+  "archive.geo.title": "Análisis geopolítico",
+  "archive.geo.body":
+    "Esta función ya no forma parte del producto activo. Nos centramos en la carta natal, los temas de vida y los tránsitos personales.",
+  "archive.calendar.title": "Calendario astrológico",
+  "archive.calendar.body":
+    "Esta función ya no forma parte del producto activo. El flujo principal es tu carta natal y la lectura por temas de vida.",
+  "archive.hint": "Puedes crear o abrir tu carta natal en cualquier momento.",
+  "archive.cta.primary": "Crear carta natal →",
+  "archive.cta.home": "Volver al inicio",
+  "archive.cta.glossary": "Ir al glosario →",
 
   // ── BirthDataForm ──
   "form.name": "Nombre",
@@ -70,7 +79,6 @@ export const es = {
   "nueva.saved.title": "Cartas guardadas",
   "nueva.saved.view": "Ver carta",
   "nueva.saved.transits": "✦ Tránsitos",
-  "nueva.saved.geo": "🌍 Geo",
   "nueva.saved.confirm_delete": "Confirmar",
   "nueva.saved.cancel": "Cancelar",
   "nueva.features.ephemeris": "Swiss Ephemeris",
@@ -98,7 +106,6 @@ export const es = {
   "chart.error.solar": "Error retorno solar",
   "chart.aspects.show_all": "Ver todos los aspectos",
   "chart.aspects.show_less": "Ver menos",
-  "chart.nav.geo": "🌍 Ciclos mundiales sobre tu carta",
   "chart.nav.topics": "Temas",
 
   // ── Resumen por Temas (freemium) ──
@@ -148,7 +155,6 @@ export const es = {
   "transits.calculating": "Calculando tránsitos de",
   "transits.title": "Tu cielo en movimiento",
   "transits.orientation": "Cada barra es un tránsito sobre tu carta: de cuándo entra en orbe a cuándo sale; ♦ = exacto.",
-  "transits.calendar_cta": "📅 Ver el cielo día a día en el Calendario →",
   "transits.nav.home": "Inicio",
   "transits.nav.new": "Nueva carta",
   "transits.nav.natal": "← Carta natal",
@@ -245,10 +251,7 @@ export const es = {
   "glossary.back": "← Volver",
   "glossary.cta": "Realizar carta natal →",
 
-  // ── Navegación (extra) ──
-  "nav.geopolitics": "Geopolítica",
-
-  // ── Análisis Geopolítico (astrología mundial) ──
+  // ── Análisis Geopolítico (corpus / UI archivada) ──
   "geo.title": "Análisis Geopolítico",
   "geo.subtitle": "Ciclos de planetas lentos y su eco histórico · 2026–2027",
   "geo.disclaimer": "Astrología mundial analógica: los pronósticos son «temas probables» por recurrencia de ciclos planetarios, con bibliografía citada. Es interpretación astrológica, NO una predicción factual de hechos.",

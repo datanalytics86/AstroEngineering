@@ -590,9 +590,6 @@ export default function TransitosPage() {
           </h1>
           <p className="text-slate-500 font-mono text-sm mt-1">{chart.name}</p>
           <p className="text-slate-400 text-sm mt-2 max-w-xl">{t("transits.orientation")}</p>
-          <a href="/calendario" className="inline-block text-teal-600 hover:text-teal-800 text-xs font-mono mt-1.5">
-            {t("transits.calendar_cta")}
-          </a>
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton variant="secondary" accent="blue" onClick={() => router.push(`/carta/${id}`)}>

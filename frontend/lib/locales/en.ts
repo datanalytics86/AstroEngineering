@@ -3,7 +3,6 @@ export const en = {
   "nav.home": "Home",
   "nav.new_chart": "New chart",
   "nav.learn": "Learn",
-  "nav.calendar": "Calendar",
 
   // ── Común ──
   "common.error.waking": "The server is waking up (may take ~50s the first time). Retrying…",
@@ -16,7 +15,7 @@ export const en = {
   "landing.hero.title_line1": "A snapshot of the sky",
   "landing.hero.title_line2": "at the moment of your birth",
   "landing.hero.subtitle":
-    "AstroEngine Pro calculates natal charts with real astronomical precision, detects planetary aspects and generates month-by-month transit forecasts for the coming years.",
+    "Natal chart with real astronomical precision: wheel, aspects, and life topics (love, money, work…). Transits and solar return as support for your reading.",
   "landing.cta.primary": "Calculate natal chart →",
   "landing.cta.secondary": "Learn the meanings",
   "landing.what_is.title": "What is a natal chart?",
@@ -35,21 +34,31 @@ export const en = {
   "landing.features.natal.title": "Full natal chart",
   "landing.features.natal.desc":
     "12 planets, Placidus houses, exact aspects, and classical dignities with detailed interpretation.",
+  "landing.features.topics.title": "Life topics",
+  "landing.features.topics.desc":
+    "Love, money, work, health, family, and growth — accessible free reading; optional Pro technical layer.",
   "landing.features.transits.title": "Year-by-year transits",
   "landing.features.transits.desc":
     "Interactive timeline for every transit: when it enters orb, when it's exact, and when it leaves, with days of influence and interpretation.",
   "landing.features.solar.title": "Solar Return",
   "landing.features.solar.desc":
     "The chart for the exact moment the Sun returns to its natal position: the yearly horoscope.",
-  "landing.features.geo.title": "Geopolitical Analysis",
-  "landing.features.geo.desc":
-    "World cycles of slow planets, eclipses, and impact by country or on your own natal chart.",
-  "landing.features.calendar.title": "Astrological Calendar",
-  "landing.features.calendar.desc":
-    "The sky day by day: Moon, Sun and fast planets with ingresses, phases, stations and exact aspects.",
   "landing.bottom_cta.title": "Start with your natal chart",
   "landing.bottom_cta.subtitle":
     "You only need date, time, and place of birth. The calculation takes less than 5 seconds.",
+
+  // ── Archived routes (outside active product) ──
+  "archive.badge": "Archived feature",
+  "archive.geo.title": "Geopolitical analysis",
+  "archive.geo.body":
+    "This feature is no longer part of the active product. We focus on the natal chart, life topics, and personal transits.",
+  "archive.calendar.title": "Astrological calendar",
+  "archive.calendar.body":
+    "This feature is no longer part of the active product. The main flow is your natal chart and life-topic reading.",
+  "archive.hint": "You can create or open your natal chart anytime.",
+  "archive.cta.primary": "Create natal chart →",
+  "archive.cta.home": "Back to home",
+  "archive.cta.glossary": "Go to glossary →",
 
   // ── BirthDataForm ──
   "form.name": "Name",
@@ -70,7 +79,6 @@ export const en = {
   "nueva.saved.title": "Saved charts",
   "nueva.saved.view": "View chart",
   "nueva.saved.transits": "✦ Transits",
-  "nueva.saved.geo": "🌍 Geo",
   "nueva.saved.confirm_delete": "Confirm",
   "nueva.saved.cancel": "Cancel",
   "nueva.features.ephemeris": "Swiss Ephemeris",
@@ -98,7 +106,6 @@ export const en = {
   "chart.error.solar": "Solar return error",
   "chart.aspects.show_all": "Show all aspects",
   "chart.aspects.show_less": "Show less",
-  "chart.nav.geo": "🌍 World cycles on your chart",
   "chart.nav.topics": "Topics",
 
   // ── Topic summaries (freemium) ──
@@ -148,7 +155,6 @@ export const en = {
   "transits.calculating": "Calculating transits for",
   "transits.title": "Your sky in motion",
   "transits.orientation": "Each bar is a transit on your chart: from when it enters orb to when it leaves; ♦ = exact.",
-  "transits.calendar_cta": "📅 See the sky day by day in the Calendar →",
   "transits.nav.home": "Home",
   "transits.nav.new": "New chart",
   "transits.nav.natal": "← Natal chart",
@@ -245,10 +251,7 @@ export const en = {
   "glossary.back": "← Back",
   "glossary.cta": "Calculate natal chart →",
 
-  // ── Navigation (extra) ──
-  "nav.geopolitics": "Geopolitics",
-
-  // ── Geopolitical Analysis (mundane astrology) ──
+  // ── Geopolitical Analysis (corpus / archived UI) ──
   "geo.title": "Geopolitical Analysis",
   "geo.subtitle": "Slow-planet cycles and their historical echo · 2026–2027",
   "geo.disclaimer": "Analogical mundane astrology: forecasts are \"probable themes\" from the recurrence of planetary cycles, with cited bibliography. This is astrological interpretation, NOT a factual prediction of events.",

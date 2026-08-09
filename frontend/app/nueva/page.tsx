@@ -120,13 +120,6 @@ export default function NuevaCartaPage() {
                         </button>
                       )}
                       <button
-                        onClick={() => router.push(`/geopolitica?mode=natal&chart=${c.id}`)}
-                        title="Impacto en tu carta — Geopolítica"
-                        className="text-xs font-mono px-2 py-1 rounded-lg border border-indigo-200 text-indigo-500 hover:bg-indigo-50 transition-colors"
-                      >
-                        {t("nueva.saved.geo")}
-                      </button>
-                      <button
                         onClick={() => router.push(`/carta/${c.id}`)}
                         className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-800 transition-colors"
                       >
