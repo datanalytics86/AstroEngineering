@@ -217,11 +217,66 @@ export function deleteChart(id: string): void {
     .forEach((k) => localStorage.removeItem(k));
 }
 
+// ── AstroIngeniería Pro unlock (soft paywall, localStorage) ───────────────────
+// Clave: astro_pro_{chartId}. Valor: { unlocked: true, at: ISO, expiresAt: ISO | null }
+// expiresAt null = permanente. Por defecto 30 días desde el unlock.
+
+const PREFIX_PRO = "astro_pro_";
+const PRO_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
+
+export interface ProUnlockRecord {
+  unlocked: boolean;
+  at: string;
+  expiresAt: string | null;
+}
+
+function proKey(chartId: string): string {
+  return PREFIX_PRO + chartId;
+}
+
+export function isProUnlocked(chartId: string): boolean {
+  try {
+    const raw = localStorage.getItem(proKey(chartId));
+    if (!raw) return false;
+    const rec = JSON.parse(raw) as ProUnlockRecord;
+    if (!rec?.unlocked) return false;
+    if (rec.expiresAt === null) return true;
+    if (!rec.expiresAt) return true;
+    return new Date(rec.expiresAt).getTime() > Date.now();
+  } catch {
+    return false;
+  }
+}
+
+// TODO(Stripe): replace unlockPro with real checkout session
+export function unlockPro(chartId: string, permanent = false): void {
+  const at = new Date().toISOString();
+  const rec: ProUnlockRecord = {
+    unlocked: true,
+    at,
+    expiresAt: permanent ? null : new Date(Date.now() + PRO_TTL_MS).toISOString(),
+  };
+  try {
+    localStorage.setItem(proKey(chartId), JSON.stringify(rec));
+  } catch {
+    pruneStorage();
+    try {
+      localStorage.setItem(proKey(chartId), JSON.stringify(rec));
+    } catch {
+      /* sin espacio */
+    }
+  }
+}
+
 // ── Housekeeping ──────────────────────────────────────────────────────────────
 
 function pruneStorage(): void {
   const keys = Object.keys(localStorage).filter(
-    (k) => k.startsWith(PREFIX_CHART) || k.startsWith(PREFIX_TRANSIT) || k.startsWith(PREFIX_BIRTH)
+    (k) =>
+      k.startsWith(PREFIX_CHART) ||
+      k.startsWith(PREFIX_TRANSIT) ||
+      k.startsWith(PREFIX_BIRTH) ||
+      k.startsWith(PREFIX_PRO)
   );
   // Eliminar las 5 entradas más antiguas
   keys.slice(0, 5).forEach((k) => localStorage.removeItem(k));
