@@ -3,6 +3,8 @@ export const es = {
   "nav.home": "Inicio",
   "nav.new_chart": "Nueva carta",
   "nav.learn": "Aprende",
+  "nav.menu_open": "Abrir menú",
+  "nav.menu_close": "Cerrar menú",
 
   // ── Común ──
   "common.error.waking": "El servidor está despertando (puede tardar ~50s la primera vez). Reintentando…",
@@ -11,13 +13,21 @@ export const es = {
   "footer.tagline": "AstroEngine Pro — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com",
 
   // ── Portada / Landing ──
+  "landing.trust_line": "Swiss Ephemeris · precisión ±0.05°",
   "landing.badge": "Swiss Ephemeris · Precisión ±0.05°",
-  "landing.hero.title_line1": "El mapa del cielo",
-  "landing.hero.title_line2": "en tu momento de nacimiento",
+  "landing.hero.title_line1": "Tu carta natal, en 6 áreas",
+  "landing.hero.title_line2": "de la vida real",
   "landing.hero.subtitle":
-    "Carta natal con precisión astronómica real: rueda, aspectos y temas de vida (amor, dinero, trabajo…). Tránsitos y retorno solar como soporte de tu lectura.",
-  "landing.cta.primary": "Realizar carta natal →",
-  "landing.cta.secondary": "Aprende los significados",
+    "Amor, dinero, trabajo, salud, familia y crecimiento — en lenguaje claro. La ingeniería (orbes, rueda, aspectos) queda al servicio de tu lectura.",
+  "landing.cta.primary": "Ver mi carta →",
+  "landing.cta.secondary": "Cómo se lee una carta",
+  "landing.areas.amor": "Amor",
+  "landing.areas.dinero": "Dinero",
+  "landing.areas.trabajo": "Trabajo",
+  "landing.areas.salud": "Salud",
+  "landing.areas.familia": "Familia",
+  "landing.areas.crecimiento": "Crecimiento",
+  "landing.areas.caption": "Gratis al calcular tu carta · sin paywall en los temas",
   "landing.what_is.title": "¿Qué es una carta natal?",
   "landing.what_is.p1":
     "Una carta natal es una fotografía precisa del cielo en el momento exacto de tu nacimiento: la posición de cada planeta, el signo del zodíaco que ascendía en el horizonte y las doce casas astrológicas que dividen el cielo desde tu lugar de nacimiento.",
@@ -25,27 +35,32 @@ export const es = {
     "Esta configuración única revela arquetipos psicológicos profundos: cómo expresas tu identidad (Sol), cómo procesas tus emociones (Luna), de qué manera te comunicas (Mercurio) y qué fuerzas de transformación operan en tu vida (Saturno, Urano, Neptuno, Plutón).",
   "landing.what_is.p3":
     "Los cálculos utilizan Swiss Ephemeris, la misma biblioteca astronómica usada por el software profesional Astro.com, con una precisión de ±0.05° en las posiciones planetarias.",
+  "landing.what_is.short":
+    "Una carta natal es el cielo en el instante de tu nacimiento. Aquí la traducimos a temas de vida y, si quieres, a la capa de ingeniería: aspectos exactos, rueda y tránsitos.",
   "landing.planets.title": "Los planetas principales",
   "landing.planets.subtitle": "Cada planeta rige un principio psicológico distinto en tu carta",
   "landing.planets.more": "Y mucho más…",
   "landing.planets.more_desc":
     "Aspectos, dignidades, casas, Urano, Neptuno, Plutón, Nodo Norte, Quirón y retrogradación.",
-  "landing.planets.glossary_link": "Ver glosario completo →",
+  "landing.planets.glossary_link": "Glosario de planetas y aspectos →",
   "landing.features.natal.title": "Carta natal completa",
   "landing.features.natal.desc":
     "12 planetas, casas Placidus, aspectos exactos y dignidades clásicas con interpretación detallada.",
-  "landing.features.topics.title": "Temas de vida",
+  "landing.features.topics.title": "Temas de vida (gratis)",
   "landing.features.topics.desc":
-    "Amor, dinero, trabajo, salud, familia y crecimiento — lectura accesible gratis; capa técnica Pro opcional.",
-  "landing.features.transits.title": "Tránsitos año a año",
+    "Seis áreas legibles al instante: lo que te importa, sin jerga opaca.",
+  "landing.features.pro.title": "AstroIngeniería Pro",
+  "landing.features.pro.desc":
+    "Resumen técnico, aspectos TIER1 (orbe < 1°) e índice de intensidad 12 meses.",
+  "landing.features.transits.title": "Tránsitos del año",
   "landing.features.transits.desc":
-    "Cronología interactiva de cada tránsito: cuándo entra en orbe, cuándo es exacto y cuándo sale, con días de influencia e interpretación.",
+    "Desde tu carta: el cielo en movimiento y el soporte del índice de intensidad.",
   "landing.features.solar.title": "Retorno Solar",
   "landing.features.solar.desc":
     "La carta del momento exacto en que el Sol regresa a su posición natal: el horóscopo del año.",
-  "landing.bottom_cta.title": "Comienza con tu carta natal",
+  "landing.bottom_cta.title": "Empieza por tu carta",
   "landing.bottom_cta.subtitle":
-    "Solo necesitas fecha, hora y lugar de nacimiento. El cálculo tarda menos de 5 segundos.",
+    "Fecha, hora y lugar. En segundos ves tus 6 temas de vida.",
 
   // ── Rutas archivadas (fuera del producto activo) ──
   "archive.badge": "Función archivada",
@@ -90,11 +105,16 @@ export const es = {
 
   // ── Carta natal page ──
   "chart.loading": "Cargando carta natal…",
+  "chart.trust_strip": "Swiss Ephemeris · ±0.05° · datos reales, sin inventar planetas",
+  "chart.tech.badge": "Ingeniería",
+  "chart.tech.title": "Carta técnica",
+  "chart.tech.subtitle":
+    "Rueda, ángulos, planetas y aspectos — la base de precisión de AstroEngine.",
   "chart.nav.home": "Inicio",
   "chart.nav.new": "← Nueva carta",
-  "chart.nav.summary": "✦ Resumen ejecutivo",
+  "chart.nav.summary": "✦ Resumen técnico",
   "chart.nav.solar": "Retorno Solar",
-  "chart.nav.transits": "Ver Tránsitos 12 meses →",
+  "chart.nav.transits": "Tránsitos 12 meses",
   "chart.nav.transits_loading": "Calculando tránsitos…",
   "chart.wheel.title": "Rueda Natal",
   "chart.wheel.hint": "Click en planeta, aspecto, casa o ángulo para ver interpretación",
@@ -109,29 +129,29 @@ export const es = {
   "chart.nav.topics": "Temas",
 
   // ── Resumen por Temas (freemium) ──
-  "chart.topics.badge": "Gratis · Compartible",
-  "chart.topics.title": "Resumen por Temas",
+  "chart.topics.badge": "Gratis · valor inmediato",
+  "chart.topics.title": "Tu mapa en 6 áreas",
   "chart.topics.subtitle":
-    "Amor, dinero, trabajo y más — una lectura accesible de tu carta, lista para compartir.",
+    "Toca una tarjeta. Lectura anclada a tu carta real — no a un horóscopo genérico.",
   "chart.topics.free_badge": "Incluido",
   "chart.topics.strength.alta": "Alta",
   "chart.topics.strength.media": "Media",
   "chart.topics.strength.desafio": "Desafío",
 
   // ── AstroIngeniería Pro (soft paywall) ──
-  "chart.pro.badge": "AstroIngeniería Completa",
+  "chart.pro.badge": "AstroIngeniería",
   "chart.pro.title_unlocked": "Capa técnica desbloqueada",
-  "chart.pro.teaser.title": "Desbloquea la capa técnica",
+  "chart.pro.teaser.title": "Precisión de ingeniería",
   "chart.pro.teaser.body":
-    "Resumen técnico, aspectos TIER1 (orbe < 1°), Índice de Intensidad Personal 12 meses y preview de tránsitos por tema cuando haya datos reales.",
+    "Cuando quieras ir más profundo: resumen técnico, aspectos TIER1 (orbe < 1°), intensidad personal 12 meses y preview de tránsitos por tema.",
   "chart.pro.unlocked_subtitle":
-    "Contenido técnico desbloqueado para esta carta. Válido 30 días en este dispositivo.",
-  "chart.pro.locked_badge": "Bloqueado",
-  "chart.pro.unlocked_badge": "Pro",
-  "chart.pro.feature.summary": "Resumen técnico ejecutivo (Sol, Luna, MC, aspectos clave)",
-  "chart.pro.feature.tier1": "Aspectos TIER1 con orbe inferior a 1°",
+    "Contenido técnico activo en esta carta · 30 días en este dispositivo.",
+  "chart.pro.locked_badge": "Pro",
+  "chart.pro.unlocked_badge": "Pro activo",
+  "chart.pro.feature.summary": "Resumen técnico (Sol, Luna, MC, aspectos clave)",
+  "chart.pro.feature.tier1": "Aspectos TIER1 con orbe < 1°",
   "chart.pro.feature.intensity": "Índice de Intensidad Personal (12 meses)",
-  "chart.pro.feature.transits": "Preview de tránsitos 12 meses agrupados por tema",
+  "chart.pro.feature.transits": "Preview de tránsitos por tema (con datos reales)",
   "chart.pro.unlock_cta": "Desbloquear AstroIngeniería ($2.99)",
   "chart.pro.unlock_note": "Pago simulado · se guarda en este navegador",
   "chart.pro.section.summary": "Resumen técnico",
@@ -145,10 +165,10 @@ export const es = {
   "chart.pro.intensity.cta_transits": "Calcular tránsitos 12 meses →",
   "chart.pro.intensity.aria": "Gráfico de intensidad personal con {n} meses",
   "chart.pro.intensity.explain":
-    "Curva inspirada en el índice cíclico de Barbault: intensidad mensual de tránsitos sobre tu carta natal (0–10). No es predicción absoluta.",
+    "Intensidad mensual de tránsitos sobre tu carta (0–10). Interpretativo, no predicción absoluta.",
   "chart.pro.transits_empty":
-    "Aún no hay tránsitos calculados para este año. Usa «Ver Tránsitos 12 meses» y vuelve aquí para el preview por tema.",
-  "chart.pro.summary_locked": "Resumen ejecutivo (Pro)",
+    "Aún no hay tránsitos calculados para este año. Usa «Tránsitos 12 meses» y vuelve para el preview por tema.",
+  "chart.pro.summary_locked": "Resumen Pro",
 
   // ── Tránsitos page ──
   "transits.loading": "Cargando carta…",

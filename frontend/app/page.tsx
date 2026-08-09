@@ -3,232 +3,132 @@
 import { useRouter } from "next/navigation";
 import { useT } from "@/lib/i18n";
 
-const PLANET_CARDS = [
-  {
-    symbol: "☉",
-    name: "Sol",
-    roleKey: "tu identidad y voluntad",
-    color: "#F97316",
-    description:
-      "El Sol representa quién eres en esencia: tu propósito de vida, tu vitalidad y la expresión más auténtica de tu ego.",
-    descriptionEn:
-      "The Sun represents who you are at your core: your life purpose, vitality, and the most authentic expression of your ego.",
-  },
-  {
-    symbol: "☽",
-    name: "Luna",
-    roleKey: "tus emociones y hábitos",
-    color: "#6366F1",
-    description:
-      "La Luna rige el mundo interior: tus emociones, instintos, memoria y la forma en que te nutres y conectas con el hogar.",
-    descriptionEn:
-      "The Moon governs the inner world: your emotions, instincts, memory, and how you nourish yourself and connect with home.",
-  },
-  {
-    symbol: "☿",
-    name: "Mercurio",
-    roleKey: "tu mente y comunicación",
-    color: "#06B6D4",
-    description:
-      "Mercurio gobierna el pensamiento, el lenguaje y los vínculos intelectuales. Revela cómo procesas información y te comunicas.",
-    descriptionEn:
-      "Mercury governs thought, language, and intellectual connections. It reveals how you process information and communicate.",
-  },
-  {
-    symbol: "♀",
-    name: "Venus",
-    roleKey: "tus valores y relaciones",
-    color: "#EC4899",
-    description:
-      "Venus muestra qué aprecias en el amor, la belleza y el dinero. Define tu capacidad de atracción y los valores que guían tus elecciones.",
-    descriptionEn:
-      "Venus shows what you value in love, beauty, and money. It defines your capacity for attraction and the values guiding your choices.",
-  },
-  {
-    symbol: "♂",
-    name: "Marte",
-    roleKey: "tu energía y acción",
-    color: "#EF4444",
-    description:
-      "Marte es el impulso que te mueve a actuar: tu ambición, deseo, coraje y la forma en que enfrentas los conflictos.",
-    descriptionEn:
-      "Mars is the drive that moves you to act: your ambition, desire, courage, and how you face conflicts.",
-  },
-  {
-    symbol: "♃",
-    name: "Júpiter",
-    roleKey: "tu expansión y optimismo",
-    color: "#10B981",
-    description:
-      "Júpiter señala dónde encuentras abundancia, crecimiento y significado. Es el principio de expansión y búsqueda filosófica.",
-    descriptionEn:
-      "Jupiter shows where you find abundance, growth, and meaning. It is the principle of expansion and philosophical quest.",
-  },
-  {
-    symbol: "♄",
-    name: "Saturno",
-    roleKey: "tu estructura y limitaciones",
-    color: "#64748B",
-    description:
-      "Saturno representa las lecciones kármicas, la disciplina y las estructuras que te dan forma. Es donde maduras y construyes con solidez.",
-    descriptionEn:
-      "Saturn represents karmic lessons, discipline, and the structures that shape you. It is where you mature and build with solidity.",
-  },
+const LIFE_AREAS = [
+  { icon: "♥", key: "landing.areas.amor" as const },
+  { icon: "◈", key: "landing.areas.dinero" as const },
+  { icon: "↑", key: "landing.areas.trabajo" as const },
+  { icon: "✚", key: "landing.areas.salud" as const },
+  { icon: "⌂", key: "landing.areas.familia" as const },
+  { icon: "✧", key: "landing.areas.crecimiento" as const },
 ];
 
 export default function PortadaPage() {
   const router = useRouter();
-  const { t, lang } = useT();
+  const { t } = useT();
 
   return (
     <div className="min-h-screen bg-base">
-      {/* ── Hero ── */}
-      <section className="max-w-4xl mx-auto px-6 pt-20 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 mb-6 bg-blue-50 border border-blue-100 rounded-full px-4 py-1.5 text-xs font-mono text-blue-600">
-          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-          {t("landing.badge")}
-        </div>
-        <h1 className="text-5xl font-bold text-slate-900 tracking-tight leading-tight mb-4">
-          {t("landing.hero.title_line1")}<br />
+      {/* Hero — life promise first */}
+      <section className="max-w-3xl mx-auto px-5 sm:px-6 pt-16 sm:pt-24 pb-14 text-center">
+        <p className="text-xs font-mono text-slate-400 mb-5 tracking-wide">
+          {t("landing.trust_line")}
+        </p>
+        <h1 className="text-3xl sm:text-5xl font-bold text-slate-900 tracking-tight leading-[1.15] mb-5">
+          {t("landing.hero.title_line1")}
+          <br />
           <span className="text-blue-600">{t("landing.hero.title_line2")}</span>
         </h1>
-        <p className="text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto mb-10">
+        <p className="text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl mx-auto mb-8">
           {t("landing.hero.subtitle")}
         </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
           <button
+            type="button"
             onClick={() => router.push("/nueva")}
-            className="bg-blue-600 text-white px-8 py-3.5 rounded-xl text-base font-semibold hover:bg-blue-700 transition-colors shadow-card-md w-full sm:w-auto"
+            className="bg-blue-600 text-white px-8 py-3.5 min-h-[48px] rounded-xl text-base font-semibold hover:bg-blue-700 transition-colors shadow-card-md w-full sm:w-auto"
           >
             {t("landing.cta.primary")}
           </button>
           <button
+            type="button"
             onClick={() => router.push("/glosario")}
-            className="border border-border text-slate-600 px-8 py-3.5 rounded-xl text-base font-medium hover:border-blue-300 hover:text-blue-600 transition-colors w-full sm:w-auto"
+            className="border border-slate-200 text-slate-500 px-6 py-3 min-h-[48px] rounded-xl text-sm font-medium hover:border-blue-300 hover:text-blue-600 transition-colors w-full sm:w-auto"
           >
             {t("landing.cta.secondary")}
           </button>
         </div>
       </section>
 
-      {/* ── ¿Qué es una carta natal? ── */}
-      <section className="bg-white border-y border-border py-16">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">{t("landing.what_is.title")}</h2>
-          <p className="text-slate-600 leading-relaxed text-base mb-4">{t("landing.what_is.p1")}</p>
-          <p className="text-slate-600 leading-relaxed text-base mb-4">{t("landing.what_is.p2")}</p>
-          <p className="text-slate-500 leading-relaxed text-sm">
-            {lang === "es" ? (
-              <>Los cálculos utilizan <span className="font-semibold text-slate-700">Swiss Ephemeris</span>, la misma biblioteca astronómica usada por el software profesional Astro.com, con una precisión de ±0.05° en las posiciones planetarias.</>
-            ) : (
-              <>Calculations use <span className="font-semibold text-slate-700">Swiss Ephemeris</span>, the same astronomical library used by professional software Astro.com, with planetary position precision of ±0.05°.</>
-            )}
-          </p>
-        </div>
-      </section>
-
-      {/* ── Planetas principales ── */}
-      <section className="max-w-5xl mx-auto px-6 py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">{t("landing.planets.title")}</h2>
-          <p className="text-slate-500 text-sm font-mono">{t("landing.planets.subtitle")}</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {PLANET_CARDS.map((p) => (
+      {/* 6 life areas — product promise */}
+      <section className="max-w-3xl mx-auto px-5 sm:px-6 pb-14">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+          {LIFE_AREAS.map((a) => (
             <div
-              key={p.name}
-              className="bg-white border border-border rounded-2xl p-5 shadow-card hover:border-blue-200 hover:shadow-card-md transition-all"
+              key={a.key}
+              className="bg-white border border-border rounded-xl px-3 py-3.5 sm:px-4 sm:py-4 text-center shadow-card"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <span
-                  className="text-2xl w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-border font-mono"
-                  style={{ color: p.color }}
-                >
-                  {p.symbol}
-                </span>
-                <div>
-                  <p className="font-semibold text-slate-800 text-sm">{p.name}</p>
-                  <p className="text-xs text-slate-400 font-mono">{p.roleKey}</p>
-                </div>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                {lang === "en" ? p.descriptionEn : p.description}
-              </p>
+              <span className="text-blue-600 font-mono text-sm block mb-1" aria-hidden>
+                {a.icon}
+              </span>
+              <span className="text-sm font-semibold text-slate-800">{t(a.key)}</span>
             </div>
           ))}
-
-          {/* CTA card */}
-          <div
-            className="bg-blue-600 border border-blue-500 rounded-2xl p-5 shadow-card flex flex-col items-start justify-between cursor-pointer hover:bg-blue-700 transition-colors"
-            onClick={() => router.push("/glosario")}
-          >
-            <div>
-              <p className="font-semibold text-white text-sm mb-2">{t("landing.planets.more")}</p>
-              <p className="text-xs text-blue-100 leading-relaxed">{t("landing.planets.more_desc")}</p>
-            </div>
-            <span className="mt-4 text-xs font-mono text-blue-200 hover:text-white transition-colors">
-              {t("landing.planets.glossary_link")}
-            </span>
-          </div>
         </div>
+        <p className="text-center text-xs text-slate-400 mt-4 font-mono">
+          {t("landing.areas.caption")}
+        </p>
       </section>
 
-      {/* ── Features: natal product only ── */}
-      <section className="bg-white border-t border-border py-16">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Value props — max 3, all → /nueva */}
+      <section className="bg-white border-y border-border py-14 sm:py-16">
+        <div className="max-w-4xl mx-auto px-5 sm:px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-6">
             {[
               {
-                icon: "⊕",
-                titleKey: "landing.features.natal.title" as const,
-                descKey: "landing.features.natal.desc" as const,
-                href: "/nueva",
-                accent: "text-blue-600",
-              },
-              {
-                icon: "◈",
+                step: "01",
                 titleKey: "landing.features.topics.title" as const,
                 descKey: "landing.features.topics.desc" as const,
-                href: "/nueva",
-                accent: "text-indigo-600",
               },
               {
-                icon: "✦",
+                step: "02",
+                titleKey: "landing.features.pro.title" as const,
+                descKey: "landing.features.pro.desc" as const,
+              },
+              {
+                step: "03",
                 titleKey: "landing.features.transits.title" as const,
                 descKey: "landing.features.transits.desc" as const,
-                href: "/nueva",
-                accent: "text-blue-600",
-              },
-              {
-                icon: "☉",
-                titleKey: "landing.features.solar.title" as const,
-                descKey: "landing.features.solar.desc" as const,
-                href: "/nueva",
-                accent: "text-amber-600",
               },
             ].map((f) => (
-              <div
+              <button
                 key={f.titleKey}
-                onClick={() => router.push(f.href)}
-                className="text-center cursor-pointer rounded-xl p-4 -m-4 hover:bg-slate-50 transition-colors"
+                type="button"
+                onClick={() => router.push("/nueva")}
+                className="text-left rounded-xl p-1 hover:bg-slate-50/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               >
-                <div className={`text-3xl mb-3 font-mono ${f.accent}`}>{f.icon}</div>
-                <h3 className="font-semibold text-slate-800 mb-2">{t(f.titleKey)}</h3>
+                <span className="text-xs font-mono text-blue-600 font-semibold">{f.step}</span>
+                <h3 className="font-semibold text-slate-900 mt-1.5 mb-2">{t(f.titleKey)}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{t(f.descKey)}</p>
-              </div>
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Bottom CTA ── */}
-      <section className="max-w-xl mx-auto px-6 py-16 text-center">
-        <h2 className="text-2xl font-bold text-slate-900 mb-4">{t("landing.bottom_cta.title")}</h2>
+      {/* Short trust + educate link */}
+      <section className="max-w-2xl mx-auto px-5 sm:px-6 py-12 text-center">
+        <p className="text-sm text-slate-600 leading-relaxed mb-3">
+          {t("landing.what_is.short")}
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/glosario")}
+          className="text-sm font-mono text-blue-600 hover:text-blue-700 min-h-[44px]"
+        >
+          {t("landing.planets.glossary_link")}
+        </button>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="max-w-xl mx-auto px-5 sm:px-6 pb-20 text-center">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-3">
+          {t("landing.bottom_cta.title")}
+        </h2>
         <p className="text-slate-500 text-sm mb-8">{t("landing.bottom_cta.subtitle")}</p>
         <button
+          type="button"
           onClick={() => router.push("/nueva")}
-          className="bg-blue-600 text-white px-10 py-4 rounded-xl text-base font-semibold hover:bg-blue-700 transition-colors shadow-card-md"
+          className="bg-blue-600 text-white px-10 py-4 min-h-[48px] rounded-xl text-base font-semibold hover:bg-blue-700 transition-colors shadow-card-md w-full sm:w-auto"
         >
           {t("landing.cta.primary")}
         </button>

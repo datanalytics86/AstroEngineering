@@ -3,6 +3,8 @@ export const en = {
   "nav.home": "Home",
   "nav.new_chart": "New chart",
   "nav.learn": "Learn",
+  "nav.menu_open": "Open menu",
+  "nav.menu_close": "Close menu",
 
   // ── Común ──
   "common.error.waking": "The server is waking up (may take ~50s the first time). Retrying…",
@@ -11,13 +13,21 @@ export const en = {
   "footer.tagline": "AstroEngine Pro — Swiss Ephemeris · Precision ±0.05° · Calculations validated against astro.com",
 
   // ── Portada / Landing ──
+  "landing.trust_line": "Swiss Ephemeris · ±0.05° precision",
   "landing.badge": "Swiss Ephemeris · Precision ±0.05°",
-  "landing.hero.title_line1": "A snapshot of the sky",
-  "landing.hero.title_line2": "at the moment of your birth",
+  "landing.hero.title_line1": "Your natal chart, in 6",
+  "landing.hero.title_line2": "real-life areas",
   "landing.hero.subtitle":
-    "Natal chart with real astronomical precision: wheel, aspects, and life topics (love, money, work…). Transits and solar return as support for your reading.",
-  "landing.cta.primary": "Calculate natal chart →",
-  "landing.cta.secondary": "Learn the meanings",
+    "Love, money, work, health, family, and growth — in clear language. Engineering (orbs, wheel, aspects) serves your reading.",
+  "landing.cta.primary": "See my chart →",
+  "landing.cta.secondary": "How to read a chart",
+  "landing.areas.amor": "Love",
+  "landing.areas.dinero": "Money",
+  "landing.areas.trabajo": "Work",
+  "landing.areas.salud": "Health",
+  "landing.areas.familia": "Family",
+  "landing.areas.crecimiento": "Growth",
+  "landing.areas.caption": "Free when you run your chart · topics are not paywalled",
   "landing.what_is.title": "What is a natal chart?",
   "landing.what_is.p1":
     "A natal chart is a precise photograph of the sky at the exact moment of your birth: the position of each planet, the zodiac sign rising on the eastern horizon, and the twelve astrological houses dividing the sky from your birthplace.",
@@ -25,27 +35,32 @@ export const en = {
     "This unique configuration reveals deep psychological archetypes: how you express your identity (Sun), how you process emotions (Moon), how you communicate (Mercury), and what transformative forces operate in your life (Saturn, Uranus, Neptune, Pluto).",
   "landing.what_is.p3":
     "Calculations use Swiss Ephemeris, the same astronomical library used by professional software Astro.com, with planetary position precision of ±0.05°.",
+  "landing.what_is.short":
+    "A natal chart is the sky at your birth. We translate it into life topics — and, if you want, into the engineering layer: exact aspects, wheel, and transits.",
   "landing.planets.title": "The main planets",
   "landing.planets.subtitle": "Each planet governs a distinct psychological principle in your chart",
   "landing.planets.more": "And much more…",
   "landing.planets.more_desc":
     "Aspects, dignities, houses, Uranus, Neptune, Pluto, North Node, Chiron, and retrogradation.",
-  "landing.planets.glossary_link": "View full glossary →",
+  "landing.planets.glossary_link": "Planet & aspect glossary →",
   "landing.features.natal.title": "Full natal chart",
   "landing.features.natal.desc":
     "12 planets, Placidus houses, exact aspects, and classical dignities with detailed interpretation.",
-  "landing.features.topics.title": "Life topics",
+  "landing.features.topics.title": "Life topics (free)",
   "landing.features.topics.desc":
-    "Love, money, work, health, family, and growth — accessible free reading; optional Pro technical layer.",
-  "landing.features.transits.title": "Year-by-year transits",
+    "Six areas you can read instantly — what matters, without opaque jargon.",
+  "landing.features.pro.title": "AstroEngineering Pro",
+  "landing.features.pro.desc":
+    "Technical summary, TIER1 aspects (orb < 1°), and 12-month personal intensity index.",
+  "landing.features.transits.title": "Yearly transits",
   "landing.features.transits.desc":
-    "Interactive timeline for every transit: when it enters orb, when it's exact, and when it leaves, with days of influence and interpretation.",
+    "From your chart: the sky in motion and support for the intensity index.",
   "landing.features.solar.title": "Solar Return",
   "landing.features.solar.desc":
     "The chart for the exact moment the Sun returns to its natal position: the yearly horoscope.",
-  "landing.bottom_cta.title": "Start with your natal chart",
+  "landing.bottom_cta.title": "Start with your chart",
   "landing.bottom_cta.subtitle":
-    "You only need date, time, and place of birth. The calculation takes less than 5 seconds.",
+    "Date, time, and place. In seconds you see your 6 life topics.",
 
   // ── Archived routes (outside active product) ──
   "archive.badge": "Archived feature",
@@ -90,11 +105,16 @@ export const en = {
 
   // ── Carta natal page ──
   "chart.loading": "Loading natal chart…",
+  "chart.trust_strip": "Swiss Ephemeris · ±0.05° · real data, no invented planets",
+  "chart.tech.badge": "Engineering",
+  "chart.tech.title": "Technical chart",
+  "chart.tech.subtitle":
+    "Wheel, angles, planets, and aspects — AstroEngine’s precision base.",
   "chart.nav.home": "Home",
   "chart.nav.new": "← New chart",
-  "chart.nav.summary": "✦ Executive summary",
+  "chart.nav.summary": "✦ Technical summary",
   "chart.nav.solar": "Solar Return",
-  "chart.nav.transits": "View 12-month Transits →",
+  "chart.nav.transits": "12-month transits",
   "chart.nav.transits_loading": "Calculating transits…",
   "chart.wheel.title": "Natal Wheel",
   "chart.wheel.hint": "Click a planet, aspect, house, or angle to see interpretation",
@@ -109,29 +129,29 @@ export const en = {
   "chart.nav.topics": "Topics",
 
   // ── Topic summaries (freemium) ──
-  "chart.topics.badge": "Free · Shareable",
-  "chart.topics.title": "Topic Summaries",
+  "chart.topics.badge": "Free · immediate value",
+  "chart.topics.title": "Your map in 6 areas",
   "chart.topics.subtitle":
-    "Love, money, work and more — an accessible read of your chart, ready to share.",
+    "Tap a card. Reading anchored to your real chart — not a generic horoscope.",
   "chart.topics.free_badge": "Included",
   "chart.topics.strength.alta": "High",
   "chart.topics.strength.media": "Medium",
   "chart.topics.strength.desafio": "Challenge",
 
   // ── AstroEngineering Pro (soft paywall) ──
-  "chart.pro.badge": "Full AstroEngineering",
+  "chart.pro.badge": "AstroEngineering",
   "chart.pro.title_unlocked": "Technical layer unlocked",
-  "chart.pro.teaser.title": "Unlock the technical layer",
+  "chart.pro.teaser.title": "Engineering precision",
   "chart.pro.teaser.body":
-    "Technical summary, TIER1 aspects (orb < 1°), 12-month Personal Intensity Index, and transit preview by topic when real data exists.",
+    "When you want to go deeper: technical summary, TIER1 aspects (orb < 1°), 12-month personal intensity, and transit preview by topic.",
   "chart.pro.unlocked_subtitle":
-    "Technical content unlocked for this chart. Valid 30 days on this device.",
-  "chart.pro.locked_badge": "Locked",
-  "chart.pro.unlocked_badge": "Pro",
-  "chart.pro.feature.summary": "Technical executive summary (Sun, Moon, MC, key aspects)",
-  "chart.pro.feature.tier1": "TIER1 aspects with orb under 1°",
+    "Technical content active on this chart · 30 days on this device.",
+  "chart.pro.locked_badge": "Pro",
+  "chart.pro.unlocked_badge": "Pro active",
+  "chart.pro.feature.summary": "Technical summary (Sun, Moon, MC, key aspects)",
+  "chart.pro.feature.tier1": "TIER1 aspects with orb < 1°",
   "chart.pro.feature.intensity": "Personal Intensity Index (12 months)",
-  "chart.pro.feature.transits": "12-month transit preview grouped by topic",
+  "chart.pro.feature.transits": "Transit preview by topic (real data only)",
   "chart.pro.unlock_cta": "Unlock AstroEngineering ($2.99)",
   "chart.pro.unlock_note": "Simulated payment · stored in this browser",
   "chart.pro.section.summary": "Technical summary",
@@ -145,10 +165,10 @@ export const en = {
   "chart.pro.intensity.cta_transits": "Calculate 12-month transits →",
   "chart.pro.intensity.aria": "Personal intensity chart with {n} months",
   "chart.pro.intensity.explain":
-    "Barbault-inspired curve: monthly transit intensity on your natal chart (0–10). Interpretive, not absolute prediction.",
+    "Monthly transit intensity on your chart (0–10). Interpretive, not absolute prediction.",
   "chart.pro.transits_empty":
-    "No transits calculated for this year yet. Use «View 12-month Transits» and return here for the topic preview.",
-  "chart.pro.summary_locked": "Executive summary (Pro)",
+    "No transits calculated for this year yet. Use «12-month transits» and return for the topic preview.",
+  "chart.pro.summary_locked": "Pro summary",
 
   // ── Tránsitos page ──
   "transits.loading": "Loading chart…",

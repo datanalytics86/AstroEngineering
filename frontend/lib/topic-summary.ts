@@ -207,11 +207,11 @@ function buildLove(
   const headline =
     lang === "en"
       ? venus
-        ? `Venus in ${venus.sign} shapes how you love`
-        : "Your relational style is uniquely yours"
+        ? `How you love: Venus in ${venus.sign}`
+        : "How you connect — your relational signature"
       : venus
-        ? `Venus en ${venus.sign} marca tu forma de amar`
-        : "Tu estilo relacional es único";
+        ? `Cómo amas: Venus en ${venus.sign}`
+        : "Cómo te vinculas — tu firma relacional";
 
   const p1 =
     lang === "en"
@@ -313,11 +313,11 @@ function buildMoney(
   const headline =
     lang === "en"
       ? jupiter
-        ? `Jupiter in ${jupiter.sign} expands what you value`
-        : "Your relationship with resources is personal"
+        ? `Money & worth: Jupiter in ${jupiter.sign}`
+        : "How you earn, keep and value resources"
       : jupiter
-        ? `Júpiter en ${jupiter.sign} expande lo que valoras`
-        : "Tu relación con los recursos es personal";
+        ? `Dinero y valor: Júpiter en ${jupiter.sign}`
+        : "Cómo generas, cuidas y valoras lo tuyo";
 
   const p1 =
     lang === "en"
@@ -396,8 +396,8 @@ function buildWork(
 
   const headline =
     lang === "en"
-      ? `Midheaven in ${mc.sign}: your public signature`
-      : `Medio Cielo en ${mc.sign}: tu firma pública`;
+      ? `Career path: Midheaven in ${mc.sign}`
+      : `Camino profesional: Medio Cielo en ${mc.sign}`;
 
   const p1 =
     lang === "en"
@@ -475,11 +475,11 @@ function buildHealth(
   const headline =
     lang === "en"
       ? mars
-        ? `Mars in ${mars.sign} sets your energy gear`
-        : "Your body thrives on the right rhythm"
+        ? `Energy & body: Mars in ${mars.sign}`
+        : "The rhythm that keeps you well"
       : mars
-        ? `Marte en ${mars.sign} marca tu marcha energética`
-        : "Tu cuerpo prospera con el ritmo adecuado";
+        ? `Energía y cuerpo: Marte en ${mars.sign}`
+        : "El ritmo que te mantiene bien";
 
   const p1 =
     lang === "en"
@@ -551,11 +551,11 @@ function buildFamily(
   const headline =
     lang === "en"
       ? moon
-        ? `Moon in ${moon.sign}: your emotional home base`
-        : "Home is where your nervous system exhales"
+        ? `Home & roots: Moon in ${moon.sign}`
+        : "Where you feel safe enough to rest"
       : moon
-        ? `Luna en ${moon.sign}: tu base emocional`
-        : "El hogar es donde tu sistema nervioso exhala";
+        ? `Hogar y raíces: Luna en ${moon.sign}`
+        : "Dónde te sientes lo bastante seguro/a para descansar";
 
   const p1 =
     lang === "en"
@@ -631,11 +631,11 @@ function buildGrowth(
   const headline =
     lang === "en"
       ? nn
-        ? `North Node in ${nn.sign}: your growth vector`
-        : "Your chart points toward conscious expansion"
+        ? `Your next chapter: North Node in ${nn.sign}`
+        : "Where life keeps inviting you to grow"
       : nn
-        ? `Nodo Norte en ${nn.sign}: tu vector de crecimiento`
-        : "Tu carta apunta a una expansión consciente";
+        ? `Tu próximo capítulo: Nodo Norte en ${nn.sign}`
+        : "Hacia dónde la vida te invita a crecer";
 
   const p1 =
     lang === "en"
