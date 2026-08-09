@@ -99,6 +99,49 @@ export const en = {
   "chart.aspects.show_all": "Show all aspects",
   "chart.aspects.show_less": "Show less",
   "chart.nav.geo": "🌍 World cycles on your chart",
+  "chart.nav.topics": "Topics",
+
+  // ── Topic summaries (freemium) ──
+  "chart.topics.badge": "Free · Shareable",
+  "chart.topics.title": "Topic Summaries",
+  "chart.topics.subtitle":
+    "Love, money, work and more — an accessible read of your chart, ready to share.",
+  "chart.topics.free_badge": "Included",
+  "chart.topics.strength.alta": "High",
+  "chart.topics.strength.media": "Medium",
+  "chart.topics.strength.desafio": "Challenge",
+
+  // ── AstroEngineering Pro (soft paywall) ──
+  "chart.pro.badge": "Full AstroEngineering",
+  "chart.pro.title_unlocked": "Technical layer unlocked",
+  "chart.pro.teaser.title": "Unlock the technical layer",
+  "chart.pro.teaser.body":
+    "Technical summary, TIER1 aspects (orb < 1°), 12-month Personal Intensity Index, and transit preview by topic when real data exists.",
+  "chart.pro.unlocked_subtitle":
+    "Technical content unlocked for this chart. Valid 30 days on this device.",
+  "chart.pro.locked_badge": "Locked",
+  "chart.pro.unlocked_badge": "Pro",
+  "chart.pro.feature.summary": "Technical executive summary (Sun, Moon, MC, key aspects)",
+  "chart.pro.feature.tier1": "TIER1 aspects with orb under 1°",
+  "chart.pro.feature.intensity": "Personal Intensity Index (12 months)",
+  "chart.pro.feature.transits": "12-month transit preview grouped by topic",
+  "chart.pro.unlock_cta": "Unlock AstroEngineering ($2.99)",
+  "chart.pro.unlock_note": "Simulated payment · stored in this browser",
+  "chart.pro.section.summary": "Technical summary",
+  "chart.pro.tier1.title": "TIER1 aspects (orb < 1°)",
+  "chart.pro.section.transits": "Transits by topic (12 months)",
+  "chart.pro.open_summary": "Open full summary →",
+  "chart.pro.tier1_empty": "No major aspects with orb < 1° in this chart.",
+  "chart.pro.intensity.title": "Personal Intensity Index",
+  "chart.pro.intensity.empty":
+    "No transit data for this year yet. Calculate 12-month transits to see your intensity curve.",
+  "chart.pro.intensity.cta_transits": "Calculate 12-month transits →",
+  "chart.pro.intensity.aria": "Personal intensity chart with {n} months",
+  "chart.pro.intensity.explain":
+    "Barbault-inspired curve: monthly transit intensity on your natal chart (0–10). Interpretive, not absolute prediction.",
+  "chart.pro.transits_empty":
+    "No transits calculated for this year yet. Use «View 12-month Transits» and return here for the topic preview.",
+  "chart.pro.summary_locked": "Executive summary (Pro)",
 
   // ── Tránsitos page ──
   "transits.loading": "Loading chart…",

@@ -99,6 +99,49 @@ export const es = {
   "chart.aspects.show_all": "Ver todos los aspectos",
   "chart.aspects.show_less": "Ver menos",
   "chart.nav.geo": "🌍 Ciclos mundiales sobre tu carta",
+  "chart.nav.topics": "Temas",
+
+  // ── Resumen por Temas (freemium) ──
+  "chart.topics.badge": "Gratis · Compartible",
+  "chart.topics.title": "Resumen por Temas",
+  "chart.topics.subtitle":
+    "Amor, dinero, trabajo y más — una lectura accesible de tu carta, lista para compartir.",
+  "chart.topics.free_badge": "Incluido",
+  "chart.topics.strength.alta": "Alta",
+  "chart.topics.strength.media": "Media",
+  "chart.topics.strength.desafio": "Desafío",
+
+  // ── AstroIngeniería Pro (soft paywall) ──
+  "chart.pro.badge": "AstroIngeniería Completa",
+  "chart.pro.title_unlocked": "Capa técnica desbloqueada",
+  "chart.pro.teaser.title": "Desbloquea la capa técnica",
+  "chart.pro.teaser.body":
+    "Resumen técnico, aspectos TIER1 (orbe < 1°), Índice de Intensidad Personal 12 meses y preview de tránsitos por tema cuando haya datos reales.",
+  "chart.pro.unlocked_subtitle":
+    "Contenido técnico desbloqueado para esta carta. Válido 30 días en este dispositivo.",
+  "chart.pro.locked_badge": "Bloqueado",
+  "chart.pro.unlocked_badge": "Pro",
+  "chart.pro.feature.summary": "Resumen técnico ejecutivo (Sol, Luna, MC, aspectos clave)",
+  "chart.pro.feature.tier1": "Aspectos TIER1 con orbe inferior a 1°",
+  "chart.pro.feature.intensity": "Índice de Intensidad Personal (12 meses)",
+  "chart.pro.feature.transits": "Preview de tránsitos 12 meses agrupados por tema",
+  "chart.pro.unlock_cta": "Desbloquear AstroIngeniería ($2.99)",
+  "chart.pro.unlock_note": "Pago simulado · se guarda en este navegador",
+  "chart.pro.section.summary": "Resumen técnico",
+  "chart.pro.tier1.title": "Aspectos TIER1 (orbe < 1°)",
+  "chart.pro.section.transits": "Tránsitos por tema (12 meses)",
+  "chart.pro.open_summary": "Abrir resumen completo →",
+  "chart.pro.tier1_empty": "No hay aspectos mayores con orbe < 1° en esta carta.",
+  "chart.pro.intensity.title": "Índice de Intensidad Personal",
+  "chart.pro.intensity.empty":
+    "Sin datos de tránsitos para este año. Calcula tránsitos 12 meses para ver tu curva de intensidad.",
+  "chart.pro.intensity.cta_transits": "Calcular tránsitos 12 meses →",
+  "chart.pro.intensity.aria": "Gráfico de intensidad personal con {n} meses",
+  "chart.pro.intensity.explain":
+    "Curva inspirada en el índice cíclico de Barbault: intensidad mensual de tránsitos sobre tu carta natal (0–10). No es predicción absoluta.",
+  "chart.pro.transits_empty":
+    "Aún no hay tránsitos calculados para este año. Usa «Ver Tránsitos 12 meses» y vuelve aquí para el preview por tema.",
+  "chart.pro.summary_locked": "Resumen ejecutivo (Pro)",
 
   // ── Tránsitos page ──
   "transits.loading": "Cargando carta…",

@@ -1,16 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import type { ChartResponse, BirthData, ClickTarget } from "@/lib/types";
-import { loadChart, saveYearTransits, saveSolarReturn } from "@/lib/storage";
+import {
+  loadChart,
+  saveYearTransits,
+  saveSolarReturn,
+  isProUnlocked,
+  unlockPro,
+  loadYearTransits,
+} from "@/lib/storage";
 import { postWithWakingRetry } from "@/lib/api-fetch";
 import ChartWheel from "@/components/ChartWheel";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
 import InterpretationModal from "@/components/InterpretationModal";
 import ChartSummaryModal from "@/components/ChartSummary";
+import TopicSummarySection from "@/components/TopicSummarySection";
 import { generateChartSummary } from "@/lib/chart-summary";
+import { generateTopicSummaries } from "@/lib/topic-summary";
+import {
+  getTier1Aspects,
+  buildPersonalIntensitySeries,
+} from "@/lib/personal-intensity";
 import ActionButton from "@/components/ActionButton";
 import { useT } from "@/lib/i18n";
 
@@ -18,7 +31,8 @@ export default function CartaPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
-  const { t } = useT();
+  const { t, lang } = useT();
+  const locale = lang === "en" ? "en" : "es";
 
   const [chart, setChart] = useState<ChartResponse | null>(null);
   const [birthData, setBirthData] = useState<BirthData | null>(null);
@@ -29,6 +43,7 @@ export default function CartaPage() {
   const [srError, setSrError]       = useState<string | null>(null);
   const [modalTarget, setModalTarget] = useState<ClickTarget | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [proUnlocked, setProUnlocked] = useState(false);
 
   useEffect(() => {
     if (!id) { router.push("/nueva"); return; }
@@ -36,7 +51,46 @@ export default function CartaPage() {
     if (!data) { router.push("/nueva"); return; }
     setChart(data.chart);
     setBirthData(data.birthData);
+    setProUnlocked(isProUnlocked(id));
   }, [id, router]);
+
+  const topics = useMemo(
+    () => (chart ? generateTopicSummaries(chart, locale) : []),
+    [chart, locale]
+  );
+  const tier1Aspects = useMemo(
+    () => (chart ? getTier1Aspects(chart.aspects) : []),
+    [chart]
+  );
+  const intensityData = useMemo(() => {
+    if (!id) return [];
+    const year = new Date().getFullYear();
+    return buildPersonalIntensitySeries(loadYearTransits(id, year), year, locale);
+  }, [id, locale, proUnlocked]);
+
+  function handleUnlockPro() {
+    if (!id) return;
+    // TODO(Stripe): replace unlockPro with real checkout session
+    unlockPro(id, false);
+    setProUnlocked(true);
+    try {
+      window.dispatchEvent(
+        new CustomEvent("astro-pro-unlocked", { detail: { chartId: id } })
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function handleOpenSummary() {
+    if (id && isProUnlocked(id)) {
+      setProUnlocked(true);
+      setShowSummary(true);
+      return;
+    }
+    const el = document.getElementById("astro-pro-section");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function handleCalcTransits() {
     if (!chart || !birthData) return;
@@ -130,8 +184,20 @@ export default function CartaPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ActionButton variant="secondary" accent="blue" onClick={() => setShowSummary(true)}>
-            {t("chart.nav.summary")}
+          <ActionButton variant="secondary" accent="blue" onClick={handleOpenSummary}>
+            {proUnlocked ? t("chart.nav.summary") : t("chart.pro.summary_locked")}
+          </ActionButton>
+          <ActionButton
+            variant="secondary"
+            accent="blue"
+            onClick={() =>
+              document.getElementById("topic-summaries-heading")?.scrollIntoView({
+                behavior: "smooth",
+                block: "start",
+              })
+            }
+          >
+            {t("chart.nav.topics")}
           </ActionButton>
           <ActionButton variant="secondary" accent="blue" onClick={handleSolarReturn} disabled={loadingSR}>
             <span className="inline-flex items-center justify-center w-3.5 text-amber-500">
@@ -236,13 +302,31 @@ export default function CartaPage() {
         </div>
       </div>
 
+      {/* Free topics + soft Pro unlock */}
+      <div id="astro-pro-section">
+        <TopicSummarySection
+          topics={topics}
+          isPro={proUnlocked}
+          onUnlock={handleUnlockPro}
+          tier1Aspects={tier1Aspects}
+          intensityData={intensityData}
+          onOpenTechnicalSummary={() => {
+            setProUnlocked(true);
+            setShowSummary(true);
+          }}
+          onCalcTransits={handleCalcTransits}
+          chart={chart}
+          chartId={id}
+        />
+      </div>
+
       <InterpretationModal
         target={modalTarget}
         allAspects={chart.aspects}
         onClose={() => setModalTarget(null)}
       />
 
-      {showSummary && (
+      {showSummary && proUnlocked && (
         <ChartSummaryModal
           summary={generateChartSummary(chart)}
           name={chart.name}

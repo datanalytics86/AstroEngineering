@@ -141,6 +141,36 @@ export interface ChartSummary {
   advice: string;
 }
 
+// ── Topic Summary (freemium: 6 temas free + capa Pro) ─────────────────────────
+
+export type TopicId =
+  | "amor"
+  | "dinero"
+  | "trabajo"
+  | "salud"
+  | "familia"
+  | "crecimiento";
+
+export type StrengthLevel = "alta" | "media" | "desafio";
+
+export interface TopicSummary {
+  id: TopicId;
+  title: string;
+  shortHeadline: string;
+  paragraphs: string[];
+  keywords: string[];
+  strengthLevel: StrengthLevel;
+  relatedPlanets: string[];
+  relatedHouses: number[];
+}
+
+/** Punto mensual del Índice de Intensidad Personal. */
+export interface IntensityPoint {
+  month: string; // "YYYY-MM"
+  value: number; // 0–10
+  label: string;
+}
+
 export interface ExactAspectEvent {
   date: string;               // "YYYY-MM-DD"
   transit_planet: string;
