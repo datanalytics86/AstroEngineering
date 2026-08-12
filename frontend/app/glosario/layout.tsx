@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Glosario astrológico — AstroEngine Pro",
+  title: "Glosario astrológico — AstroEngine",
   description:
     "Referencia completa de planetas, aspectos, dignidades esenciales, ángulos, orbes y retrogradación en astrología.",
 };

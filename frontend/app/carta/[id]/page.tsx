@@ -28,6 +28,7 @@ import {
 } from "@/lib/personal-intensity";
 import ActionButton from "@/components/ActionButton";
 import { useT } from "@/lib/i18n";
+import { trackEvent } from "@/lib/observability";
 
 export default function CartaPage() {
   const router = useRouter();
@@ -86,6 +87,7 @@ export default function CartaPage() {
     // TODO(Stripe): replace unlockPro with real checkout session
     unlockPro(id, false);
     setProUnlocked(true);
+    trackEvent("pro.unlocked");
     try {
       window.dispatchEvent(
         new CustomEvent("astro-pro-unlocked", { detail: { chartId: id } })
@@ -110,6 +112,7 @@ export default function CartaPage() {
     if (id && isProUnlocked(id)) {
       setProUnlocked(true);
       setShowSummary(true);
+      trackEvent("summary.opened");
       return;
     }
     document
@@ -143,6 +146,7 @@ export default function CartaPage() {
       const data = await res.json();
       saveYearTransits(id, year, data);
       setYearTick((n) => n + 1);
+      trackEvent("year.calculated", { stay: false });
       router.push(`/transitos/${id}`);
     } catch (e) {
       setTransitError(e instanceof Error ? e.message : "Error desconocido");
@@ -175,6 +179,7 @@ export default function CartaPage() {
       setTransitError(null);
       saveYearTransits(id, year, await res.json());
       setYearTick((n) => n + 1);
+      trackEvent("year.calculated", { stay: true });
     } catch (e) {
       setTransitError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
@@ -395,6 +400,7 @@ export default function CartaPage() {
           onOpenTechnicalSummary={() => {
             setProUnlocked(true);
             setShowSummary(true);
+            trackEvent("summary.opened");
           }}
           onCalcYear={handleCalcYear}
           yearLoading={loadingTransits}

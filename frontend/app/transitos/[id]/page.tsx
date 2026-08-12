@@ -29,7 +29,7 @@ import {
   retroPeriodKey,
   isRetroKey,
 } from "@/lib/transit-timeline";
-import { BODY_COLORS as PLANET_COLOR } from "@/components/MundaneWheel";
+import { BODY_COLORS as PLANET_COLOR } from "@/lib/planet-colors";
 import { format } from "date-fns";
 import type { Locale } from "date-fns";
 import { es } from "date-fns/locale";

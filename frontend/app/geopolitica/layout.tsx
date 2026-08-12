@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Análisis Geopolítico — AstroEngine Pro",
-  description:
-    "Astrología mundial: ciclos de planetas lentos 2026-2027, análogos históricos verificados, timeline interactivo e índice cíclico de Barbault. Interpretación analógica, no predicción factual.",
+  title: "Análisis geopolítico — archivo",
+  description: "Función archivada. El producto activo es la carta natal y los temas de vida.",
+  robots: { index: false, follow: false },
 };
 
 export default function GeopoliticaLayout({ children }: { children: React.ReactNode }) {

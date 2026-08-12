@@ -7,6 +7,7 @@ import type { BirthData, ChartResponse } from "@/lib/types";
 import { saveChart, listCharts, deleteChart, type SavedChartMeta } from "@/lib/storage";
 import { postWithWakingRetry } from "@/lib/api-fetch";
 import { useT } from "@/lib/i18n";
+import { trackEvent } from "@/lib/observability";
 
 const SIGN_COLORS: Record<string, string> = {
   Aries: "#EF4444", Tauro: "#16A34A", "Géminis": "#EAB308", "Cáncer": "#2563EB",
@@ -39,6 +40,7 @@ export default function NuevaCartaPage() {
       }
       const chart: ChartResponse = await res.json();
       const id = saveChart(chart, data);
+      trackEvent("chart.created");
       router.push(`/carta/${id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al calcular la carta");

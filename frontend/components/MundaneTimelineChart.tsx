@@ -17,7 +17,7 @@ import { format } from "date-fns";
 import { es as esLocale, enUS } from "date-fns/locale";
 import type { MundaneConfiguration } from "@/lib/types";
 import { SIGN_NAMES, SIGN_SYMBOLS } from "@/lib/wheel-geometry";
-import { ASPECT_LINE_COLOR, ASPECT_SYMBOL, INGRESS_COLOR } from "@/components/MundaneWheel";
+import { ASPECT_LINE_COLOR, ASPECT_SYMBOL, INGRESS_COLOR } from "@/lib/planet-colors";
 import { useT } from "@/lib/i18n";
 import type { Lang } from "@/lib/mundane-corpus";
 import { parseLocalDate } from "@/lib/date-utils";

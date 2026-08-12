@@ -24,6 +24,10 @@ import {
   describeSector,
   toRad,
 } from "@/lib/wheel-geometry";
+import {
+  BODY_COLORS,
+  ASPECT_LINE_COLOR,
+} from "@/lib/planet-colors";
 
 interface Props {
   sky: MundaneSkyBody[];
@@ -73,24 +77,6 @@ const R_NA_NEEDLE_IN = 158;
 const R_CORE = 96;
 const R_CENTER = 24;
 const R_SPHERE = 10;
-
-export const BODY_COLORS: Record<string, string> = {
-  Plutón: "#7C3AED", Neptuno: "#3B82F6", Urano: "#06B6D4",
-  Saturno: "#F59E0B", Júpiter: "#10B981", Marte: "#EF4444",
-  Sol: "#F97316", Luna: "#64748B", Mercurio: "#6366F1", Venus: "#EC4899",
-};
-
-export const ASPECT_LINE_COLOR: Record<string, string> = {
-  Conjunción: "#334155", Oposición: "#DC2626", Cuadratura: "#EA580C",
-  Trígono: "#2563EB", Sextil: "#16A34A",
-};
-
-export const ASPECT_SYMBOL: Record<string, string> = {
-  Conjunción: "☌", Oposición: "☍", Cuadratura: "□", Trígono: "△", Sextil: "⚹",
-};
-
-/** Color de acento para ingresos de signo (no son un "aspecto", usan el acento indigo del módulo). */
-export const INGRESS_COLOR = "#4F46E5";
 
 const ASC_LON = 0; // rueda mundial: 0° Aries a la izquierda
 

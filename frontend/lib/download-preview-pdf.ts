@@ -1,6 +1,7 @@
 import { createElement, type ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 import type { TierMinus1Content } from "./types";
+import { trackEvent } from "./observability";
 
 export function slugifyPdfName(name: string): string {
   const slug = name
@@ -33,4 +34,5 @@ export async function downloadTierMinus1Pdf(content: TierMinus1Content): Promise
   a.click();
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  trackEvent("pdf.downloaded", { lang: content.lang });
 }
