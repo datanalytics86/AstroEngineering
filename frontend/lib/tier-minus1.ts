@@ -22,7 +22,12 @@ import { scoreAllTopics } from "./topic-summary";
 
 type Lang = "es" | "en";
 
-const PREVIEW_URL = "https://astro-engineering.vercel.app";
+const SITE_ORIGIN = "https://astro-engineering.vercel.app";
+
+export function proCtaUrl(chartId?: string): string {
+  if (chartId) return `${SITE_ORIGIN}/carta/${encodeURIComponent(chartId)}#pro-unlock-panel`;
+  return `${SITE_ORIGIN}/nueva?from=pdf_pro`;
+}
 
 // ── Badges ────────────────────────────────────────────────────────────────────
 
@@ -1098,14 +1103,14 @@ function ctaCopy(firstName: string, lang: Lang) {
         kicker: "When you want to go further",
         headline: "This is only the first look",
         body: `${who === "you" ? "This" : `${who}, this`} preview is the door, not the house. The full version goes into your current moment: the pulse of the next twelve months and the pieces that weigh most on your map. No rush. When you want to go further, it is one tap away.`,
-        button: "Unlock the full version · $2.99",
+        button: "See the pulse of your year on your chart",
         footer: "AstroEngine · personal preview · not a technical report",
       }
     : {
         kicker: "Cuando quieras ir más lejos",
         headline: "Esto es solo el primer vistazo",
         body: `${firstName ? `${firstName}, este` : "Este"} preview es la puerta, no la casa. La versión completa entra en tu momento actual: el pulso de los próximos doce meses y las piezas que más pesan en tu mapa. Sin prisa. Cuando quieras ir más lejos, está a un toque.`,
-        button: "Desbloquear la versión completa · $2.99",
+        button: "Ver el pulso de tu año en tu carta",
         footer: "AstroEngine · preview personal · no es un informe técnico",
       };
 }
@@ -1116,7 +1121,8 @@ export function generateTierMinus1Content(
   chart: ChartResponse,
   name: string,
   lang: Lang = "es",
-  place?: string
+  place?: string,
+  chartId?: string
 ): TierMinus1Content {
   const displayName = (name || chart.name || "").trim() || (lang === "en" ? "Your map" : "Tu mapa");
   const firstName = firstNameOf(displayName);
@@ -1159,7 +1165,7 @@ export function generateTierMinus1Content(
     ctaHeadline: cta.headline,
     ctaBody: cta.body,
     ctaButton: cta.button,
-    ctaUrl: PREVIEW_URL,
+    ctaUrl: proCtaUrl(chartId),
     footer: cta.footer,
   };
 

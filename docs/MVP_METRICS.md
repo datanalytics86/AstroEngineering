@@ -16,6 +16,8 @@ Sin dashboard. Conteos en `localStorage` (`astro_learning_v1`) + breadcrumbs Sen
 | `pro_unlocked` | Conversión soft (tras “sí”) |
 | `year_calculated` | Uso Pro: calculó el pulso del año |
 | `returned_same_chart` | Retención débil: reabrió una carta guardada |
+| `pro_preview_opened` | Abrió el preview in-page de Pro (enganche) |
+| `pro_sample_pdf` | Descargó el PDF muestra Pro (Alex Rivera) |
 
 ## Definiciones de éxito (2 semanas)
 

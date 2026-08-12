@@ -65,12 +65,24 @@ export default function CartaPage() {
     setProUnlocked(isProUnlocked(id));
   }, [id, router]);
 
+  useEffect(() => {
+    if (!chart || typeof window === "undefined") return;
+    if (window.location.hash !== "#pro-unlock-panel") return;
+    const t = window.setTimeout(() => {
+      document.getElementById("pro-unlock-panel")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [chart]);
+
   const preview = useMemo(
     () =>
       chart
-        ? generateTierMinus1Content(chart, chart.name, locale, birthData?.city)
+        ? generateTierMinus1Content(chart, chart.name, locale, birthData?.city, id)
         : null,
-    [chart, locale, birthData]
+    [chart, locale, birthData, id]
   );
   const tier1Aspects = useMemo(
     () => (chart ? getTier1Aspects(chart.aspects) : []),

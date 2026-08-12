@@ -11,6 +11,8 @@
  * pro_unlocked         — conversión soft (desbloqueo simulado)
  * year_calculated      — uso Pro: calculó el pulso del año
  * returned_same_chart  — retención débil: reabrió una carta guardada
+ * pro_preview_opened   — abrió el preview in-page de Pro
+ * pro_sample_pdf       — descargó el PDF muestra Pro
  */
 
 import { trackEvent } from "./observability";
@@ -24,7 +26,9 @@ export type LearningEvent =
   | "pay_intent_no"
   | "pro_unlocked"
   | "year_calculated"
-  | "returned_same_chart";
+  | "returned_same_chart"
+  | "pro_preview_opened"
+  | "pro_sample_pdf";
 
 const STORE_KEY = "astro_learning_v1";
 const EMAILS_KEY = "astro_pay_waitlist_v1";

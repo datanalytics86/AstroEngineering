@@ -22,9 +22,16 @@ export default function NuevaCartaPage() {
   const [error, setError]           = useState<string | null>(null);
   const [saved, setSaved]           = useState<SavedChartMeta[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [fromHint, setFromHint] = useState<string | null>(null);
 
   useEffect(() => {
     setSaved(listCharts());
+    try {
+      const from = new URLSearchParams(window.location.search).get("from");
+      if (from === "pdf_pro" || from === "pro_sample_pdf") setFromHint(from);
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   async function handleSubmit(data: BirthData) {
@@ -69,6 +76,13 @@ export default function NuevaCartaPage() {
           <p className="text-[11px] font-mono text-slate-400 mt-3">
             {t("nueva.trust")}
           </p>
+          {fromHint && (
+            <p className="mt-4 text-sm text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2.5 leading-relaxed">
+              {fromHint === "pro_sample_pdf"
+                ? t("nueva.from_sample")
+                : t("nueva.from_pdf")}
+            </p>
+          )}
         </div>
 
         {/* Formulario */}

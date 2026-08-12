@@ -29,6 +29,8 @@ import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { useT, type Lang } from "@/lib/i18n";
 import { ASPECT_COLORS } from "@/lib/zodiac-utils";
 import { savePayWaitlistEmail, trackLearning } from "@/lib/learning";
+import { getProSampleContent } from "@/lib/pro-sample";
+import { downloadProSamplePdf } from "@/lib/download-preview-pdf";
 
 export interface TopicSummarySectionProps {
   preview: TierMinus1Content;
@@ -73,6 +75,89 @@ const TOPIC_ACCENT: Record<string, string> = {
   familia: "#8B5CF6",
   crecimiento: "#6366F1",
 };
+
+function ProPreviewModal({
+  lang,
+  sampleBusy,
+  onClose,
+  onDownload,
+  onUnlock,
+}: {
+  lang: Lang;
+  sampleBusy: boolean;
+  onClose: () => void;
+  onDownload: () => void;
+  onUnlock: () => void;
+}) {
+  const { t } = useT();
+  const sample = getProSampleContent(lang);
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pro-preview-title"
+    >
+      <button
+        type="button"
+        className="absolute inset-0 bg-slate-900/40"
+        aria-label={t("chart.pro.preview_close")}
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-lg max-h-[88vh] overflow-y-auto bg-white rounded-2xl border border-slate-200 shadow-card-md p-5 sm:p-6 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 id="pro-preview-title" className="font-semibold text-lg text-slate-900">
+              {t("chart.pro.preview_title")}
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">{t("chart.pro.preview_note")}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-700 min-h-[44px] min-w-[44px]"
+            aria-label={t("chart.pro.preview_close")}
+          >
+            ✕
+          </button>
+        </div>
+        <p className="text-sm font-semibold text-indigo-700 leading-snug">{sample.headline}</p>
+        <p className="text-sm text-slate-600 leading-relaxed">{sample.identity}</p>
+        <ul className="space-y-2">
+          {sample.tier1.slice(0, 3).map((row) => (
+            <li key={`${row.left}-${row.right}`} className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5">
+              <p className="text-xs font-medium text-slate-800">
+                {row.left} {row.symbol} {row.aspect} {row.right}{" "}
+                <span className="text-violet-600 font-mono">{row.orb}</span>
+              </p>
+              <p className="text-sm text-slate-600 mt-1 leading-snug">{row.impact}</p>
+            </li>
+          ))}
+        </ul>
+        <p className="text-sm text-slate-600 leading-relaxed">{sample.yearReading}</p>
+        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+          <ActionButton
+            variant="secondary"
+            accent="indigo"
+            className="w-full sm:flex-1 min-h-[48px]"
+            disabled={sampleBusy}
+            onClick={onDownload}
+          >
+            {sampleBusy ? t("chart.pro.preview_downloading") : t("chart.pro.preview_download")}
+          </ActionButton>
+          <ActionButton
+            variant="primary"
+            accent="indigo"
+            className="w-full sm:flex-1 min-h-[48px]"
+            onClick={onUnlock}
+          >
+            {t("chart.pro.preview_unlock")}
+          </ActionButton>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const BADGE_TO_STRENGTH: Record<string, StrengthLevel> = {
   potencial_fuerte: "alta",
@@ -224,6 +309,8 @@ export default function TopicSummarySection({
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [payOpen, setPayOpen] = useState(false);
   const [payEmail, setPayEmail] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [sampleBusy, setSampleBusy] = useState(false);
   const locale: Lang = lang === "en" ? "en" : "es";
 
   const human = useMemo(
@@ -346,6 +433,17 @@ export default function TopicSummarySection({
               </ul>
               <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
                 <ActionButton
+                  variant="secondary"
+                  accent="indigo"
+                  onClick={() => {
+                    trackLearning("pro_preview_opened");
+                    setPreviewOpen(true);
+                  }}
+                  className="w-full sm:w-auto min-h-[48px] text-base"
+                >
+                  {t("chart.pro.preview_cta")}
+                </ActionButton>
+                <ActionButton
                   variant="primary"
                   accent="indigo"
                   onClick={() => {
@@ -361,6 +459,27 @@ export default function TopicSummarySection({
                 </p>
               </div>
             </>
+          )}
+
+          {previewOpen && !isPro && (
+            <ProPreviewModal
+              lang={locale}
+              sampleBusy={sampleBusy}
+              onClose={() => setPreviewOpen(false)}
+              onDownload={async () => {
+                setSampleBusy(true);
+                try {
+                  await downloadProSamplePdf(locale);
+                } finally {
+                  setSampleBusy(false);
+                }
+              }}
+              onUnlock={() => {
+                setPreviewOpen(false);
+                trackLearning("pro_unlock_clicked");
+                setPayOpen(true);
+              }}
+            />
           )}
 
           {payOpen && !isPro && (
