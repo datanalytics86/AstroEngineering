@@ -28,6 +28,7 @@ import PersonalIntensityChart from "@/components/PersonalIntensityChart";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { useT, type Lang } from "@/lib/i18n";
 import { ASPECT_COLORS } from "@/lib/zodiac-utils";
+import { savePayWaitlistEmail, trackLearning } from "@/lib/learning";
 
 export interface TopicSummarySectionProps {
   preview: TierMinus1Content;
@@ -79,7 +80,13 @@ const BADGE_TO_STRENGTH: Record<string, StrengthLevel> = {
   area_practica: "desafio",
 };
 
-function TopicCard({ topic }: { topic: TierMinus1Section }) {
+function TopicCard({
+  topic,
+  onOpened,
+}: {
+  topic: TierMinus1Section;
+  onOpened?: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const level = BADGE_TO_STRENGTH[topic.badge] ?? "media";
   const style = STRENGTH_STYLE[level] ?? STRENGTH_STYLE.media;
@@ -93,7 +100,13 @@ function TopicCard({ topic }: { topic: TierMinus1Section }) {
     >
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() =>
+          setOpen((v) => {
+            const next = !v;
+            if (next) onOpened?.();
+            return next;
+          })
+        }
         className="text-left px-4 py-4 sm:px-5 w-full min-h-[48px] hover:bg-slate-50/60 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-inset"
         aria-expanded={open}
       >
@@ -209,6 +222,8 @@ export default function TopicSummarySection({
 }: TopicSummarySectionProps) {
   const { t, lang } = useT();
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
+  const [payEmail, setPayEmail] = useState("");
   const locale: Lang = lang === "en" ? "en" : "es";
 
   const human = useMemo(
@@ -271,7 +286,11 @@ export default function TopicSummarySection({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {preview.sections.map((topic) => (
-            <TopicCard key={topic.id} topic={topic} />
+            <TopicCard
+              key={topic.id}
+              topic={topic}
+              onOpened={() => trackLearning("topics_opened")}
+            />
           ))}
         </div>
       </div>
@@ -329,7 +348,10 @@ export default function TopicSummarySection({
                 <ActionButton
                   variant="primary"
                   accent="indigo"
-                  onClick={onUnlock}
+                  onClick={() => {
+                    trackLearning("pro_unlock_clicked");
+                    setPayOpen(true);
+                  }}
                   className="w-full sm:w-auto min-h-[48px] text-base"
                 >
                   {t("chart.pro.unlock_cta")}
@@ -339,6 +361,66 @@ export default function TopicSummarySection({
                 </p>
               </div>
             </>
+          )}
+
+          {payOpen && !isPro && (
+            <div
+              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 py-6"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="pay-intent-title"
+            >
+              <button
+                type="button"
+                className="absolute inset-0 bg-slate-900/40"
+                aria-label={t("pay.intent.close")}
+                onClick={() => setPayOpen(false)}
+              />
+              <div className="relative z-10 w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-card-md p-5 sm:p-6 space-y-4">
+                <h3 id="pay-intent-title" className="font-semibold text-lg text-slate-900">
+                  {t("pay.intent.title")}
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">{t("pay.intent.body")}</p>
+                <p className="text-sm font-medium text-slate-800">{t("pay.intent.question")}</p>
+                <label className="block text-xs text-slate-500">
+                  {t("pay.intent.email_label")}
+                  <input
+                    type="email"
+                    value={payEmail}
+                    onChange={(e) => setPayEmail(e.target.value)}
+                    placeholder={t("pay.intent.email_placeholder")}
+                    className="mt-1.5 w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-slate-800 min-h-[44px]"
+                  />
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                  <ActionButton
+                    variant="primary"
+                    accent="indigo"
+                    className="w-full sm:flex-1 min-h-[48px]"
+                    onClick={() => {
+                      savePayWaitlistEmail(payEmail);
+                      trackLearning("pay_intent_yes");
+                      setPayOpen(false);
+                      onUnlock();
+                    }}
+                  >
+                    {t("pay.intent.yes")}
+                  </ActionButton>
+                  <ActionButton
+                    variant="secondary"
+                    accent="indigo"
+                    className="w-full sm:flex-1 min-h-[48px]"
+                    onClick={() => {
+                      savePayWaitlistEmail(payEmail);
+                      trackLearning("pay_intent_no");
+                      setPayOpen(false);
+                    }}
+                  >
+                    {t("pay.intent.no")}
+                  </ActionButton>
+                </div>
+              </div>
+            </div>
           )}
 
           {isPro && (

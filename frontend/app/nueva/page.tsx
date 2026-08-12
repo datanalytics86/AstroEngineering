@@ -7,7 +7,7 @@ import type { BirthData, ChartResponse } from "@/lib/types";
 import { saveChart, listCharts, deleteChart, type SavedChartMeta } from "@/lib/storage";
 import { postWithWakingRetry } from "@/lib/api-fetch";
 import { useT } from "@/lib/i18n";
-import { trackEvent } from "@/lib/observability";
+import { trackLearning } from "@/lib/learning";
 
 const SIGN_COLORS: Record<string, string> = {
   Aries: "#EF4444", Tauro: "#16A34A", "Géminis": "#EAB308", "Cáncer": "#2563EB",
@@ -40,7 +40,7 @@ export default function NuevaCartaPage() {
       }
       const chart: ChartResponse = await res.json();
       const id = saveChart(chart, data);
-      trackEvent("chart.created");
+      trackLearning("chart_created");
       router.push(`/carta/${id}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al calcular la carta");
@@ -119,14 +119,17 @@ export default function NuevaCartaPage() {
                         <button
                           onClick={() => router.push(`/transitos/${c.id}`)}
                           title="Ver tránsitos"
-                          className="text-xs font-mono px-2 py-1 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors"
+                          className="text-xs font-mono px-2 py-1 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors min-h-[44px]"
                         >
                           {t("nueva.saved.transits")}
                         </button>
                       )}
                       <button
-                        onClick={() => router.push(`/carta/${c.id}`)}
-                        className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-800 transition-colors"
+                        onClick={() => {
+                          trackLearning("returned_same_chart");
+                          router.push(`/carta/${c.id}`);
+                        }}
+                        className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-800 transition-colors min-h-[44px]"
                       >
                         {t("nueva.saved.view")}
                       </button>

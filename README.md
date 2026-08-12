@@ -1,4 +1,4 @@
-# AstroEngine Pro
+# AstroEngine
 
 Aplicación web de ingeniería astrológica profesional. Calcula cartas natales con precisión astronómica real (Swiss Ephemeris), detecta aspectos entre planetas, genera pronósticos de tránsitos planetarios y retornos solares. Incluye página de bienvenida, interfaz bilingüe ES/EN y glosario interactivo.
 
@@ -65,6 +65,8 @@ cd frontend && npm install && npm run dev
 3. (Opcional) `NEXT_PUBLIC_SENTRY_DSN` — fail-soft si falta
 
 `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLOY.md` son históricos; ver su sección **Estado 2026-08**. Documentación de producto: `CLAUDE.md`.
+
+**TIER 1 learning:** [`docs/MVP_METRICS.md`](./docs/MVP_METRICS.md) · test de 5 usuarios: [`docs/FIVE_USER_TEST.md`](./docs/FIVE_USER_TEST.md).
 
 ## Validación de precisión
 

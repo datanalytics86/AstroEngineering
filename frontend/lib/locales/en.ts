@@ -161,7 +161,16 @@ export const en = {
   "chart.pro.feature.intensity": "The pulse of your 12 months: when to push, when to ease",
   "chart.pro.feature.transits": "Which life areas activate this year",
   "chart.pro.unlock_cta": "Unlock Pro · $2.99",
-  "chart.pro.unlock_note": "Simulated payment · stored in this browser",
+  "chart.pro.unlock_note": "Real checkout comes later. First we ask if you would actually pay.",
+  "pay.intent.title": "Pro is $2.99",
+  "pay.intent.body":
+    "The pulse of your year and a deeper reading of your map. Precision included. No subscription.",
+  "pay.intent.question": "Would you actually pay $2.99?",
+  "pay.intent.yes": "Yes — unlock",
+  "pay.intent.no": "Not now",
+  "pay.intent.email_label": "Get notified when real checkout is live (optional)",
+  "pay.intent.email_placeholder": "you@email.com",
+  "pay.intent.close": "Close",
   "chart.pro.section.summary": "Who you are",
   "chart.pro.section.year": "The pulse of your year",
   "chart.pro.tier1.title": "What weighs most on your map",
@@ -312,7 +321,8 @@ export const en = {
   "glossary.back": "← Back",
   "glossary.cta": "Calculate natal chart →",
 
-  // ── Geopolitical Analysis (corpus / archived UI) ──
+  // DEPRECATED 2026-08 — geo/cal UI archived. Active product uses archive.*
+  // Kept so leftover mundane components still type-check.
   "geo.title": "Geopolitical Analysis",
   "geo.subtitle": "Slow-planet cycles and their historical echo · 2026–2027",
   "geo.disclaimer": "Analogical mundane astrology: forecasts are \"probable themes\" from the recurrence of planetary cycles, with cited bibliography. This is astrological interpretation, NOT a factual prediction of events.",
