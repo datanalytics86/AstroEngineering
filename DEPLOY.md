@@ -44,8 +44,30 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 | `BACKEND_URL` | misma URL del BE | Server-only en proxies; si falta, usa `NEXT_PUBLIC_API_URL` |
 | `NEXT_PUBLIC_SENTRY_DSN` | DSN frontend | Fail-soft |
 | `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | `production` | Opcional |
+| `STRIPE_SECRET_KEY` | `sk_live_…` o `sk_test_…` | Activa Checkout real de Pro ($2.99). Sin ella, el CTA sigue en modo investigación (“¿pagarías?”). |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_…` | Opcional. Endpoint: `https://astro-engineering.vercel.app/api/checkout/webhook` (evento `checkout.session.completed`) |
+| `STRIPE_PRICE_ID` | `price_…` | Opcional. Si falta, se crea un price de $2.99 USD en la sesión |
+| `NEXT_PUBLIC_SITE_URL` | `https://astro-engineering.vercel.app` | Fallback de origin; en Vercel se usa el `Origin` de la request |
 
 > **Hueco humano:** este repo no puede leer los dashboards de Vercel/Render. Verificar en UI que los valores de prod coinciden con la tabla. No inventar secrets.
+
+## Auditoría live 2026-08-12
+
+Verificado contra producción (no contra dashboards):
+
+| Check | Resultado |
+|-------|-----------|
+| `GET /` Vercel | 200 |
+| `GET https://astroengine-backend.onrender.com/health` | 200 `{"status":"ok","service":"astroengine-backend"}` (~22s en cold start) |
+| `GET https://astroengine.onrender.com/health` | 200 stub `{"status":"ok"}` — **no usar como API** |
+| `POST /api/chart` vía proxy (Santiago 1990-05-15 14:30) | 200; Sol Tauro, ASC Virgo |
+| `GET /api/calendar?year=2026&month=8` | 200 |
+| `GET /api/mundane/countries` | 200 |
+| Headers FE | CSP, nosniff, DENY, Referrer-Policy, Permissions-Policy |
+| `/geopolitica` `/calendario` | `noindex,nofollow` + `robots.txt` Disallow |
+| Pro paywall | Hasta este deploy: soft unlock + pregunta “¿pagarías $2.99?”. Checkout Stripe queda listo; se enciende con `STRIPE_SECRET_KEY`. |
+
+Cold start: keepalive cada 10 min + ping `/api/health` al abrir el sitio (una vez por pestaña).
 
 ## Keepalive anti cold-start
 

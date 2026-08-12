@@ -8,11 +8,15 @@
  * pdf_downloaded       — valor free / proxy de share
  * pro_unlock_clicked   — intención: tocó el CTA de unlock
  * pay_intent_yes/no    — willingness to pay explícita ($2.99)
- * pro_unlocked         — conversión soft (desbloqueo simulado)
+ * pro_unlocked         — conversión (soft o pago verificado)
  * year_calculated      — uso Pro: calculó el pulso del año
  * returned_same_chart  — retención débil: reabrió una carta guardada
  * pro_preview_opened   — abrió el preview in-page de Pro
  * pro_sample_pdf       — descargó el PDF muestra Pro
+ * checkout_started     — redirigió a Stripe Checkout
+ * checkout_success     — Stripe confirmó el pago
+ * checkout_cancel      — volvió sin pagar
+ * checkout_error       — no se pudo abrir Checkout
  */
 
 import { trackEvent } from "./observability";
@@ -28,7 +32,11 @@ export type LearningEvent =
   | "year_calculated"
   | "returned_same_chart"
   | "pro_preview_opened"
-  | "pro_sample_pdf";
+  | "pro_sample_pdf"
+  | "checkout_started"
+  | "checkout_success"
+  | "checkout_cancel"
+  | "checkout_error";
 
 const STORE_KEY = "astro_learning_v1";
 const EMAILS_KEY = "astro_pay_waitlist_v1";

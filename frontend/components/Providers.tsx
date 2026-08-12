@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { LanguageProvider } from "@/lib/i18n";
 import { captureException, initClientSentry } from "@/lib/observability";
+import BackendWarmup from "@/components/BackendWarmup";
 
 export default function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
@@ -23,5 +24,10 @@ export default function Providers({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return <LanguageProvider>{children}</LanguageProvider>;
+  return (
+    <LanguageProvider>
+      <BackendWarmup />
+      {children}
+    </LanguageProvider>
+  );
 }

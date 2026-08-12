@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/components/Providers";
 import NavHeader from "@/components/NavHeader";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "AstroEngine",
@@ -24,17 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <NavHeader />
           <main>{children}</main>
-          <NavFooter />
+          <SiteFooter />
         </Providers>
       </body>
     </html>
-  );
-}
-
-function NavFooter() {
-  return (
-    <footer className="border-t border-border mt-16 px-6 py-6 text-center text-xs text-slate-400 font-mono">
-      AstroEngine — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com
-    </footer>
   );
 }

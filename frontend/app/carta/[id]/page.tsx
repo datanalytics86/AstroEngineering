@@ -49,6 +49,9 @@ export default function CartaPage() {
   const [proUnlocked, setProUnlocked] = useState(false);
   const [techOpen, setTechOpen] = useState(false);
   const [yearTick, setYearTick] = useState(0);
+  const [checkoutBanner, setCheckoutBanner] = useState<"success" | "cancel" | "error" | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!id) {
@@ -64,6 +67,52 @@ export default function CartaPage() {
     setBirthData(data.birthData);
     setProUnlocked(isProUnlocked(id));
   }, [id, router]);
+
+  useEffect(() => {
+    if (!id || typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const checkout = params.get("checkout");
+    const sessionId = params.get("session_id");
+    if (!checkout) return;
+
+    if (checkout === "cancel") {
+      trackLearning("checkout_cancel");
+      setCheckoutBanner("cancel");
+      window.history.replaceState({}, "", `/carta/${id}#pro-unlock-panel`);
+      return;
+    }
+
+    if (checkout === "success" && sessionId) {
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await fetch(
+            `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}&chart_id=${encodeURIComponent(id)}`,
+          );
+          const data = (await res.json()) as { paid?: boolean; chartId?: string | null };
+          if (cancelled) return;
+          if (res.ok && data.paid && data.chartId === id) {
+            unlockPro(id, { permanent: true, sessionId, source: "stripe" });
+            setProUnlocked(true);
+            trackLearning("checkout_success");
+            trackLearning("pro_unlocked");
+            setCheckoutBanner("success");
+          } else {
+            setCheckoutBanner("error");
+          }
+        } catch {
+          if (!cancelled) setCheckoutBanner("error");
+        } finally {
+          if (!cancelled) {
+            window.history.replaceState({}, "", `/carta/${id}`);
+          }
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!chart || typeof window === "undefined") return;
@@ -96,7 +145,6 @@ export default function CartaPage() {
 
   function handleUnlockPro() {
     if (!id) return;
-    // TODO(Stripe): replace unlockPro with real checkout session
     unlockPro(id, false);
     setProUnlocked(true);
     trackLearning("pro_unlocked");
@@ -309,6 +357,25 @@ export default function CartaPage() {
             : t("chart.nav.solar_link").replace("{year}", String(new Date().getFullYear()))}
         </button>
       </div>
+
+      {checkoutBanner && (
+        <div
+          className={`mb-5 rounded-lg border p-4 text-sm ${
+            checkoutBanner === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : checkoutBanner === "cancel"
+                ? "bg-slate-50 border-slate-200 text-slate-600"
+                : "bg-red-50 border-red-200 text-red-600"
+          }`}
+          role="status"
+        >
+          {checkoutBanner === "success"
+            ? t("pay.checkout.success")
+            : checkoutBanner === "cancel"
+              ? t("pay.checkout.cancel")
+              : t("pay.checkout.error")}
+        </div>
+      )}
 
       {transitError && (
         <div className="mb-5 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600 font-mono">
