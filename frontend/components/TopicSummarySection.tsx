@@ -11,7 +11,8 @@ import type {
   ChartResponse,
   IntensityPoint,
   StrengthLevel,
-  TopicSummary,
+  TierMinus1Content,
+  TierMinus1Section,
   TransitEvent,
 } from "@/lib/types";
 import { groupTransitsByTopic } from "@/lib/topic-summary";
@@ -19,11 +20,12 @@ import { generateChartSummary } from "@/lib/chart-summary";
 import { loadYearTransits } from "@/lib/storage";
 import ActionButton from "@/components/ActionButton";
 import PersonalIntensityChart from "@/components/PersonalIntensityChart";
+import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { useT, type Lang } from "@/lib/i18n";
 import { ASPECT_COLORS } from "@/lib/zodiac-utils";
 
 export interface TopicSummarySectionProps {
-  topics: TopicSummary[];
+  preview: TierMinus1Content;
   isPro: boolean;
   onUnlock: () => void;
   tier1Aspects: Aspect[];
@@ -64,18 +66,18 @@ const TOPIC_ACCENT: Record<string, string> = {
   crecimiento: "#6366F1",
 };
 
-function TopicCard({ topic }: { topic: TopicSummary }) {
+const BADGE_TO_STRENGTH: Record<string, StrengthLevel> = {
+  potencial_fuerte: "alta",
+  equilibrado: "media",
+  area_practica: "desafio",
+};
+
+function TopicCard({ topic }: { topic: TierMinus1Section }) {
   const [open, setOpen] = useState(false);
-  const style = STRENGTH_STYLE[topic.strengthLevel] ?? STRENGTH_STYLE.media;
+  const level = BADGE_TO_STRENGTH[topic.badge] ?? "media";
+  const style = STRENGTH_STYLE[level] ?? STRENGTH_STYLE.media;
   const accent = TOPIC_ACCENT[topic.id] ?? "#6366F1";
   const { t } = useT();
-
-  const strengthKey =
-    topic.strengthLevel === "alta"
-      ? "chart.topics.strength.alta"
-      : topic.strengthLevel === "desafio"
-        ? "chart.topics.strength.desafio"
-        : "chart.topics.strength.media";
 
   return (
     <article
@@ -94,13 +96,13 @@ function TopicCard({ topic }: { topic: TopicSummary }) {
               {topic.title}
             </h3>
             <p className="text-sm text-slate-600 mt-1.5 leading-snug">
-              {topic.shortHeadline}
+              {topic.headline}
             </p>
           </div>
           <span
             className={`shrink-0 text-[10px] sm:text-xs font-mono px-2 py-1 rounded-full border ${style.bg} ${style.text} ${style.border}`}
           >
-            {t(strengthKey)}
+            {topic.badgeLabel}
           </span>
         </div>
         <div className="flex flex-wrap gap-1.5 mt-3">
@@ -113,14 +115,9 @@ function TopicCard({ topic }: { topic: TopicSummary }) {
             </span>
           ))}
         </div>
-        <div className="mt-3 flex items-center justify-between">
-          <div className="flex flex-wrap gap-1.5 text-[10px] font-mono text-slate-400">
-            {topic.relatedPlanets.slice(0, 3).map((p) => (
-              <span key={p}>{p}</span>
-            ))}
-          </div>
+        <div className="mt-3 flex items-center justify-end">
           <span className="text-xs text-blue-600 font-mono" aria-hidden>
-            {open ? "▴" : "▾"} {open ? "" : "·"}
+            {open ? "▴" : "▾"}
           </span>
         </div>
       </button>
@@ -132,6 +129,20 @@ function TopicCard({ topic }: { topic: TopicSummary }) {
               {p}
             </p>
           ))}
+          {topic.tips.length > 0 && (
+            <div className="bg-slate-50 border border-slate-100 rounded-lg px-3 py-3 space-y-1.5">
+              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-mono">
+                {t("chart.topics.tips")}
+              </p>
+              <ul className="space-y-1.5">
+                {topic.tips.map((tip) => (
+                  <li key={tip} className="text-sm text-slate-700 leading-snug">
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </article>
@@ -165,7 +176,7 @@ function Tier1List({ aspects, emptyLabel }: { aspects: Aspect[]; emptyLabel: str
 }
 
 export default function TopicSummarySection({
-  topics,
+  preview,
   isPro,
   onUnlock,
   tier1Aspects,
@@ -222,13 +233,16 @@ export default function TopicSummarySection({
               {t("chart.topics.subtitle")}
             </p>
           </div>
-          <span className="text-[10px] sm:text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-            {t("chart.topics.free_badge")}
-          </span>
+          <div className="flex flex-col items-stretch sm:items-end gap-2">
+            <span className="self-start sm:self-end text-[10px] sm:text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+              {t("chart.topics.free_badge")}
+            </span>
+            <DownloadPreviewPdfButton content={preview} />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {topics.map((topic) => (
+          {preview.sections.map((topic) => (
             <TopicCard key={topic.id} topic={topic} />
           ))}
         </div>

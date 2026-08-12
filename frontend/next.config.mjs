@@ -22,6 +22,12 @@ const CONTENT_SECURITY_POLICY = [
 
 const nextConfig = {
   output: "standalone",
+  transpilePackages: ["@react-pdf/renderer"],
+  webpack: (config) => {
+    config.resolve.alias.canvas = false;
+    config.resolve.alias.encoding = false;
+    return config;
+  },
   env: {
     NEXT_PUBLIC_API_URL: API_URL ?? "http://localhost:8000",
   },

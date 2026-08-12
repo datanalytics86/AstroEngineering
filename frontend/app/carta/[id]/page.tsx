@@ -18,8 +18,9 @@ import AspectTable from "@/components/AspectTable";
 import InterpretationModal from "@/components/InterpretationModal";
 import ChartSummaryModal from "@/components/ChartSummary";
 import TopicSummarySection from "@/components/TopicSummarySection";
+import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { generateChartSummary } from "@/lib/chart-summary";
-import { generateTopicSummaries } from "@/lib/topic-summary";
+import { generateTierMinus1Content } from "@/lib/tier-minus1";
 import {
   getTier1Aspects,
   buildPersonalIntensitySeries,
@@ -44,7 +45,7 @@ export default function CartaPage() {
   const [modalTarget, setModalTarget] = useState<ClickTarget | null>(null);
   const [showSummary, setShowSummary] = useState(false);
   const [proUnlocked, setProUnlocked] = useState(false);
-  const [techOpen, setTechOpen] = useState(true);
+  const [techOpen, setTechOpen] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -61,17 +62,12 @@ export default function CartaPage() {
     setProUnlocked(isProUnlocked(id));
   }, [id, router]);
 
-  // On mobile, collapse technical block by default so topics win first paint
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia("(max-width: 767px)").matches) {
-      setTechOpen(false);
-    }
-  }, []);
-
-  const topics = useMemo(
-    () => (chart ? generateTopicSummaries(chart, locale) : []),
-    [chart, locale]
+  const preview = useMemo(
+    () =>
+      chart
+        ? generateTierMinus1Content(chart, chart.name, locale, birthData?.city)
+        : null,
+    [chart, locale, birthData]
   );
   const tier1Aspects = useMemo(
     () => (chart ? getTier1Aspects(chart.aspects) : []),
@@ -185,7 +181,7 @@ export default function CartaPage() {
     }
   }
 
-  if (!chart) {
+  if (!chart || !preview) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -226,6 +222,9 @@ export default function CartaPage() {
           >
             {t("chart.nav.topics")}
           </ActionButton>
+          {preview && (
+            <DownloadPreviewPdfButton content={preview} variant="secondary" />
+          )}
           <ActionButton
             variant="secondary"
             accent="indigo"
@@ -291,10 +290,80 @@ export default function CartaPage() {
         </div>
       )}
 
-      {/* 3–4. Topics free + Pro (DOMINANT) */}
+      {/* 3. Hero wheel — always visible, free */}
+      <section className="mb-10" aria-labelledby="chart-hero-heading">
+        <div className="text-center mb-4">
+          <p className="text-xs font-mono uppercase tracking-widest text-blue-600 mb-1.5">
+            {t("chart.hero.badge")}
+          </p>
+          <h2
+            id="chart-hero-heading"
+            className="font-semibold text-xl sm:text-2xl text-slate-900 tracking-tight"
+          >
+            {t("chart.wheel.title")}
+          </h2>
+        </div>
+
+        <div
+          className="relative mx-auto max-w-[680px] rounded-[28px] border border-indigo-100/80 p-1.5 sm:p-5 shadow-card-md"
+          style={{
+            background:
+              "radial-gradient(circle at 50% 38%, #FFFFFF 0%, #F8FAFC 52%, #EEF2FF 100%)",
+          }}
+        >
+          <ChartWheel
+            size="hero"
+            planets={chart.planets}
+            houses={chart.houses}
+            ascendant={chart.ascendant}
+            midheaven={chart.midheaven}
+            aspects={chart.aspects}
+            highlightedPlanet={highlighted}
+            onPlanetClick={(name) =>
+              setHighlighted((prev) => (prev === name ? undefined : name))
+            }
+            onElementClick={(target) => setModalTarget(target)}
+          />
+        </div>
+
+        {highlighted ? (
+          <p className="text-xs text-center text-blue-600 mt-3">
+            {highlighted} — {t("chart.wheel.deselect")}
+          </p>
+        ) : (
+          <p className="text-xs text-slate-400 text-center mt-3">{t("chart.wheel.hint")}</p>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto mt-4">
+          <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-card">
+            <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono mb-0.5">
+              {t("chart.ascendant")}
+            </div>
+            <div className="text-blue-600 font-semibold text-base leading-tight">
+              {chart.ascendant.sign}
+            </div>
+            <div className="text-slate-500 font-mono text-xs mt-0.5">
+              {chart.ascendant.degree_display}
+            </div>
+          </div>
+          <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-card">
+            <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono mb-0.5">
+              {t("chart.mc")}
+            </div>
+            <div className="text-teal-600 font-semibold text-base leading-tight">
+              {chart.midheaven.sign}
+            </div>
+            <div className="text-slate-500 font-mono text-xs mt-0.5">
+              {chart.midheaven.degree_display}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Topics free + Pro */}
       <div id="astro-pro-section" className="mb-10">
         <TopicSummarySection
-          topics={topics}
+          preview={preview}
           isPro={proUnlocked}
           onUnlock={handleUnlockPro}
           tier1Aspects={tier1Aspects}
@@ -309,7 +378,7 @@ export default function CartaPage() {
         />
       </div>
 
-      {/* 5. Technical chart — engineering pride, secondary in funnel */}
+      {/* 5. Positions + aspects — secondary, collapsed */}
       <section className="border-t border-slate-200 pt-8" aria-labelledby="tech-chart-heading">
         <button
           type="button"
@@ -335,70 +404,15 @@ export default function CartaPage() {
         </button>
 
         {techOpen && (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <h3 className="font-semibold text-base text-slate-700">{t("chart.wheel.title")}</h3>
-              <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
-                <ChartWheel
-                  planets={chart.planets}
-                  houses={chart.houses}
-                  ascendant={chart.ascendant}
-                  midheaven={chart.midheaven}
-                  aspects={chart.aspects}
-                  highlightedPlanet={highlighted}
-                  onPlanetClick={(name) =>
-                    setHighlighted((prev) => (prev === name ? undefined : name))
-                  }
-                  onElementClick={(target) => setModalTarget(target)}
-                />
-              </div>
-              {highlighted ? (
-                <p className="text-xs text-center text-blue-600 font-mono">
-                  {highlighted} — {t("chart.wheel.deselect")}
-                </p>
-              ) : (
-                <p className="text-xs text-slate-400 text-center font-mono">
-                  {t("chart.wheel.hint")}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white border border-border rounded-xl p-4 shadow-card">
-                  <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">
-                    {t("chart.ascendant")}
-                  </div>
-                  <div className="text-blue-600 font-mono text-lg font-semibold">
-                    {chart.ascendant.sign}
-                  </div>
-                  <div className="text-slate-500 font-mono text-sm">
-                    {chart.ascendant.degree_display}
-                  </div>
-                </div>
-                <div className="bg-white border border-border rounded-xl p-4 shadow-card">
-                  <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">
-                    {t("chart.mc")}
-                  </div>
-                  <div className="text-sky-500 font-mono text-lg font-semibold">
-                    {chart.midheaven.sign}
-                  </div>
-                  <div className="text-slate-500 font-mono text-sm">
-                    {chart.midheaven.degree_display}
-                  </div>
-                </div>
-              </div>
-
-              <PlanetPositions
-                planets={chart.planets}
-                highlightedPlanet={highlighted}
-                onPlanetClick={(name) =>
-                  setHighlighted((prev) => (prev === name ? undefined : name))
-                }
-              />
-
-              <AspectTable aspects={chart.aspects} highlightedPlanet={highlighted} />
-            </div>
+          <div className="max-w-3xl space-y-6">
+            <PlanetPositions
+              planets={chart.planets}
+              highlightedPlanet={highlighted}
+              onPlanetClick={(name) =>
+                setHighlighted((prev) => (prev === name ? undefined : name))
+              }
+            />
+            <AspectTable aspects={chart.aspects} highlightedPlanet={highlighted} />
           </div>
         )}
       </section>

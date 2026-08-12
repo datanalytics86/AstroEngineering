@@ -7,15 +7,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "check:i18n": "node scripts/check-i18n.mjs"
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check:preview": "npx --yes tsx scripts/check-tier-minus1.mjs"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.6.0",
     "@sentry/browser": "^8.47.0",
+    "d3": "^7.9.0",
+    "date-fns": "^3.6.0",
     "next": "14.2.3",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "d3": "^7.9.0",
-    "date-fns": "^3.6.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/d3": "^7.4.3",

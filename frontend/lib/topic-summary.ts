@@ -696,12 +696,23 @@ function buildGrowth(
   return { headline, paragraphs: [p1, p2, p3, p4], keywords };
 }
 
-// ── Main API ──────────────────────────────────────────────────────────────────
+// ── Scoring (shared with Tier -1 PDF) ─────────────────────────────────────────
 
-export function generateTopicSummaries(
-  chart: ChartResponse,
-  lang: Lang = "es"
-): TopicSummary[] {
+export interface TopicScoreSignals {
+  id: TopicId;
+  strength: StrengthLevel;
+  harmonious: number;
+  tense: number;
+  exactHits: number;
+  houseHits: number;
+  keyPlanetHits: number;
+  topicAspects: Aspect[];
+  relatedPlanets: string[];
+  relatedHouses: number[];
+}
+
+/** Scoring canónico de los 6 temas. El PDF Preview reutiliza exactamente esto. */
+export function scoreAllTopics(chart: ChartResponse): TopicScoreSignals[] {
   return TOPICS.map((def) => {
     const housePlanets = planetsInHouses(chart.planets, def.houses);
     const keyPresent = def.keyPlanets.filter((n) => planetByName(chart.planets, n));
@@ -740,6 +751,37 @@ export function generateTopicSummaries(
       exactHits
     );
 
+    return {
+      id: def.id,
+      strength,
+      harmonious,
+      tense,
+      exactHits,
+      houseHits: housePlanets.length,
+      keyPlanetHits: keyPresent.length,
+      topicAspects,
+      relatedPlanets,
+      relatedHouses,
+    };
+  });
+}
+
+// ── Main API ──────────────────────────────────────────────────────────────────
+
+export function generateTopicSummaries(
+  chart: ChartResponse,
+  lang: Lang = "es"
+): TopicSummary[] {
+  const defById = Object.fromEntries(TOPICS.map((d) => [d.id, d])) as Record<
+    TopicId,
+    TopicDef
+  >;
+
+  return scoreAllTopics(chart).map((signals) => {
+    const def = defById[signals.id];
+    const strength = signals.strength;
+    const topicAspects = signals.topicAspects;
+
     const title = lang === "en" ? def.titleEn : def.titleEs;
     let body: { headline: string; paragraphs: string[]; keywords: string[] };
 
@@ -771,8 +813,8 @@ export function generateTopicSummaries(
       paragraphs: body.paragraphs.slice(0, 4),
       keywords: body.keywords,
       strengthLevel: strength,
-      relatedPlanets,
-      relatedHouses,
+      relatedPlanets: signals.relatedPlanets,
+      relatedHouses: signals.relatedHouses,
     };
   });
 }
