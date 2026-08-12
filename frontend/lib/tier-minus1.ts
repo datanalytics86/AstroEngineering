@@ -599,12 +599,12 @@ function planetByName(planets: PlanetPosition[], name: string): PlanetPosition |
   return planets.find((p) => p.name === name);
 }
 
-function voiceOf(sign: string | undefined, lang: Lang): SignVoice {
+export function voiceOf(sign: string | undefined, lang: Lang): SignVoice {
   if (sign && VOICE[sign]) return VOICE[sign][lang];
   return FALLBACK_VOICE[lang];
 }
 
-function zoneOf(house: number | undefined, lang: Lang): string {
+export function zoneOf(house: number | undefined, lang: Lang): string {
   if (house && LIFE_ZONE[house]) return lang === "en" ? LIFE_ZONE[house].en : LIFE_ZONE[house].es;
   return lang === "en" ? "everyday life" : "el día a día";
 }

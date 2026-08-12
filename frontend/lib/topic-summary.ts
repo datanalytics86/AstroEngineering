@@ -822,8 +822,9 @@ export function generateTopicSummaries(
 /** Agrupa tránsitos por tema de vida (preview Pro con data real). */
 export function groupTransitsByTopic(
   natalPlanets: PlanetPosition[],
-  events: { transit_planet: string; natal_planet: string; aspect_name: string; orb: number; exact_date?: string | null; importance?: string }[],
-  lang: Lang = "es"
+  events: { transit_planet: string; natal_planet: string; aspect_name: string; orb: number; exact_date?: string | null; enters_orb?: string; importance?: string }[],
+  lang: Lang = "es",
+  formatLine?: (ev: (typeof events)[number]) => string
 ): { topicId: TopicId; title: string; items: string[] }[] {
   const titles: Record<TopicId, { es: string; en: string }> = {
     amor: { es: "Amor & Relaciones", en: "Love & Relationships" },
@@ -847,8 +848,9 @@ export function groupTransitsByTopic(
     const natal = natalPlanets.find((p) => p.name === ev.natal_planet);
     const house = natal?.house;
     const name = ev.natal_planet;
-    const line =
-      lang === "en"
+    const line = formatLine
+      ? formatLine(ev)
+      : lang === "en"
         ? `${ev.transit_planet} ${ev.aspect_name} natal ${ev.natal_planet}${ev.exact_date ? ` · exact ${String(ev.exact_date).slice(0, 10)}` : ""}`
         : `${ev.transit_planet} ${ev.aspect_name} ${ev.natal_planet} natal${ev.exact_date ? ` · exacto ${String(ev.exact_date).slice(0, 10)}` : ""}`;
 
