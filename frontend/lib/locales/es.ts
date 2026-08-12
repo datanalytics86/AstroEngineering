@@ -106,10 +106,11 @@ export const es = {
   // ── Carta natal page ──
   "chart.loading": "Cargando carta natal…",
   "chart.trust_strip": "Swiss Ephemeris · ±0.05° · datos reales, sin inventar planetas",
-  "chart.tech.badge": "Ingeniería",
-  "chart.tech.title": "Carta técnica",
+  "chart.hero.badge": "Tu carta",
+  "chart.tech.badge": "Detalle",
+  "chart.tech.title": "Posiciones y aspectos",
   "chart.tech.subtitle":
-    "Rueda, ángulos, planetas y aspectos — la base de precisión de AstroEngine.",
+    "Tabla de planetas y aspectos — la capa de precisión de AstroEngine.",
   "chart.nav.home": "Inicio",
   "chart.nav.new": "← Nueva carta",
   "chart.nav.summary": "✦ Resumen técnico",
@@ -134,9 +135,14 @@ export const es = {
   "chart.topics.subtitle":
     "Toca una tarjeta. Lectura anclada a tu carta real — no a un horóscopo genérico.",
   "chart.topics.free_badge": "Incluido",
-  "chart.topics.strength.alta": "Alta",
-  "chart.topics.strength.media": "Media",
-  "chart.topics.strength.desafio": "Desafío",
+  "chart.topics.strength.alta": "Potencial fuerte",
+  "chart.topics.strength.media": "Equilibrado",
+  "chart.topics.strength.desafio": "Área de práctica",
+  "chart.topics.tips": "Para practicar",
+  "chart.pdf.download": "Descargar mi preview PDF",
+  "chart.pdf.downloading": "Preparando tu PDF…",
+  "chart.pdf.error": "No se pudo crear el PDF. Inténtalo de nuevo.",
+  "chart.pdf.aria": "Descargar preview PDF de tu mapa de vida",
 
   // ── AstroIngeniería Pro (soft paywall) ──
   "chart.pro.badge": "AstroIngeniería",

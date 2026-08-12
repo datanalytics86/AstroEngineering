@@ -7,6 +7,7 @@ export interface BirthData {
   latitude: number;
   longitude: number;
   timezone_offset: number;  // UTC offset en horas, ej: -4
+  city?: string;            // etiqueta humana del lugar (para PDF / portada)
 }
 
 export interface TransitRequest {
@@ -153,6 +154,9 @@ export type TopicId =
 
 export type StrengthLevel = "alta" | "media" | "desafio";
 
+/** Badge humano del Preview PDF (mapeo de StrengthLevel). */
+export type HumanBadge = "potencial_fuerte" | "equilibrado" | "area_practica";
+
 export interface TopicSummary {
   id: TopicId;
   title: string;
@@ -162,6 +166,38 @@ export interface TopicSummary {
   strengthLevel: StrengthLevel;
   relatedPlanets: string[];
   relatedHouses: number[];
+}
+
+/** Una sección del Tier -1 Free PDF Preview — 100% lenguaje humano. */
+export interface TierMinus1Section {
+  id: TopicId;
+  title: string;
+  headline: string;
+  paragraphs: string[];
+  tips: string[];
+  badge: HumanBadge;
+  badgeLabel: string;
+  keywords: string[];
+}
+
+/** Documento listo para renderizar el PDF Preview. */
+export interface TierMinus1Content {
+  name: string;
+  firstName: string;
+  lang: "es" | "en";
+  coverKicker: string;
+  coverTitle: string;
+  coverLead: string;
+  birthDateLabel: string;
+  birthTimeLabel: string;
+  birthPlace: string;
+  sections: TierMinus1Section[];
+  ctaKicker: string;
+  ctaHeadline: string;
+  ctaBody: string;
+  ctaButton: string;
+  ctaUrl: string;
+  footer: string;
 }
 
 /** Punto mensual del Índice de Intensidad Personal. */

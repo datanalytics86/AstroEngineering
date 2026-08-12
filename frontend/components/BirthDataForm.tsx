@@ -580,6 +580,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
       latitude:        parseFloat(form.latitude),
       longitude:       parseFloat(form.longitude),
       timezone_offset: parseFloat(form.timezone_offset),
+      city:            form.city_search.trim() || undefined,
     });
   }
 

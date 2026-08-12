@@ -106,10 +106,11 @@ export const en = {
   // ── Carta natal page ──
   "chart.loading": "Loading natal chart…",
   "chart.trust_strip": "Swiss Ephemeris · ±0.05° · real data, no invented planets",
-  "chart.tech.badge": "Engineering",
-  "chart.tech.title": "Technical chart",
+  "chart.hero.badge": "Your chart",
+  "chart.tech.badge": "Detail",
+  "chart.tech.title": "Positions & aspects",
   "chart.tech.subtitle":
-    "Wheel, angles, planets, and aspects — AstroEngine’s precision base.",
+    "Planet table and aspects — AstroEngine’s precision layer.",
   "chart.nav.home": "Home",
   "chart.nav.new": "← New chart",
   "chart.nav.summary": "✦ Technical summary",
@@ -134,9 +135,14 @@ export const en = {
   "chart.topics.subtitle":
     "Tap a card. Reading anchored to your real chart — not a generic horoscope.",
   "chart.topics.free_badge": "Included",
-  "chart.topics.strength.alta": "High",
-  "chart.topics.strength.media": "Medium",
-  "chart.topics.strength.desafio": "Challenge",
+  "chart.topics.strength.alta": "Strong potential",
+  "chart.topics.strength.media": "Balanced",
+  "chart.topics.strength.desafio": "Practice area",
+  "chart.topics.tips": "To practice",
+  "chart.pdf.download": "Download my preview PDF",
+  "chart.pdf.downloading": "Preparing your PDF…",
+  "chart.pdf.error": "Could not create the PDF. Please try again.",
+  "chart.pdf.aria": "Download the life-map preview PDF",
 
   // ── AstroEngineering Pro (soft paywall) ──
   "chart.pro.badge": "AstroEngineering",
