@@ -11,6 +11,7 @@ export const en = {
 
   // ── Footer ──
   "footer.tagline": "AstroEngine — Swiss Ephemeris · Precision ±0.05° · Calculations validated against astro.com",
+  "footer.privacy": "Privacy",
 
   // ── Portada / Landing ──
   "landing.trust_line": "Swiss Ephemeris · ±0.05° precision",
@@ -156,6 +157,8 @@ export const en = {
     "The free map tells you who you are. Pro tells you how this year feels: a clear summary, the louder months, and the pieces that weigh most — with the precision underneath.",
   "chart.pro.unlocked_subtitle":
     "Active 30 days on this device. Start with the summary; the year is calculated once.",
+  "chart.pro.unlocked_subtitle_paid":
+    "Payment confirmed. Active on this device. Start with the summary; the year is calculated once.",
   "chart.pro.locked_badge": "Pro",
   "chart.pro.unlocked_badge": "Pro active",
   "chart.pro.feature.summary": "Who you are, in plain language — identity, emotion, purpose",
@@ -171,6 +174,7 @@ export const en = {
   "chart.pro.preview_downloading": "Preparing the sample…",
   "chart.pro.unlock_cta": "Unlock Pro · $2.99",
   "chart.pro.unlock_note": "Real checkout comes later. First we ask if you would actually pay.",
+  "chart.pro.unlock_note_live": "One-time $2.99. No subscription. Stripe handles the card.",
   "pay.intent.title": "Pro is $2.99",
   "pay.intent.body":
     "The pulse of your year and a deeper reading of your map. Precision included. No subscription.",
@@ -180,6 +184,21 @@ export const en = {
   "pay.intent.email_label": "Get notified when real checkout is live (optional)",
   "pay.intent.email_placeholder": "you@email.com",
   "pay.intent.close": "Close",
+  "pay.checkout.redirecting": "Opening secure checkout…",
+  "pay.checkout.error": "Could not open checkout. Please try again in a few seconds.",
+  "pay.checkout.success": "Payment confirmed. Pro is active on this chart.",
+  "pay.checkout.cancel": "Checkout canceled. You can unlock whenever you want.",
+  "privacy.kicker": "Data",
+  "privacy.title": "Privacy",
+  "privacy.p1":
+    "Birth date, time, and place are used only to calculate your chart in the moment. The server does not keep an account or a history of your data.",
+  "privacy.p2":
+    "The chart, topics, and Pro unlock live in your browser’s local storage. Clear the site data and they go away.",
+  "privacy.p3":
+    "If you buy Pro, Stripe processes the $2.99 one-time payment. They receive the email and card details; we never see your card.",
+  "privacy.p4":
+    "We count anonymous clicks (chart created, PDF, pay intent) to improve the product. No name, no birth date in those counts.",
+  "privacy.back": "Calculate my chart →",
   "chart.pro.section.summary": "Who you are",
   "chart.pro.section.year": "The pulse of your year",
   "chart.pro.tier1.title": "What weighs most on your map",

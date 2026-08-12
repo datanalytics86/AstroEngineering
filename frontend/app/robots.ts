@@ -5,7 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/geopolitica", "/calendario"],
+      disallow: ["/geopolitica", "/calendario", "/api/"],
     },
+    sitemap: "https://astro-engineering.vercel.app/sitemap.xml",
   };
 }

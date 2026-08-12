@@ -11,6 +11,7 @@ export const es = {
 
   // ── Footer ──
   "footer.tagline": "AstroEngine — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com",
+  "footer.privacy": "Privacidad",
 
   // ── Portada / Landing ──
   "landing.trust_line": "Swiss Ephemeris · precisión ±0.05°",
@@ -156,6 +157,8 @@ export const es = {
     "El mapa gratis te dice cómo eres. Pro te dice cómo se siente este año: un resumen en claro, los meses más cargados y las piezas que más pesan — con la precisión de detrás.",
   "chart.pro.unlocked_subtitle":
     "Activo 30 días en este dispositivo. Empieza por el resumen; el año se calcula una vez.",
+  "chart.pro.unlocked_subtitle_paid":
+    "Pago confirmado. Activo en este dispositivo. Empieza por el resumen; el año se calcula una vez.",
   "chart.pro.locked_badge": "Pro",
   "chart.pro.unlocked_badge": "Pro activo",
   "chart.pro.feature.summary": "Quién eres, en claro — identidad, emoción, propósito",
@@ -171,6 +174,7 @@ export const es = {
   "chart.pro.preview_downloading": "Preparando el ejemplo…",
   "chart.pro.unlock_cta": "Desbloquear Pro · $2.99",
   "chart.pro.unlock_note": "El pago real llega después. Primero te preguntamos si lo pagarías.",
+  "chart.pro.unlock_note_live": "Pago único de $2.99. Sin suscripción. Te lleva a Stripe.",
   "pay.intent.title": "Pro son $2.99",
   "pay.intent.body":
     "El pulso de tu año y una lectura más profunda de tu mapa. Precisión incluida. Sin suscripción.",
@@ -180,6 +184,21 @@ export const es = {
   "pay.intent.email_label": "Si quieres aviso cuando el pago esté vivo (opcional)",
   "pay.intent.email_placeholder": "tu@email.com",
   "pay.intent.close": "Cerrar",
+  "pay.checkout.redirecting": "Abriendo el pago seguro…",
+  "pay.checkout.error": "No se pudo abrir el pago. Inténtalo de nuevo en unos segundos.",
+  "pay.checkout.success": "Pago confirmado. Pro ya está activo en esta carta.",
+  "pay.checkout.cancel": "Pago cancelado. Puedes desbloquear cuando quieras.",
+  "privacy.kicker": "Datos",
+  "privacy.title": "Privacidad",
+  "privacy.p1":
+    "Fecha, hora y lugar de nacimiento se usan solo para calcular tu carta en el momento. El servidor no guarda una cuenta ni un historial de tus datos.",
+  "privacy.p2":
+    "La carta, los temas y el desbloqueo Pro quedan en el almacenamiento local de tu navegador. Si borras los datos del sitio, se van.",
+  "privacy.p3":
+    "Si pagas Pro, Stripe procesa el cobro ($2.99, un solo pago). Ellos reciben el email y los datos de pago; nosotros no vemos tu tarjeta.",
+  "privacy.p4":
+    "Medimos clics anónimos (carta creada, PDF, intención de pago) para mejorar el producto. Sin nombre, sin fecha de nacimiento en esos conteos.",
+  "privacy.back": "Calcular mi carta →",
   "chart.pro.section.summary": "Quién eres",
   "chart.pro.section.year": "El pulso de tu año",
   "chart.pro.tier1.title": "Lo que más pesa en tu mapa",

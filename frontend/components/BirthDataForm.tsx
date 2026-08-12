@@ -759,6 +759,13 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
         )}
       </button>
 
+      <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+        Calculamos en el momento. Fecha, hora y lugar no se guardan en el servidor — solo en este navegador.{" "}
+        <a href="/privacidad" className="underline hover:text-blue-600">
+          Privacidad
+        </a>
+      </p>
+
       {/* Demo */}
       <div className="text-center pt-1">
         <button

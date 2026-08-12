@@ -228,6 +228,8 @@ export interface ProUnlockRecord {
   unlocked: boolean;
   at: string;
   expiresAt: string | null;
+  sessionId?: string;
+  source?: "soft" | "stripe";
 }
 
 function proKey(chartId: string): string {
@@ -248,13 +250,21 @@ export function isProUnlocked(chartId: string): boolean {
   }
 }
 
-// TODO(Stripe): replace unlockPro with real checkout session
-export function unlockPro(chartId: string, permanent = false): void {
+export function unlockPro(
+  chartId: string,
+  permanentOrOpts: boolean | { permanent?: boolean; sessionId?: string; source?: "soft" | "stripe" } = false,
+): void {
+  const opts =
+    typeof permanentOrOpts === "boolean"
+      ? { permanent: permanentOrOpts }
+      : permanentOrOpts;
   const at = new Date().toISOString();
   const rec: ProUnlockRecord = {
     unlocked: true,
     at,
-    expiresAt: permanent ? null : new Date(Date.now() + PRO_TTL_MS).toISOString(),
+    expiresAt: opts.permanent ? null : new Date(Date.now() + PRO_TTL_MS).toISOString(),
+    sessionId: opts.sessionId,
+    source: opts.source ?? (opts.sessionId ? "stripe" : "soft"),
   };
   try {
     localStorage.setItem(proKey(chartId), JSON.stringify(rec));

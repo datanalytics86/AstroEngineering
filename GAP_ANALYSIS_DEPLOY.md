@@ -22,8 +22,9 @@
 ### Pendiente humano (no automatizable sin secrets)
 
 - [ ] Confirmar en dashboard Render: `FRONTEND_URL=https://astro-engineering.vercel.app`
-- [ ] Confirmar en dashboard Vercel: `NEXT_PUBLIC_API_URL=https://astroengine.onrender.com` (sin trailing slash)
+- [ ] Confirmar en dashboard Vercel: `NEXT_PUBLIC_API_URL=https://astroengine-backend.onrender.com` (sin trailing slash; **nunca** el stub `astroengine.onrender.com`)
 - [ ] (Opcional) Crear proyecto Sentry y pegar DSN en Render + Vercel
+- [ ] Para cobrar Pro: pegar `STRIPE_SECRET_KEY` (y opcional `STRIPE_WEBHOOK_SECRET`) en Vercel y redeploy
 - [ ] Redeploy tras cambiar env vars
 
 > ⚠️ Actualización 2026-06-17 (histórica): se eliminó mundane; **luego se reintrodujo** (2026-07) como Geopolítica. Ignorar la nota de “ya no aplican” para endpoints mundane.

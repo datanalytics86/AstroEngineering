@@ -5,7 +5,7 @@
  * (TIER1 aspects, intensity chart, technical summary access).
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   Aspect,
   ChartResponse,
@@ -311,7 +311,57 @@ export default function TopicSummarySection({
   const [payEmail, setPayEmail] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sampleBusy, setSampleBusy] = useState(false);
+  const [checkoutEnabled, setCheckoutEnabled] = useState<boolean | null>(null);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const locale: Lang = lang === "en" ? "en" : "es";
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/checkout/status")
+      .then((r) => r.json())
+      .then((d: { enabled?: boolean }) => {
+        if (!cancelled) setCheckoutEnabled(Boolean(d.enabled));
+      })
+      .catch(() => {
+        if (!cancelled) setCheckoutEnabled(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function startStripeCheckout() {
+    if (!chartId || checkoutBusy) return;
+    setCheckoutBusy(true);
+    setCheckoutError(null);
+    trackLearning("checkout_started");
+    try {
+      const res = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chartId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { url?: string; detail?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.detail || "checkout_failed");
+      }
+      window.location.href = data.url;
+    } catch {
+      trackLearning("checkout_error");
+      setCheckoutError(t("pay.checkout.error"));
+      setCheckoutBusy(false);
+    }
+  }
+
+  function requestUnlock() {
+    trackLearning("pro_unlock_clicked");
+    if (checkoutEnabled) {
+      void startStripeCheckout();
+      return;
+    }
+    setPayOpen(true);
+  }
 
   const human = useMemo(
     () => (isPro && chart ? generateHumanProSummary(chart, locale) : null),
@@ -397,7 +447,9 @@ export default function TopicSummarySection({
                 {isPro ? t("chart.pro.title_unlocked") : t("chart.pro.teaser.title")}
               </h3>
               <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
-                {isPro ? t("chart.pro.unlocked_subtitle") : t("chart.pro.teaser.body")}
+                {isPro
+                  ? t("chart.pro.unlocked_subtitle_paid")
+                  : t("chart.pro.teaser.body")}
               </p>
             </div>
             {isPro ? (
@@ -446,18 +498,21 @@ export default function TopicSummarySection({
                 <ActionButton
                   variant="primary"
                   accent="indigo"
-                  onClick={() => {
-                    trackLearning("pro_unlock_clicked");
-                    setPayOpen(true);
-                  }}
+                  onClick={requestUnlock}
                   className="w-full sm:w-auto min-h-[48px] text-base"
+                  disabled={checkoutBusy}
                 >
-                  {t("chart.pro.unlock_cta")}
+                  {checkoutBusy ? t("pay.checkout.redirecting") : t("chart.pro.unlock_cta")}
                 </ActionButton>
                 <p className="text-[11px] sm:text-xs text-slate-400">
-                  {t("chart.pro.unlock_note")}
+                  {checkoutEnabled ? t("chart.pro.unlock_note_live") : t("chart.pro.unlock_note")}
                 </p>
               </div>
+              {checkoutError && (
+                <p className="text-sm text-red-600" role="alert">
+                  {checkoutError}
+                </p>
+              )}
             </>
           )}
 
@@ -476,8 +531,7 @@ export default function TopicSummarySection({
               }}
               onUnlock={() => {
                 setPreviewOpen(false);
-                trackLearning("pro_unlock_clicked");
-                setPayOpen(true);
+                requestUnlock();
               }}
             />
           )}

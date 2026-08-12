@@ -14,6 +14,7 @@ Sin guía. Sin “mira el PDF”. Si se traban, anotar **dónde**, no rescatar.
 2. ¿Entienden free vs Pro sin que se lo digas?  
 3. ¿El PDF se siente regalable (WhatsApp / “quiero el mío”)?  
 4. En la pregunta “¿Pagarías $2.99 de verdad?”: sí/no y la razón en una línea.  
+   Si Stripe ya está encendido (`STRIPE_SECRET_KEY` en Vercel), observa si **completan el checkout** en vez de la pregunta hipotética.  
 5. ¿Piden tránsitos, rueda técnica, o más jerga? (señal de que el valor no está en el mapa de vida)
 
 ## Registro (una fila por persona)
