@@ -16,8 +16,13 @@ import type {
   TransitEvent,
 } from "@/lib/types";
 import { groupTransitsByTopic } from "@/lib/topic-summary";
-import { generateChartSummary } from "@/lib/chart-summary";
 import { loadYearTransits } from "@/lib/storage";
+import {
+  buildTier1Readings,
+  generateHumanProSummary,
+  humanTransitLine,
+  readIntensityYear,
+} from "@/lib/pro-human";
 import ActionButton from "@/components/ActionButton";
 import PersonalIntensityChart from "@/components/PersonalIntensityChart";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
@@ -31,7 +36,9 @@ export interface TopicSummarySectionProps {
   tier1Aspects: Aspect[];
   intensityData: IntensityPoint[];
   onOpenTechnicalSummary?: () => void;
-  onCalcTransits?: () => void;
+  onCalcYear?: () => void;
+  yearLoading?: boolean;
+  yearError?: string | null;
   chart?: ChartResponse;
   chartId?: string;
 }
@@ -149,26 +156,38 @@ function TopicCard({ topic }: { topic: TierMinus1Section }) {
   );
 }
 
-function Tier1List({ aspects, emptyLabel }: { aspects: Aspect[]; emptyLabel: string }) {
-  if (aspects.length === 0) {
-    return <p className="text-sm text-slate-500 font-mono">{emptyLabel}</p>;
+function Tier1List({
+  aspects,
+  emptyLabel,
+  lang,
+}: {
+  aspects: Aspect[];
+  emptyLabel: string;
+  lang: Lang;
+}) {
+  const readings = buildTier1Readings(aspects, lang);
+  if (readings.length === 0) {
+    return <p className="text-sm text-slate-500 leading-relaxed">{emptyLabel}</p>;
   }
   return (
     <ul className="space-y-2">
-      {aspects.map((a, i) => (
+      {readings.map(({ aspect: a, impact }) => (
         <li
-          key={`${a.planet1}-${a.aspect_name}-${a.planet2}-${i}`}
-          className="text-xs sm:text-sm font-mono text-slate-700 bg-slate-50 border border-slate-100 rounded-lg px-3 py-2.5 flex flex-wrap items-center gap-2 min-h-[44px]"
+          key={`${a.planet1}-${a.aspect_name}-${a.planet2}`}
+          className="bg-white border border-slate-100 rounded-xl px-3 py-3 space-y-1.5"
         >
-          <span>{a.planet1}</span>
-          <span style={{ color: ASPECT_COLORS[a.nature] ?? "#64748B" }}>
-            {a.aspect_symbol} {a.aspect_name}
-          </span>
-          <span>{a.planet2}</span>
-          <span className="text-violet-600 ml-auto">
-            {a.orb.toFixed(2)}°
-            {a.applying ? " ↗" : " ↘"}
-          </span>
+          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm min-h-[28px]">
+            <span className="font-medium text-slate-800">{a.planet1}</span>
+            <span style={{ color: ASPECT_COLORS[a.nature] ?? "#64748B" }}>
+              {a.aspect_symbol} {a.aspect_name}
+            </span>
+            <span className="font-medium text-slate-800">{a.planet2}</span>
+            <span className="text-violet-600 ml-auto font-mono text-[11px]">
+              {a.orb.toFixed(2)}°
+              {a.applying ? " ↗" : " ↘"}
+            </span>
+          </div>
+          <p className="text-sm text-slate-600 leading-snug">{impact}</p>
         </li>
       ))}
     </ul>
@@ -182,7 +201,9 @@ export default function TopicSummarySection({
   tier1Aspects,
   intensityData,
   onOpenTechnicalSummary,
-  onCalcTransits,
+  onCalcYear,
+  yearLoading = false,
+  yearError = null,
   chart,
   chartId,
 }: TopicSummarySectionProps) {
@@ -190,9 +211,14 @@ export default function TopicSummarySection({
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const locale: Lang = lang === "en" ? "en" : "es";
 
-  const technical = useMemo(
-    () => (isPro && chart ? generateChartSummary(chart) : null),
-    [isPro, chart]
+  const human = useMemo(
+    () => (isPro && chart ? generateHumanProSummary(chart, locale) : null),
+    [isPro, chart, locale]
+  );
+
+  const yearReading = useMemo(
+    () => (isPro ? readIntensityYear(intensityData, locale) : null),
+    [isPro, intensityData, locale]
   );
 
   const transitPreview = useMemo(() => {
@@ -211,7 +237,9 @@ export default function TopicSummarySection({
       seen.add(k);
       return true;
     });
-    return groupTransitsByTopic(chart.planets, unique, locale);
+    return groupTransitsByTopic(chart.planets, unique, locale, (ev) =>
+      humanTransitLine(ev, locale)
+    );
   }, [isPro, chart, chartId, locale]);
 
   return (
@@ -277,44 +305,45 @@ export default function TopicSummarySection({
             )}
           </div>
 
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {[
-              t("chart.pro.feature.summary"),
-              t("chart.pro.feature.tier1"),
-              t("chart.pro.feature.intensity"),
-              t("chart.pro.feature.transits"),
-            ].map((label) => (
-              <li
-                key={label}
-                className="text-xs sm:text-sm text-slate-600 bg-white border border-slate-100 rounded-lg px-3 py-2.5 flex items-start gap-2 min-h-[44px]"
-              >
-                <span className="text-indigo-500 mt-0.5 shrink-0 font-mono" aria-hidden>
-                  {isPro ? "✓" : "·"}
-                </span>
-                <span>{label}</span>
-              </li>
-            ))}
-          </ul>
-
           {!isPro && (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
-              <ActionButton
-                variant="primary"
-                accent="indigo"
-                onClick={onUnlock}
-                className="w-full sm:w-auto min-h-[48px] text-base"
-              >
-                {t("chart.pro.unlock_cta")}
-              </ActionButton>
-              <p className="text-[11px] sm:text-xs text-slate-400 font-mono">
-                {t("chart.pro.unlock_note")}
-              </p>
-            </div>
+            <>
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {[
+                  t("chart.pro.feature.summary"),
+                  t("chart.pro.feature.intensity"),
+                  t("chart.pro.feature.tier1"),
+                  t("chart.pro.feature.transits"),
+                ].map((label) => (
+                  <li
+                    key={label}
+                    className="text-xs sm:text-sm text-slate-600 bg-white border border-slate-100 rounded-lg px-3 py-2.5 flex items-start gap-2 min-h-[44px]"
+                  >
+                    <span className="text-indigo-500 mt-0.5 shrink-0 font-mono" aria-hidden>
+                      ·
+                    </span>
+                    <span>{label}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+                <ActionButton
+                  variant="primary"
+                  accent="indigo"
+                  onClick={onUnlock}
+                  className="w-full sm:w-auto min-h-[48px] text-base"
+                >
+                  {t("chart.pro.unlock_cta")}
+                </ActionButton>
+                <p className="text-[11px] sm:text-xs text-slate-400">
+                  {t("chart.pro.unlock_note")}
+                </p>
+              </div>
+            </>
           )}
 
           {isPro && (
-            <div className="space-y-6 pt-2 border-t border-slate-200/80">
-              {/* Technical summary */}
+            <div className="space-y-7 pt-2 border-t border-slate-200/80">
+              {/* 1. Human summary */}
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
                   <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono">
@@ -331,110 +360,131 @@ export default function TopicSummarySection({
                     </ActionButton>
                   )}
                 </div>
-                {technical && (
+                {human && (
                   <div className="bg-white border border-slate-100 rounded-xl p-4 space-y-2">
-                    <p className="text-sm font-semibold text-indigo-600">{technical.headline}</p>
-                    <p className="text-sm text-slate-700 leading-relaxed line-clamp-3">
-                      {technical.core_identity}
+                    <p className="text-sm font-semibold text-indigo-700 leading-snug">
+                      {human.headline}
                     </p>
-                    <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
-                      {technical.life_purpose}
-                    </p>
+                    <p className="text-sm text-slate-700 leading-relaxed">{human.identity}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed">{human.purpose}</p>
                   </div>
                 )}
               </div>
 
-              {/* TIER1 aspects */}
+              {/* 2. Year pulse — one empty CTA */}
               <div>
                 <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
-                  {t("chart.pro.tier1.title")}
+                  {t("chart.pro.section.year")}
                 </h4>
-                <Tier1List aspects={tier1Aspects} emptyLabel={t("chart.pro.tier1_empty")} />
-              </div>
-
-              {/* Personal intensity */}
-              <div>
-                <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
-                  {t("chart.pro.intensity.title")}
-                </h4>
-                <div className="bg-white border border-slate-100 rounded-xl p-3 sm:p-4">
-                  <PersonalIntensityChart data={intensityData} />
-                  {intensityData.length === 0 && onCalcTransits && (
-                    <div className="mt-3 flex justify-center">
-                      <ActionButton
-                        variant="secondary"
-                        accent="indigo"
-                        onClick={onCalcTransits}
-                        className="min-h-[44px]"
-                      >
-                        {t("chart.pro.intensity.cta_transits")}
-                      </ActionButton>
-                    </div>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-400 mt-2 leading-relaxed">
-                  {t("chart.pro.intensity.explain")}
-                </p>
-              </div>
-
-              {/* Transit preview by topic — only with real data */}
-              <div>
-                <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
-                  {t("chart.pro.section.transits")}
-                </h4>
-                {transitPreview && transitPreview.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {transitPreview.map((g) => (
-                      <div
-                        key={g.topicId}
-                        className="bg-white border border-slate-100 rounded-xl p-3"
-                      >
-                        <button
-                          type="button"
-                          className="w-full text-left flex items-center justify-between gap-2 min-h-[44px]"
-                          onClick={() =>
-                            setExpandedTopic((prev) =>
-                              prev === g.topicId ? null : g.topicId
-                            )
-                          }
-                        >
-                          <span className="text-sm font-semibold text-slate-800">{g.title}</span>
-                          <span className="text-xs font-mono text-slate-400">{g.items.length}</span>
-                        </button>
-                        {(expandedTopic === g.topicId || expandedTopic === null) && (
-                          <ul className="mt-2 space-y-1">
-                            {(expandedTopic === g.topicId
-                              ? g.items
-                              : g.items.slice(0, 2)
-                            ).map((item, i) => (
-                              <li
-                                key={i}
-                                className="text-xs font-mono text-slate-600 leading-snug"
-                              >
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                {yearLoading ? (
+                  <div className="bg-white border border-slate-100 rounded-xl p-5 text-center">
+                    <div className="w-7 h-7 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-sm text-slate-600">{t("chart.pro.year.loading")}</p>
+                  </div>
+                ) : intensityData.length > 0 ? (
+                  <div className="space-y-3">
+                    {yearReading && (
+                      <div className="bg-white border border-slate-100 rounded-xl p-4 space-y-1.5">
+                        <p className="text-sm font-semibold text-slate-900">{yearReading.headline}</p>
+                        <p className="text-sm text-slate-600 leading-relaxed">{yearReading.body}</p>
                       </div>
-                    ))}
+                    )}
+                    <div className="bg-white border border-slate-100 rounded-xl p-3 sm:p-4">
+                      <PersonalIntensityChart data={intensityData} />
+                    </div>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">
+                      {t("chart.pro.intensity.explain")}
+                    </p>
                   </div>
                 ) : (
-                  <div className="bg-white border border-dashed border-slate-200 rounded-xl p-4 text-sm text-slate-500 space-y-3">
-                    <p>{t("chart.pro.transits_empty")}</p>
-                    {onCalcTransits && (
-                      <ActionButton
-                        variant="secondary"
-                        accent="indigo"
-                        onClick={onCalcTransits}
-                        className="min-h-[44px]"
-                      >
-                        {t("chart.pro.intensity.cta_transits")}
-                      </ActionButton>
+                  <div className="bg-white border border-dashed border-indigo-200 rounded-xl p-5 space-y-3 text-center sm:text-left">
+                    <p className="text-sm text-slate-600 leading-relaxed">
+                      {t("chart.pro.intensity.empty")}
+                    </p>
+                    {yearError && (
+                      <p className="text-sm text-red-600" role="alert">
+                        {yearError}
+                      </p>
+                    )}
+                    {onCalcYear && (
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <ActionButton
+                          variant="primary"
+                          accent="indigo"
+                          onClick={onCalcYear}
+                          className="w-full sm:w-auto min-h-[48px]"
+                        >
+                          {t("chart.pro.intensity.cta_transits")}
+                        </ActionButton>
+                        <p className="text-[11px] text-slate-400">
+                          {t("chart.pro.intensity.cta_note")}
+                        </p>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
+
+              {/* 3. TIER1 with meaning */}
+              <div>
+                <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
+                  {t("chart.pro.tier1.title")}
+                </h4>
+                <Tier1List
+                  aspects={tier1Aspects}
+                  emptyLabel={t("chart.pro.tier1_empty")}
+                  lang={locale}
+                />
+              </div>
+
+              {/* 4. Year by topic — only with data */}
+              {intensityData.length > 0 && (
+                <div>
+                  <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
+                    {t("chart.pro.section.transits")}
+                  </h4>
+                  {transitPreview && transitPreview.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {transitPreview.map((g) => (
+                        <div
+                          key={g.topicId}
+                          className="bg-white border border-slate-100 rounded-xl p-3"
+                        >
+                          <button
+                            type="button"
+                            className="w-full text-left flex items-center justify-between gap-2 min-h-[44px]"
+                            onClick={() =>
+                              setExpandedTopic((prev) =>
+                                prev === g.topicId ? null : g.topicId
+                              )
+                            }
+                          >
+                            <span className="text-sm font-semibold text-slate-800">{g.title}</span>
+                            <span className="text-xs font-mono text-slate-400">{g.items.length}</span>
+                          </button>
+                          {(expandedTopic === g.topicId || expandedTopic === null) && (
+                            <ul className="mt-2 space-y-1">
+                              {(expandedTopic === g.topicId
+                                ? g.items
+                                : g.items.slice(0, 2)
+                              ).map((item) => (
+                                <li
+                                  key={item}
+                                  className="text-sm text-slate-600 leading-snug"
+                                >
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">{t("chart.pro.transits_empty")}</p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

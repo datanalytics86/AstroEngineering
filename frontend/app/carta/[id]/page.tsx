@@ -20,6 +20,7 @@ import ChartSummaryModal from "@/components/ChartSummary";
 import TopicSummarySection from "@/components/TopicSummarySection";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { generateChartSummary } from "@/lib/chart-summary";
+import { generateHumanProSummary } from "@/lib/pro-human";
 import { generateTierMinus1Content } from "@/lib/tier-minus1";
 import {
   getTier1Aspects,
@@ -46,6 +47,7 @@ export default function CartaPage() {
   const [showSummary, setShowSummary] = useState(false);
   const [proUnlocked, setProUnlocked] = useState(false);
   const [techOpen, setTechOpen] = useState(false);
+  const [yearTick, setYearTick] = useState(0);
 
   useEffect(() => {
     if (!id) {
@@ -77,7 +79,7 @@ export default function CartaPage() {
     if (!id) return [];
     const year = new Date().getFullYear();
     return buildPersonalIntensitySeries(loadYearTransits(id, year), year, locale);
-  }, [id, locale, proUnlocked]);
+  }, [id, locale, proUnlocked, yearTick]);
 
   function handleUnlockPro() {
     if (!id) return;
@@ -91,6 +93,11 @@ export default function CartaPage() {
     } catch {
       /* ignore */
     }
+    requestAnimationFrame(() => {
+      document
+        .getElementById("pro-unlock-panel")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function scrollToTopics() {
@@ -135,7 +142,39 @@ export default function CartaPage() {
       setTransitError(null);
       const data = await res.json();
       saveYearTransits(id, year, data);
+      setYearTick((n) => n + 1);
       router.push(`/transitos/${id}`);
+    } catch (e) {
+      setTransitError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setLoadingTransits(false);
+    }
+  }
+
+  async function handleCalcYear() {
+    if (!chart || !birthData || !id) return;
+    setLoadingTransits(true);
+    setTransitError(null);
+    const year = new Date().getFullYear();
+    try {
+      const res = await postWithWakingRetry(
+        "/api/transits",
+        {
+          natal_planets: chart.planets,
+          start_date: `${year}-01-01`,
+          end_date: `${year}-12-31`,
+          latitude: birthData.latitude,
+          longitude: birthData.longitude,
+        },
+        () => setTransitError(t("common.error.waking"))
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: "Error" }));
+        throw new Error(err.detail ?? `HTTP ${res.status}`);
+      }
+      setTransitError(null);
+      saveYearTransits(id, year, await res.json());
+      setYearTick((n) => n + 1);
     } catch (e) {
       setTransitError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
@@ -372,7 +411,9 @@ export default function CartaPage() {
             setProUnlocked(true);
             setShowSummary(true);
           }}
-          onCalcTransits={handleCalcTransits}
+          onCalcYear={handleCalcYear}
+          yearLoading={loadingTransits}
+          yearError={transitError}
           chart={chart}
           chartId={id}
         />
@@ -426,6 +467,7 @@ export default function CartaPage() {
       {showSummary && proUnlocked && (
         <ChartSummaryModal
           summary={generateChartSummary(chart)}
+          human={generateHumanProSummary(chart, locale)}
           name={chart.name}
           onClose={() => setShowSummary(false)}
         />

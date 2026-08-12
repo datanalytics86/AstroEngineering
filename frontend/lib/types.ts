@@ -142,6 +142,29 @@ export interface ChartSummary {
   advice: string;
 }
 
+/** Capa A del resumen Pro — cero jerga, misma voz que Tier -1. */
+export interface HumanProSummary {
+  headline: string;
+  identity: string;
+  emotion: string;
+  purpose: string;
+  strengths: string[];
+  challenges: string[];
+  advice: string;
+  emphasis: string;
+}
+
+export interface IntensityReading {
+  headline: string;
+  body: string;
+  peakLabels: string[];
+}
+
+export interface Tier1Reading {
+  aspect: Aspect;
+  impact: string;
+}
+
 // ── Topic Summary (freemium: 6 temas free + capa Pro) ─────────────────────────
 
 export type TopicId =
