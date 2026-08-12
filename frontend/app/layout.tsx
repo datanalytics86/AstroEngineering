@@ -4,8 +4,8 @@ import Providers from "@/components/Providers";
 import NavHeader from "@/components/NavHeader";
 
 export const metadata: Metadata = {
-  title: "AstroEngine Pro",
-  description: "Cartas natales y tránsitos planetarios con precisión astronómica real",
+  title: "AstroEngine",
+  description: "Tu carta natal en 6 áreas de la vida real — amor, dinero, trabajo, salud, familia y crecimiento.",
   icons: { icon: "/favicon.svg" },
 };
 
@@ -34,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 function NavFooter() {
   return (
     <footer className="border-t border-border mt-16 px-6 py-6 text-center text-xs text-slate-400 font-mono">
-      AstroEngine Pro — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com
+      AstroEngine — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com
     </footer>
   );
 }

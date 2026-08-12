@@ -10,7 +10,7 @@ export const es = {
   "common.error.waking": "El servidor está despertando (puede tardar ~50s la primera vez). Reintentando…",
 
   // ── Footer ──
-  "footer.tagline": "AstroEngine Pro — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com",
+  "footer.tagline": "AstroEngine — Swiss Ephemeris · Precisión ±0.05° · Cálculos validados contra astro.com",
 
   // ── Portada / Landing ──
   "landing.trust_line": "Swiss Ephemeris · precisión ±0.05°",
@@ -49,9 +49,9 @@ export const es = {
   "landing.features.topics.title": "Temas de vida (gratis)",
   "landing.features.topics.desc":
     "Seis áreas legibles al instante: lo que te importa, sin jerga opaca.",
-  "landing.features.pro.title": "AstroIngeniería Pro",
+  "landing.features.pro.title": "El pulso de tu año",
   "landing.features.pro.desc":
-    "Resumen técnico, aspectos TIER1 (orbe < 1°) e índice de intensidad 12 meses.",
+    "Lectura más profunda de tu mapa y los meses que más pesan — con la precisión incluida.",
   "landing.features.transits.title": "Tránsitos del año",
   "landing.features.transits.desc":
     "Desde tu carta: el cielo en movimiento y el soporte del índice de intensidad.",
@@ -90,7 +90,8 @@ export const es = {
 
   // ── Nueva carta / Saved charts ──
   "nueva.title": "Carta Natal",
-  "nueva.subtitle": "Precisión astronómica con Swiss Ephemeris.\nTránsitos calculados día a día.",
+  "nueva.subtitle": "Tu carta, en 6 áreas de la vida real.\nLenguaje claro. Hecha para entenderte.",
+  "nueva.trust": "Swiss Ephemeris · ±0.05°",
   "nueva.saved.title": "Cartas guardadas",
   "nueva.saved.view": "Ver carta",
   "nueva.saved.transits": "✦ Tránsitos",
@@ -113,10 +114,11 @@ export const es = {
     "Tabla de planetas y aspectos — la capa de precisión de AstroEngine.",
   "chart.nav.home": "Inicio",
   "chart.nav.new": "← Nueva carta",
-  "chart.nav.summary": "✦ Resumen técnico",
-  "chart.nav.solar": "Retorno Solar",
-  "chart.nav.transits": "Tránsitos 12 meses",
-  "chart.nav.transits_loading": "Calculando tránsitos…",
+  "chart.nav.summary": "Resumen",
+  "chart.nav.solar": "Retorno solar",
+  "chart.nav.solar_link": "Retorno solar {year} →",
+  "chart.nav.transits": "Tu año",
+  "chart.nav.transits_loading": "Calculando tu año…",
   "chart.wheel.title": "Rueda Natal",
   "chart.wheel.hint": "Click en planeta, aspecto, casa o ángulo para ver interpretación",
   "chart.wheel.deselect": "click de nuevo para deseleccionar",

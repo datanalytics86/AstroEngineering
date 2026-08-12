@@ -64,6 +64,9 @@ export default function NuevaCartaPage() {
           <p className="text-slate-500 leading-relaxed text-sm whitespace-pre-line">
             {t("nueva.subtitle")}
           </p>
+          <p className="text-[11px] font-mono text-slate-400 mt-3">
+            {t("nueva.trust")}
+          </p>
         </div>
 
         {/* Formulario */}

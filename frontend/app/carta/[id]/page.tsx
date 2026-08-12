@@ -237,21 +237,14 @@ export default function CartaPage() {
       <div className="flex flex-col gap-4 mb-5">
         <div>
           <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{chart.name}</h1>
-          <p className="text-slate-400 font-mono text-sm mt-1">
-            {chart.birth_date} · {chart.birth_time} ·{" "}
-            <span className="text-blue-600 font-semibold">{chart.ascendant.sign}</span>{" "}
-            {t("chart.ascendant")} ·{" "}
-            <span className="text-sky-500">
-              {t("chart.mc")} {chart.midheaven.sign}
-            </span>
+          <p className="text-slate-500 text-sm mt-1">
+            {[chart.birth_date, chart.birth_time, birthData?.city].filter(Boolean).join(" · ")}
           </p>
-          {/* 2. Trust strip */}
           <p className="text-[11px] sm:text-xs font-mono text-slate-400 mt-2">
             {t("chart.trust_strip")}
           </p>
         </div>
 
-        {/* Actions: Temas > Pro/Resumen > Tránsitos > Solar */}
         <div className="flex flex-wrap gap-2">
           <ActionButton
             variant="primary"
@@ -288,25 +281,17 @@ export default function CartaPage() {
               t("chart.nav.transits")
             )}
           </ActionButton>
-          <ActionButton
-            variant="secondary"
-            accent="amber"
-            onClick={handleSolarReturn}
-            disabled={loadingSR}
-            className="min-h-[44px]"
-          >
-            <span className="inline-flex items-center justify-center w-3.5 text-amber-500">
-              {loadingSR ? (
-                <span className="inline-block w-3 h-3 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-              ) : (
-                "☉"
-              )}
-            </span>
-            <span>
-              {t("chart.nav.solar")} {new Date().getFullYear()}
-            </span>
-          </ActionButton>
         </div>
+        <button
+          type="button"
+          onClick={handleSolarReturn}
+          disabled={loadingSR}
+          className="self-start text-sm text-slate-400 hover:text-amber-700 transition-colors min-h-[44px] disabled:opacity-50"
+        >
+          {loadingSR
+            ? t("chart.nav.transits_loading")
+            : t("chart.nav.solar_link").replace("{year}", String(new Date().getFullYear()))}
+        </button>
       </div>
 
       {transitError && (

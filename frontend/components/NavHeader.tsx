@@ -32,9 +32,6 @@ export default function NavHeader() {
       <div className="px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
         <a href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity min-h-[44px]">
           <span className="font-semibold text-slate-900 tracking-tight text-lg">AstroEngine</span>
-          <span className="text-xs font-mono bg-blue-600 text-white px-1.5 py-0.5 rounded font-semibold">
-            Pro
-          </span>
         </a>
 
         <div className="flex items-center gap-2 sm:gap-4">
