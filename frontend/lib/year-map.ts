@@ -75,8 +75,11 @@ export interface YearMapContent {
   lang: Lang;
   name: string;
   year: number;
+  sample?: boolean;
   natal: HumanProSummary;
   solar: SolarYearTone;
+  natalPoints: number[];
+  solarPoints: number[];
   yearPulse: { headline: string; body: string };
   forecast: { headline: string; body: string; remaining: YearMonthBlock[] };
   months: YearMonthBlock[];
@@ -361,6 +364,8 @@ export function buildYearMap(opts: {
     year,
     natal,
     solar: solarTone(opts.solar, lang),
+    natalPoints: opts.chart.planets.map((p) => p.longitude),
+    solarPoints: (opts.solar?.planets ?? opts.chart.planets).map((p) => p.longitude),
     yearPulse: {
       headline: pulse?.headline ?? (lang === "en" ? "Your year has a pulse" : "Tu año tiene pulso"),
       body:
@@ -370,6 +375,118 @@ export function buildYearMap(opts: {
           : "Calcula el año una vez para ver qué meses aprietan y cuáles te dejan respirar."),
     },
     forecast: { headline: forecastHeadline, body: forecastBody, remaining },
+    months,
+  };
+}
+
+/** Full Pro year-map sample (Alex Rivera) — same document as a paid map. */
+export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
+  const year = new Date().getFullYear();
+  const intensities = [3.2, 4.1, 8.6, 5.4, 4.0, 3.6, 2.8, 4.7, 5.9, 7.4, 4.5, 3.1];
+  const months: YearMonthBlock[] = intensities.map((value, i) => {
+    const climate = climateOf(value);
+    const label = monthName(i, lang);
+    const topics: YearTopicLine[] = TOPIC_ORDER.map((id) => ({
+      id,
+      title: lang === "en" ? TOPIC_TITLE[id].en : TOPIC_TITLE[id].es,
+      line: topicLine(id, climate, undefined, lang),
+    }));
+    const hot =
+      climate === "apretado"
+        ? [lang === "en" ? "love" : "amor", lang === "en" ? "work" : "trabajo"]
+        : climate === "abierto"
+          ? [lang === "en" ? "money" : "dinero"]
+          : [];
+    return {
+      key: `${year}-${String(i + 1).padStart(2, "0")}`,
+      monthIndex: i,
+      label,
+      intensity: value,
+      climate,
+      executive: executiveFor(label, climate, hot, lang),
+      topics,
+    };
+  });
+  const remaining = months.slice(Math.max(0, new Date().getMonth()));
+  return {
+    lang,
+    name: "Alex Rivera",
+    year,
+    sample: true,
+    natal: {
+      headline:
+        lang === "en"
+          ? "A presence that is direct and without theater, with an inner climate that is protective"
+          : "Una presencia directa y sin rodeos, con un clima interno protector",
+      identity:
+        lang === "en"
+          ? "You recognize yourself when you start before fear gets a vote. That light shows most clearly in your vocation and your name in the world."
+          : "Te reconoces cuando empiezas antes de que el miedo hable. Esa luz se nota sobre todo en tu vocación y tu nombre en el mundo.",
+      emotion:
+        lang === "en"
+          ? "Inside, you need emotional safety. There is room to rest when private life is tended — not postponed."
+          : "Por dentro necesitas seguridad emocional. Hay calma para descansar cuando la vida privada se cuida — no se posterga.",
+      purpose:
+        lang === "en"
+          ? "The world tends to recognize a mark that is serious and long-game. Purpose holds when you leave work that stands."
+          : "El mundo tiende a reconocerte por una marca seria y de largo aliento. El propósito se sostiene cuando dejas una obra que se aguante.",
+      strengths:
+        lang === "en"
+          ? [
+              "A natural ease that is direct — people feel it before they can name it.",
+              "Emotional intelligence tuned to safety.",
+            ]
+          : [
+              "Una naturalidad directa: se nota antes de que puedan nombrarla.",
+              "Una inteligencia emocional afinada a la seguridad.",
+            ],
+      challenges:
+        lang === "en"
+          ? ["How you love and how you build rub and ask for practice."]
+          : ["Tu forma de amar y tu forma de construir se rozan y piden práctica."],
+      advice:
+        lang === "en"
+          ? "Your engine is drive and vision. Growth is staying in the room with the tension long enough to use it."
+          : "Tu motor es el impulso y la visión. El crecimiento es quedarte en la habitación con la tensión el tiempo suficiente para usarla.",
+      emphasis:
+        lang === "en"
+          ? "A lot of your energy gathers in vocation. That is a main plotline."
+          : "Mucha de tu energía se junta en la vocación. Es trama central.",
+    },
+    solar: {
+      headline:
+        lang === "en"
+          ? "This year wants a tone that is serious and long-game"
+          : "Este año pide un tono serio y de largo aliento",
+      body:
+        lang === "en"
+          ? "The year holds when you give yourself to work that stands. What you need underneath is emotional safety. The shadow to watch is rushing — it will dress itself up as ambition."
+          : "El año se sostiene cuando te dedicas a una obra que se aguante. Lo que necesitas debajo es seguridad emocional. La sombra a vigilar es apurar: se disfraza de ambición.",
+      publicMark:
+        lang === "en"
+          ? "The world tends to meet you this year through a mark that is visible and steady. Let that be a direction, not a costume."
+          : "El mundo tiende a encontrarte este año por una marca visible y firme. Que sea dirección, no disfraz.",
+    },
+    natalPoints: [24, 96, 118, 142, 168, 201, 248, 286, 312, 338, 18, 72],
+    solarPoints: [41, 88, 110, 155, 190, 214, 260, 295, 321, 350, 12, 67],
+    yearPulse: {
+      headline:
+        lang === "en"
+          ? `${monthName(2, lang)} is the loudest month of your year`
+          : `${monthName(2, lang)} es el mes más cargado de tu año`,
+      body:
+        lang === "en"
+          ? `Leave margin around ${monthName(2, lang)} and ${monthName(9, lang)}. That is a window of pressure and opening. ${monthName(6, lang)} is better for integrating.`
+          : `Deja margen alrededor de ${monthName(2, lang)} y ${monthName(9, lang)}. Es una ventana de presión y de apertura. ${monthName(6, lang)} sirve mejor para integrar.`,
+    },
+    forecast: {
+      headline: lang === "en" ? `From here to the end of ${year}` : `De aquí a fin de ${year}`,
+      body:
+        lang === "en"
+          ? `The months that ask for margin are ${monthName(2, lang)}, ${monthName(9, lang)}. Use ${monthName(6, lang)} to integrate, not to disappear.`
+          : `Los meses que piden margen son ${monthName(2, lang)}, ${monthName(9, lang)}. Usa ${monthName(6, lang)} para integrar, no para desaparecer.`,
+      remaining,
+    },
     months,
   };
 }

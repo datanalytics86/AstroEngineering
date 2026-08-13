@@ -2,8 +2,7 @@ import { createElement, type ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 import type { TierMinus1Content } from "./types";
 import { trackLearning } from "./learning";
-import { getProSampleContent } from "./pro-sample";
-import type { YearMapContent } from "./year-map";
+import { getSampleYearMap, type YearMapContent } from "./year-map";
 
 export function slugifyPdfName(name: string): string {
   const slug = name
@@ -40,24 +39,7 @@ export async function downloadTierMinus1Pdf(content: TierMinus1Content): Promise
 }
 
 export async function downloadProSamplePdf(lang: "es" | "en" = "es"): Promise<void> {
-  const content = getProSampleContent(lang);
-  const [{ pdf }, { default: ProSampleDocument }] = await Promise.all([
-    import("@react-pdf/renderer"),
-    import("@/components/pdf/ProSampleDocument"),
-  ]);
-  const doc = createElement(ProSampleDocument, { content }) as unknown as ReactElement<DocumentProps>;
-  const blob = await pdf(doc).toBlob();
-  const filename = lang === "en" ? "astroengine-pro-sample.pdf" : "astroengine-pro-ejemplo.pdf";
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
-  trackLearning("pro_sample_pdf", { lang });
+  await downloadProYearPdf(getSampleYearMap(lang));
 }
 
 export async function downloadProYearPdf(content: YearMapContent): Promise<void> {
@@ -78,5 +60,8 @@ export async function downloadProYearPdf(content: YearMapContent): Promise<void>
   a.click();
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
-  trackLearning("year_calculated", { pdf: true, lang: content.lang });
+  trackLearning(content.sample ? "pro_sample_pdf" : "pdf_downloaded", {
+    pdf: "year_map",
+    lang: content.lang,
+  });
 }

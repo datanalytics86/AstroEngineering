@@ -19,8 +19,8 @@ import PersonalIntensityChart from "@/components/PersonalIntensityChart";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { useT, type Lang } from "@/lib/i18n";
 import { savePayWaitlistEmail, trackLearning } from "@/lib/learning";
-import { getProSampleContent } from "@/lib/pro-sample";
 import { downloadProSamplePdf, downloadProYearPdf } from "@/lib/download-preview-pdf";
+import { getSampleYearMap } from "@/lib/year-map";
 import type { YearMapContent } from "@/lib/year-map";
 
 export interface TopicSummarySectionProps {
@@ -84,7 +84,7 @@ function ProPreviewModal({
   onUnlock: () => void;
 }) {
   const { t } = useT();
-  const sample = getProSampleContent(lang);
+  const sample = getSampleYearMap(lang);
   return (
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 py-6"
@@ -115,16 +115,20 @@ function ProPreviewModal({
             ✕
           </button>
         </div>
-        <p className="text-sm font-semibold text-indigo-700 leading-snug">{sample.headline}</p>
-        <p className="text-sm text-slate-600 leading-relaxed">{sample.identity}</p>
+        <p className="text-sm font-semibold text-indigo-700 leading-snug">{sample.natal.headline}</p>
+        <p className="text-sm text-slate-600 leading-relaxed">{sample.solar.headline}</p>
+        <p className="text-sm text-slate-600 leading-relaxed">{sample.forecast.body}</p>
         <ul className="space-y-2">
-          {sample.tier1.slice(0, 3).map((row) => (
-            <li key={`${row.left}-${row.right}`} className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5">
-              <p className="text-sm text-slate-600 leading-snug">{row.impact}</p>
+          {sample.months.slice(2, 4).map((month) => (
+            <li key={month.key} className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5">
+              <p className="text-xs font-semibold text-slate-800">{month.label}</p>
+              <p className="text-sm text-slate-600 mt-1 leading-snug">{month.executive}</p>
+              <p className="text-xs text-slate-500 mt-1.5">
+                {month.topics.map((tp) => tp.title).join(" · ")}
+              </p>
             </li>
           ))}
         </ul>
-        <p className="text-sm text-slate-600 leading-relaxed">{sample.yearReading}</p>
         <div className="flex flex-col sm:flex-row gap-2 pt-1">
           <ActionButton
             variant="secondary"
@@ -337,10 +341,29 @@ export default function TopicSummarySection({
             <span className="self-start sm:self-end text-[10px] sm:text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
               {t("chart.topics.free_badge")}
             </span>
-            <DownloadPreviewPdfButton
-              content={preview}
-              onDownloaded={() => setPdfTaken(true)}
-            />
+            {isPro && yearMap ? (
+              <ActionButton
+                variant="secondary"
+                accent="indigo"
+                className="min-h-[48px]"
+                disabled={yearPdfBusy}
+                onClick={async () => {
+                  setYearPdfBusy(true);
+                  try {
+                    await downloadProYearPdf(yearMap);
+                  } finally {
+                    setYearPdfBusy(false);
+                  }
+                }}
+              >
+                {yearPdfBusy ? t("chart.pro.year.downloading") : t("chart.pro.year.pdf")}
+              </ActionButton>
+            ) : (
+              <DownloadPreviewPdfButton
+                content={preview}
+                onDownloaded={() => setPdfTaken(true)}
+              />
+            )}
           </div>
         </div>
 

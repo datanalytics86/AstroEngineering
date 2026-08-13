@@ -1,10 +1,11 @@
 /**
- * TIER 1 Pro year-map PDF — natal + solar tone + forecast + 12 months × 6 topics.
- * No planets, signs, houses, orbs on the page.
+ * TIER 1 Pro year-map PDF — natal wheel + reading, solar wheel + year tone,
+ * remaining-year forecast, 12 executive months × 6 life areas.
+ * No planets, signs, houses, orbs in the copy.
  */
 
 import type { ReactNode } from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Circle, Document, Line, Page, Svg, Text, View, StyleSheet } from "@react-pdf/renderer";
 import type { YearMapContent, YearMonthBlock } from "@/lib/year-map";
 
 const INK = "#1E293B";
@@ -14,6 +15,7 @@ const RULE = "#E2E8F0";
 const WASH = "#F8FAFC";
 const PAPER = "#FFFEFB";
 const ACCENT = "#4F46E5";
+const ACCENT_SOFT = "#C7D2FE";
 
 const s = StyleSheet.create({
   page: {
@@ -63,9 +65,62 @@ const s = StyleSheet.create({
   },
   monthTitle: { fontSize: 12, fontFamily: "Helvetica-Bold", marginBottom: 4 },
   topicRow: { marginBottom: 3 },
-  topicName: { fontSize: 8, letterSpacing: 1, color: ACCENT, textTransform: "uppercase", marginBottom: 1 },
+  topicName: {
+    fontSize: 8,
+    letterSpacing: 1,
+    color: ACCENT,
+    textTransform: "uppercase",
+    marginBottom: 1,
+  },
   topicLine: { fontSize: 9, lineHeight: 1.4, color: SLATE },
+  wheelWrap: { alignItems: "center", marginVertical: 10 },
+  wheelCaption: { fontSize: 8, color: MUTED, marginTop: 6, textAlign: "center" },
+  barRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  barLabel: { width: 56, fontSize: 8, color: MUTED },
+  barTrack: { width: 280, height: 6, backgroundColor: "#EEF2FF", borderRadius: 3 },
+  barFill: { height: 6, backgroundColor: ACCENT, borderRadius: 3 },
 });
+
+function polar(cx: number, cy: number, r: number, deg: number) {
+  const rad = ((180 - deg) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
+}
+
+function PdfWheel({ points, stroke }: { points: number[]; stroke: string }) {
+  const size = 200;
+  const cx = 100;
+  const cy = 100;
+  const outer = 92;
+  const inner = 34;
+  const ticks = Array.from({ length: 12 }, (_, i) => {
+    const a = i * 30;
+    const a0 = polar(cx, cy, outer - 2, a);
+    const a1 = polar(cx, cy, outer - 10, a);
+    return { x1: a0.x, y1: a0.y, x2: a1.x, y2: a1.y, key: a };
+  });
+  return (
+    <Svg width={size} height={size} viewBox="0 0 200 200">
+      <Circle cx={cx} cy={cy} r={outer} stroke={stroke} strokeWidth={1.4} fill="#F8FAFC" />
+      <Circle cx={cx} cy={cy} r={inner} stroke={ACCENT_SOFT} strokeWidth={1} fill="#FFFFFF" />
+      {ticks.map((tk) => (
+        <Line
+          key={tk.key}
+          x1={tk.x1}
+          y1={tk.y1}
+          x2={tk.x2}
+          y2={tk.y2}
+          stroke={ACCENT_SOFT}
+          strokeWidth={1}
+        />
+      ))}
+      {points.map((lon, i) => {
+        const p = polar(cx, cy, 62, lon);
+        return <Circle key={`${lon}-${i}`} cx={p.x} cy={p.y} r={3.2} fill={stroke} />;
+      })}
+      <Circle cx={cx} cy={cy} r={3} fill={stroke} />
+    </Svg>
+  );
+}
 
 function Chrome({
   content,
@@ -78,9 +133,14 @@ function Chrome({
   total: number;
   children: ReactNode;
 }) {
+  const sample = Boolean(content.sample);
   return (
     <Page size="A4" style={s.page}>
-      <Text style={s.brand}>AstroEngine Pro · {content.year}</Text>
+      <Text style={s.brand}>
+        {sample
+          ? `AstroEngine Pro · ${content.year} · ${content.lang === "en" ? "sample" : "ejemplo"}`
+          : `AstroEngine Pro · ${content.year}`}
+      </Text>
       {children}
       <View style={s.footer} fixed>
         <Text style={s.footerText}>
@@ -117,40 +177,58 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
     pairs.push(content.months.slice(i, i + 2));
   }
   const total = 4 + pairs.length;
-  const t = content.lang === "en";
+  const en = content.lang === "en";
 
   return (
-    <Document>
+    <Document
+      title={en ? `${content.name} · year map ${content.year}` : `${content.name} · mapa del año ${content.year}`}
+      author="AstroEngine"
+      subject={en ? "Personal year map" : "Mapa personal del año"}
+      language={en ? "en" : "es"}
+    >
       <Chrome content={content} page={1} total={total}>
-        <View style={{ marginTop: 36 }}>
-          <Text style={s.kicker}>{t ? "Your year map" : "Tu mapa del año"}</Text>
+        <View style={{ marginTop: 28 }}>
+          <Text style={s.kicker}>{en ? "Your year map" : "Tu mapa del año"}</Text>
           <Text style={s.name}>{content.name}</Text>
           <Text style={s.title}>{content.year}</Text>
           <View style={s.rule} />
           <Text style={s.headline}>{content.natal.headline}</Text>
           <Text style={s.p}>
-            {t
-              ? "Who you are. How this year wants to feel. Twelve months, six life areas. Written so you can use it — not decode it."
-              : "Quién eres. Cómo quiere sentirse este año. Doce meses, seis áreas. Escrito para usarlo — no para descifrarlo."}
+            {en
+              ? "Your chart. Who you are. How this year wants to feel. Twelve months, six life areas. Written so you can use it — not decode it."
+              : "Tu carta. Quién eres. Cómo quiere sentirse este año. Doce meses, seis áreas. Escrito para usarlo — no para descifrarlo."}
           </Text>
+          {content.sample && (
+            <Text style={s.p}>
+              {en
+                ? "This is a sample. Your Pro uses your sky."
+                : "Esto es un ejemplo. Tu Pro usa tu cielo."}
+            </Text>
+          )}
         </View>
       </Chrome>
 
       <Chrome content={content} page={2} total={total}>
-        <View style={{ marginTop: 18 }}>
-          <Text style={s.kicker}>{t ? "Who you are" : "Quién eres"}</Text>
+        <View style={{ marginTop: 12 }}>
+          <Text style={s.kicker}>{en ? "Your chart · who you are" : "Tu carta · quién eres"}</Text>
+          <View style={s.wheelWrap}>
+            <PdfWheel points={content.natalPoints} stroke={ACCENT} />
+            <Text style={s.wheelCaption}>
+              {en ? "Your natal chart" : "Tu carta natal"}
+            </Text>
+          </View>
           <Text style={s.headline}>{content.natal.headline}</Text>
           <Text style={s.p}>{content.natal.identity}</Text>
           <Text style={s.p}>{content.natal.emotion}</Text>
           <Text style={s.p}>{content.natal.purpose}</Text>
           <View style={s.rule} />
-          <Text style={s.h}>{t ? "To lean on" : "En qué apoyarte"}</Text>
+          <Text style={s.h}>{en ? "To lean on" : "En qué apoyarte"}</Text>
           {content.natal.strengths.map((line) => (
             <Text key={line} style={s.p}>
               · {line}
             </Text>
           ))}
-          <Text style={s.h}>{t ? "To practice" : "Dónde practicar"}</Text>
+          <Text style={s.h}>{en ? "To practice" : "Dónde practicar"}</Text>
           {content.natal.challenges.map((line) => (
             <Text key={line} style={s.p}>
               · {line}
@@ -161,20 +239,36 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
       </Chrome>
 
       <Chrome content={content} page={3} total={total}>
-        <View style={{ marginTop: 18 }}>
-          <Text style={s.kicker}>{t ? "The tone of the year" : "El tono del año"}</Text>
+        <View style={{ marginTop: 12 }}>
+          <Text style={s.kicker}>{en ? "The tone of this year" : "El tono de este año"}</Text>
+          <View style={s.wheelWrap}>
+            <PdfWheel points={content.solarPoints} stroke="#0F766E" />
+            <Text style={s.wheelCaption}>
+              {en ? "This year's chart" : "La carta de este año"}
+            </Text>
+          </View>
           <Text style={s.headline}>{content.solar.headline}</Text>
           <Text style={s.p}>{content.solar.body}</Text>
           <Text style={s.p}>{content.solar.publicMark}</Text>
           <View style={s.rule} />
           <Text style={s.h}>{content.yearPulse.headline}</Text>
           <Text style={s.p}>{content.yearPulse.body}</Text>
+          <View style={{ marginTop: 8 }}>
+            {content.months.map((m) => (
+              <View key={m.key} style={s.barRow}>
+                <Text style={s.barLabel}>{m.label}</Text>
+                <View style={s.barTrack}>
+                  <View style={[s.barFill, { width: Math.round((m.intensity / 10) * 280) }]} />
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
       </Chrome>
 
       <Chrome content={content} page={4} total={total}>
-        <View style={{ marginTop: 18 }}>
-          <Text style={s.kicker}>{t ? "From here to December" : "De aquí a diciembre"}</Text>
+        <View style={{ marginTop: 12 }}>
+          <Text style={s.kicker}>{en ? "From here to December" : "De aquí a diciembre"}</Text>
           <Text style={s.headline}>{content.forecast.headline}</Text>
           <Text style={s.p}>{content.forecast.body}</Text>
           <View style={s.rule} />
@@ -188,9 +282,9 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
 
       {pairs.map((pair, idx) => (
         <Chrome key={pair[0].key} content={content} page={5 + idx} total={total}>
-          <View style={{ marginTop: 18 }}>
+          <View style={{ marginTop: 12 }}>
             <Text style={s.kicker}>
-              {t ? "Month by month · six areas" : "Mes a mes · seis áreas"}
+              {en ? "Month by month · six areas" : "Mes a mes · seis áreas"}
             </Text>
             {pair.map((month) => (
               <MonthCard key={month.key} month={month} />

@@ -211,7 +211,7 @@ export const en = {
   "chart.pro.preview_cta": "See a preview",
   "chart.pro.preview_title": "This is what Pro looks like",
   "chart.pro.preview_note": "Sample (Alex Rivera). Yours uses your sky.",
-  "chart.pro.preview_download": "Download sample PDF",
+  "chart.pro.preview_download": "Download the sample year map",
   "chart.pro.preview_unlock": "Unlock mine · $2.99",
   "chart.pro.preview_close": "Close preview",
   "chart.pro.preview_downloading": "Preparing the sample…",

@@ -18,6 +18,7 @@ import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
 import TopicSummarySection from "@/components/TopicSummarySection";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
+import { downloadProYearPdf } from "@/lib/download-preview-pdf";
 import { generateHumanProSummary } from "@/lib/pro-human";
 import { generateTierMinus1Content } from "@/lib/tier-minus1";
 import { buildYearMap } from "@/lib/year-map";
@@ -48,6 +49,7 @@ export default function CartaPage() {
   const [techOpen, setTechOpen] = useState(false);
   const [solarTick, setSolarTick] = useState(0);
   const [shareCopied, setShareCopied] = useState(false);
+  const [yearPdfBusy, setYearPdfBusy] = useState(false);
   const [yearTick, setYearTick] = useState(0);
   const [checkoutBanner, setCheckoutBanner] = useState<"success" | "cancel" | "error" | null>(
     null,
@@ -296,8 +298,25 @@ export default function CartaPage() {
           >
             {t("chart.nav.topics")}
           </ActionButton>
-          {preview && (
-            <DownloadPreviewPdfButton content={preview} variant="secondary" />
+          {proUnlocked && yearMap ? (
+            <ActionButton
+              variant="secondary"
+              accent="indigo"
+              className="min-h-[44px]"
+              disabled={yearPdfBusy}
+              onClick={async () => {
+                setYearPdfBusy(true);
+                try {
+                  await downloadProYearPdf(yearMap);
+                } finally {
+                  setYearPdfBusy(false);
+                }
+              }}
+            >
+              {yearPdfBusy ? t("chart.pro.year.downloading") : t("chart.pro.year.pdf")}
+            </ActionButton>
+          ) : (
+            preview && <DownloadPreviewPdfButton content={preview} variant="secondary" />
           )}
         </div>
         {birthData && (

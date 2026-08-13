@@ -211,7 +211,7 @@ export const es = {
   "chart.pro.preview_cta": "Ver un preview",
   "chart.pro.preview_title": "Así se ve Pro",
   "chart.pro.preview_note": "Ejemplo (Alex Rivera). El tuyo usa tu cielo.",
-  "chart.pro.preview_download": "Descargar PDF ejemplo",
+  "chart.pro.preview_download": "Descargar el mapa de ejemplo",
   "chart.pro.preview_unlock": "Desbloquear el mío · $2.99",
   "chart.pro.preview_close": "Cerrar preview",
   "chart.pro.preview_downloading": "Preparando el ejemplo…",
