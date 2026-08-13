@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * Freemium section: 6 topic cards (free) + Pro panel
@@ -405,7 +405,7 @@ export default function TopicSummarySection({
         <div className="border-l-4 border-indigo-500 p-5 sm:p-6 space-y-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="max-w-xl">
-              <p className="text-xs font-mono uppercase tracking-widest text-indigo-600 mb-1.5">
+              <p className="text-xs font-mono uppercase tracking-widest text-accent mb-1.5">
                 {t("chart.pro.badge")}
               </p>
               <h3 className="font-semibold text-lg sm:text-xl text-ink">
@@ -678,7 +678,7 @@ export default function TopicSummarySection({
                                 {month.executive}
                               </p>
                             </div>
-                            <span className="text-xs text-indigo-600 shrink-0 mt-1">
+                            <span className="text-xs text-accent shrink-0 mt-1">
                               {open ? t("chart.pro.month.close") : t("chart.pro.month.open")}
                             </span>
                           </div>
@@ -687,7 +687,7 @@ export default function TopicSummarySection({
                           <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
                             {month.topics.map((topic) => (
                               <div key={topic.id}>
-                                <p className="text-[11px] uppercase tracking-widest text-indigo-600 mb-1">
+                                <p className="text-[11px] uppercase tracking-widest text-accent mb-1">
                                   {topic.title}
                                 </p>
                                 <p className="text-sm text-ink-2 leading-snug">{topic.line}</p>

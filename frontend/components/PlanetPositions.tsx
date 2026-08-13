@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { PlanetPosition } from "@/lib/types";
 import { signColor, getPlanetDignity, DIGNITY_SYMBOL, DIGNITY_COLOR } from "@/lib/zodiac-utils";
@@ -13,13 +13,13 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
   return (
     <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
       <div className="px-4 py-3 border-b border-border">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-mono">
+        <h3 className="text-sm uppercase tracking-widest text-ink-3 font-mono">
           Posiciones Planetarias
         </h3>
       </div>
       <table className="w-full text-sm font-mono">
         <thead>
-          <tr className="text-xs text-slate-400 uppercase">
+          <tr className="text-xs text-ink-3 uppercase">
             <th className="text-left px-4 py-2">Planeta</th>
             <th className="text-left px-4 py-2">Signo</th>
             <th className="text-left px-4 py-2">Posición</th>
@@ -69,7 +69,7 @@ export default function PlanetPositions({ planets, highlightedPlanet, onPlanetCl
               <td className="px-4 py-2.5 text-slate-500">
                 {p.degree_display}
                 {/* Móvil: casa como sufijo, ya que la columna dedicada se oculta (B5) */}
-                <span className="sm:hidden text-slate-400"> · C{p.house}</span>
+                <span className="sm:hidden text-ink-3"> · C{p.house}</span>
               </td>
               <td className="hidden sm:table-cell px-4 py-2.5 text-center text-blue-600 font-semibold">{p.house}</td>
               <td className="hidden sm:table-cell px-4 py-2.5 text-center">

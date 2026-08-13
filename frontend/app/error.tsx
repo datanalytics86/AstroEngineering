@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect } from "react";
 import { captureException } from "@/lib/observability";
@@ -26,7 +26,7 @@ export default function Error({
         <h1 className="font-semibold text-2xl text-slate-900 mb-3">{t("error.title")}</h1>
         <p className="text-slate-500 text-sm mb-2">{error.message}</p>
         {error.digest && (
-          <p className="text-slate-400 text-xs mb-6">ID: {error.digest}</p>
+          <p className="text-ink-3 text-xs mb-6">ID: {error.digest}</p>
         )}
         <div className="flex gap-3 justify-center">
           <button
@@ -37,7 +37,7 @@ export default function Error({
           </button>
           <a
             href="/"
-            className="border border-border text-slate-500 px-5 py-2.5 min-h-[44px] rounded-xl text-sm hover:border-blue-400 hover:text-blue-600 transition-colors"
+            className="border border-border text-slate-500 px-5 py-2.5 min-h-[44px] rounded-xl text-sm hover:border-blue-400 hover:text-accent transition-colors"
           >
             {t("error.home")}
           </a>

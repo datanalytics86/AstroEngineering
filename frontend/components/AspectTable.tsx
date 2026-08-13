@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import type { Aspect } from "@/lib/types";
@@ -27,13 +27,13 @@ export default function AspectTable({ aspects, highlightedPlanet }: Props) {
   return (
     <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-mono">Aspectos</h3>
-        <span className="text-xs text-slate-400 font-mono">{sorted.length} aspectos</span>
+        <h3 className="text-sm uppercase tracking-widest text-ink-3 font-mono">Aspectos</h3>
+        <span className="text-xs text-ink-3 font-mono">{sorted.length} aspectos</span>
       </div>
       <div>
         <table className="w-full text-sm font-mono">
           <thead>
-            <tr className="text-xs text-slate-400 uppercase">
+            <tr className="text-xs text-ink-3 uppercase">
               <th className="text-left px-4 py-2">Planeta 1</th>
               <th className="text-center px-4 py-2">Aspecto</th>
               <th className="text-left px-4 py-2">Planeta 2</th>
@@ -52,7 +52,7 @@ export default function AspectTable({ aspects, highlightedPlanet }: Props) {
                   <span style={{ color: ASPECT_COLORS[a.nature] }} className="text-lg" title={a.aspect_name}>
                     {a.aspect_symbol}
                   </span>
-                  <span className="ml-1 text-xs text-slate-400">{a.aspect_name}</span>
+                  <span className="ml-1 text-xs text-ink-3">{a.aspect_name}</span>
                 </td>
                 <td className="px-4 py-2 text-slate-700">{a.planet2}</td>
                 <td className="px-4 py-2 text-right text-slate-500">

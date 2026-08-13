@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo } from "react";
 import type { TransitEvent } from "@/lib/types";
@@ -39,7 +39,7 @@ export default function TransitTimeline({ transits, startDate, endDate }: Props)
   return (
     <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
       <div className="px-4 py-3 border-b border-border">
-        <h3 className="text-sm uppercase tracking-widest text-slate-400 font-mono">
+        <h3 className="text-sm uppercase tracking-widest text-ink-3 font-mono">
           Timeline de Tránsitos
         </h3>
       </div>
@@ -50,7 +50,7 @@ export default function TransitTimeline({ transits, startDate, endDate }: Props)
           {monthMarks.map((m, idx) => (
             <span
               key={`label-${idx}`}
-              className="absolute text-xs text-slate-400 font-mono transform -translate-x-1/2"
+              className="absolute text-xs text-ink-3 font-mono transform -translate-x-1/2"
               style={{ left: `${m.pct}%` }}
             >
               {m.label}
@@ -84,7 +84,7 @@ export default function TransitTimeline({ transits, startDate, endDate }: Props)
                 {/* Label izquierdo */}
                 <div className="w-44 shrink-0 pr-3 text-xs font-mono text-right truncate">
                   <span className="text-slate-700">{t.transit_planet}</span>
-                  <span className="text-slate-400 mx-1">{t.aspect_name.slice(0, 3)}</span>
+                  <span className="text-ink-3 mx-1">{t.aspect_name.slice(0, 3)}</span>
                   <span className="text-slate-500">{t.natal_planet}</span>
                 </div>
 
@@ -130,7 +130,7 @@ export default function TransitTimeline({ transits, startDate, endDate }: Props)
         </div>
 
         {/* Leyenda */}
-        <div className="mt-4 pt-3 border-t border-border flex gap-4 text-xs font-mono text-slate-400">
+        <div className="mt-4 pt-3 border-t border-border flex gap-4 text-xs font-mono text-ink-3">
           <span>Grosor = intensidad del tránsito</span>
           <span className="ml-auto">| = fecha exacta</span>
         </div>

@@ -25,56 +25,63 @@ import type {
 } from "@/lib/year-map";
 import { describeSector, makeToAngle, polarXY } from "@/lib/wheel-geometry";
 
-const INK = "#1E293B";
-const SLATE = "#475569";
-const MUTED = "#94A3B8";
-const RULE = "#E2E8F0";
-const WASH = "#F8FAFC";
-const PAPER = "#FFFEFB";
-const ACCENT = "#4F46E5";
+/** Celestial Laboratory on paper. Contrast vs ivory (measured): navy 14.3 · mute 7.9 · copper 7.4 */
+const INK = "#142033";
+const SLATE = "#3D4A5C";
+const MUTED = "#3D4A5C";
+const RULE = "#D4CBB8";
+const WASH = "#EFE8D8";
+const PAPER = "#F4EFE4";
+const ACCENT = "#6B4423";
+const NAVY = "#142033";
 
 const CLIMATE_INK: Record<YearClimate, string> = {
-  apretado: "#B45309",
-  abierto: "#047857",
-  suave: "#0369A1",
+  apretado: "#9A3412",
+  abierto: "#065F46",
+  suave: "#1E3A5F",
 };
 const CLIMATE_BG: Record<YearClimate, string> = {
   apretado: "#FFF7ED",
   abierto: "#ECFDF5",
-  suave: "#F0F9FF",
+  suave: "#EEF4F8",
 };
 const CLIMATE_BAR: Record<YearClimate, string> = {
-  apretado: "#F59E0B",
-  abierto: "#10B981",
-  suave: "#38BDF8",
+  apretado: "#C2410C",
+  abierto: "#0F766E",
+  suave: "#1E3A5F",
 };
 
 const TOPIC_COLOR: Record<string, string> = {
-  amor: "#DB2777",
-  dinero: "#059669",
-  trabajo: "#2563EB",
-  salud: "#D97706",
-  familia: "#7C3AED",
-  crecimiento: "#4F46E5",
+  amor: "#9A3412",
+  dinero: "#065F46",
+  trabajo: "#1E3A5F",
+  salud: "#6B4423",
+  familia: "#3D4A5C",
+  crecimiento: "#142033",
 };
 
 const s = StyleSheet.create({
   page: {
     backgroundColor: PAPER,
-    paddingTop: 40,
-    paddingBottom: 38,
-    paddingHorizontal: 40,
+    paddingTop: 44,
+    paddingBottom: 40,
+    paddingHorizontal: 38,
     fontFamily: "Helvetica",
     color: INK,
   },
   brand: {
     position: "absolute",
-    top: 20,
-    left: 40,
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 22,
+    backgroundColor: NAVY,
+    color: "#F4EFE4",
     fontSize: 8,
-    letterSpacing: 2.4,
-    color: MUTED,
+    letterSpacing: 2.2,
     textTransform: "uppercase",
+    paddingTop: 6,
+    paddingHorizontal: 38,
   },
   footer: {
     position: "absolute",
@@ -85,21 +92,21 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  footerText: { fontSize: 7.5, color: MUTED },
+  footerText: { fontSize: 8, color: SLATE },
   kicker: {
-    fontSize: 8.5,
+    fontSize: 9,
     letterSpacing: 2.2,
     textTransform: "uppercase",
     color: ACCENT,
     marginBottom: 8,
   },
-  name: { fontFamily: "Times-Roman", fontSize: 26, marginBottom: 4, lineHeight: 1.1 },
+  name: { fontFamily: "Times-Roman", fontSize: 28, marginBottom: 4, lineHeight: 1.08 },
   title: { fontFamily: "Times-Italic", fontSize: 16, color: SLATE, marginBottom: 8 },
-  rule: { height: 1, backgroundColor: RULE, marginVertical: 11 },
-  h: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 6 },
-  p: { fontSize: 9.5, lineHeight: 1.48, color: SLATE, marginBottom: 6 },
-  small: { fontSize: 8.5, lineHeight: 1.4, color: SLATE },
-  headline: { fontFamily: "Times-Italic", fontSize: 13, lineHeight: 1.35, marginBottom: 8 },
+  rule: { height: 1.5, backgroundColor: ACCENT, marginVertical: 11 },
+  h: { fontSize: 11, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 6 },
+  p: { fontSize: 10.5, lineHeight: 1.45, color: SLATE, marginBottom: 6 },
+  small: { fontSize: 9, lineHeight: 1.4, color: SLATE },
+  headline: { fontFamily: "Times-Italic", fontSize: 14, lineHeight: 1.32, marginBottom: 8 },
   row: { flexDirection: "row", gap: 14 },
   col: { flexGrow: 1, flexShrink: 1 },
   step: { flexDirection: "row", gap: 8, marginBottom: 6, alignItems: "flex-start" },
@@ -145,24 +152,28 @@ const s = StyleSheet.create({
     alignItems: "center",
     marginBottom: 5,
   },
-  monthName: { fontFamily: "Times-Roman", fontSize: 13 },
-  ask: { fontSize: 9.5, lineHeight: 1.4, color: INK, marginBottom: 6 },
+  monthName: { fontFamily: "Times-Roman", fontSize: 14 },
+  ask: { fontSize: 11, lineHeight: 1.4, color: INK, marginBottom: 6 },
   feat: { flexDirection: "row", gap: 6, marginBottom: 4, alignItems: "flex-start" },
-  featBar: { width: 3, height: 18, borderRadius: 1, marginTop: 1 },
-  featTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", marginBottom: 1 },
-  featLine: { fontSize: 8, color: SLATE, lineHeight: 1.3 },
-  pills: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 5 },
+  featBar: { width: 3, height: 20, borderRadius: 1, marginTop: 1 },
+  featTitle: { fontSize: 9, fontFamily: "Helvetica-Bold", marginBottom: 1 },
+  featLine: { fontSize: 9.5, color: SLATE, lineHeight: 1.35 },
+  pills: { marginTop: 4, flexDirection: "row", flexWrap: "wrap" },
   pill: {
-    fontSize: 7.5,
+    width: "50%",
+    fontSize: 8.5,
     color: SLATE,
-    borderWidth: 1,
-    borderColor: RULE,
-    borderRadius: 8,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    backgroundColor: "#fff",
+    lineHeight: 1.35,
+    marginBottom: 3,
+    paddingRight: 6,
   },
-  barTrack: { height: 5, backgroundColor: "#E2E8F0", borderRadius: 3 },
+  brandText: {
+    color: "#F4EFE4",
+    fontSize: 8,
+    letterSpacing: 2.2,
+    textTransform: "uppercase",
+  },
+  barTrack: { height: 5, backgroundColor: RULE, borderRadius: 3 },
   barFill: { height: 5, borderRadius: 3 },
   legendRow: { flexDirection: "row", gap: 8, marginTop: 10 },
   legendItem: { flexGrow: 1, borderWidth: 1, borderRadius: 5, padding: 7 },
@@ -192,11 +203,13 @@ function Chrome({
   const en = content.lang === "en";
   return (
     <Page size="A4" style={s.page}>
-      <Text style={s.brand}>
-        {sample
-          ? `ASTROENGINE · ${content.year} · ${en ? "SAMPLE" : "EJEMPLO"}`
-          : `ASTROENGINE · ${content.year}`}
-      </Text>
+      <View style={s.brand}>
+        <Text style={s.brandText}>
+          {sample
+            ? `ASTROENGINE  ·  ${content.year}  ·  ${en ? "SAMPLE" : "EJEMPLO"}`
+            : `ASTROENGINE  ·  LABORATORY  ·  ${content.year}`}
+        </Text>
+      </View>
       {children}
       <View style={s.footer} fixed>
         <Text style={s.footerText}>
@@ -378,7 +391,7 @@ function MonthCard({ month }: { month: YearMonthBlock }) {
       <View style={s.pills}>
         {rest.map((r) => (
           <Text key={r.id} style={s.pill}>
-            {r.title}: {r.feel ?? r.line}
+            {r.title} — {r.line}
           </Text>
         ))}
       </View>
@@ -570,6 +583,31 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
             <Text style={[s.p, { marginBottom: 0, flexGrow: 1 }]}>{mv}</Text>
           </View>
         ))}
+        <View style={{ marginTop: 12 }}>
+          <Text style={s.h}>{en ? "Remaining months" : "Meses que quedan"}</Text>
+          {content.forecast.remaining.map((m) => (
+            <View
+              key={`rem-${m.key}`}
+              style={{
+                flexDirection: "row",
+                borderBottomWidth: 0.6,
+                borderBottomColor: RULE,
+                paddingVertical: 4,
+                alignItems: "flex-start",
+              }}
+            >
+              <Text style={{ width: 72, fontSize: 9, fontFamily: "Helvetica-Bold", color: INK }}>
+                {m.label}
+              </Text>
+              <Text style={{ width: 62, fontSize: 8, color: CLIMATE_INK[m.climate] }}>
+                {m.climateLabel}
+              </Text>
+              <Text style={{ flexGrow: 1, fontSize: 9, color: SLATE, lineHeight: 1.35 }}>
+                {m.executive}
+              </Text>
+            </View>
+          ))}
+        </View>
         <View style={{ marginTop: 14 }}>
           <Text style={s.h}>{en ? "Hold these months" : "Quédate con estos meses"}</Text>
           {keyMonths.map((k) => (

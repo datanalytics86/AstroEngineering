@@ -373,7 +373,7 @@ export default function CartaPage() {
         <div className="mb-5 bg-white border border-border rounded-xl p-5 text-center shadow-card">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-slate-700 text-sm mb-1">{t("chart.nav.transits_loading")}</p>
-          <p className="text-slate-400 text-xs">{t("chart.loading_hint")}</p>
+          <p className="text-ink-3 text-xs">{t("chart.loading_hint")}</p>
         </div>
       )}
 
@@ -453,7 +453,7 @@ export default function CartaPage() {
           aria-expanded={techOpen}
         >
           <div>
-            <p className="text-xs font-mono uppercase tracking-widest text-slate-400 mb-1">
+            <p className="text-xs font-mono uppercase tracking-widest text-ink-3 mb-1">
               {t("chart.tech.badge")}
             </p>
             <h2
@@ -464,7 +464,7 @@ export default function CartaPage() {
             </h2>
             <p className="text-sm text-slate-500 mt-1 max-w-xl">{t("chart.tech.subtitle")}</p>
           </div>
-          <span className="shrink-0 text-slate-400 font-mono text-sm mt-1" aria-hidden>
+          <span className="shrink-0 text-ink-3 font-mono text-sm mt-1" aria-hidden>
             {techOpen ? "▴" : "▾"}
           </span>
         </button>

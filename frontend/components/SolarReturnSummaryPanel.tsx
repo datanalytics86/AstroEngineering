@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { SolarReturnSummary } from "@/lib/solar-return-summary";
 
@@ -47,7 +47,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
           </h2>
         </div>
         <p className="text-sm font-semibold text-slate-800">{name}</p>
-        <p className="text-xs text-slate-400 font-mono mt-0.5">
+        <p className="text-xs text-ink-3 font-mono mt-0.5">
           ASC Retorno · <span style={{ color: accentColor }}>{ascSign}</span>
         </p>
         <p className="text-sm mt-2 font-semibold leading-tight" style={{ color: accentColor }}>
@@ -60,7 +60,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
 
         {/* ASC interpretation */}
         <section>
-          <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-1.5">
+          <p className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-1.5">
             Ascendente del Retorno
           </p>
           <p className="text-xs text-slate-600 leading-relaxed">
@@ -70,7 +70,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
 
         {/* MC interpretation */}
         <section>
-          <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-1.5">
+          <p className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-1.5">
             MC · Dirección del año
           </p>
           <p className="text-xs text-slate-600 leading-relaxed">
@@ -81,7 +81,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
         {/* Angular planets */}
         {summary.angular_planets.length > 0 && (
           <section>
-            <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+            <p className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
               Planetas angulares
             </p>
             <div className="space-y-2">
@@ -109,7 +109,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
         {/* Stelliums */}
         {summary.stelliums.length > 0 && (
           <section>
-            <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+            <p className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
               Stellium
             </p>
             {summary.stelliums.map((s) => (
@@ -130,7 +130,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
         {/* Key aspects */}
         {summary.key_aspects.length > 0 && (
           <section>
-            <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+            <p className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
               Aspectos clave (orbe {"<"} 2.5°)
             </p>
             <div className="space-y-1.5">
@@ -154,7 +154,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
 
         {/* Element distribution */}
         <section>
-          <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+          <p className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
             Distribución elemental
           </p>
           <div className="space-y-1.5">
@@ -174,7 +174,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
                       }}
                     />
                   </div>
-                  <span className="text-xs text-slate-400 font-mono w-4">{count}</span>
+                  <span className="text-xs text-ink-3 font-mono w-4">{count}</span>
                 </div>
               ))}
           </div>

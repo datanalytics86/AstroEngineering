@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ClickTarget, NatalInterpretation, Aspect } from "@/lib/types";
@@ -107,7 +107,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="text-xs font-mono px-3 py-1.5 rounded border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 transition-colors"
+      className="text-xs font-mono px-3 py-1.5 rounded border border-slate-200 text-slate-500 hover:text-accent hover:border-blue-300 transition-colors"
     >
       {copied ? t("modal.copied") : t("modal.copy")}
     </button>
@@ -123,7 +123,7 @@ function AspectPills({ aspects, planetName }: { aspects: Aspect[]; planetName: s
   if (!related.length) return null;
   return (
     <div className="mt-4 pt-4 border-t border-slate-100">
-      <p className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">{t("modal.active_aspects")}</p>
+      <p className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">{t("modal.active_aspects")}</p>
       <div className="flex flex-wrap gap-2">
         {related.map((a, i) => {
           const other = a.planet1 === planetName ? a.planet2 : a.planet1;
@@ -229,7 +229,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               </div>
               <div>
                 <h2 className="font-semibold text-lg text-slate-900 leading-tight">{main}</h2>
-                <p className="text-xs font-mono text-slate-400 mt-0.5">{sub}</p>
+                <p className="text-xs font-mono text-ink-3 mt-0.5">{sub}</p>
               </div>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -237,7 +237,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               <button
                 onClick={onClose}
                 aria-label={t("modal.close")}
-                className="w-8 h-8 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                className="w-8 h-8 flex items-center justify-center rounded text-ink-3 hover:text-ink hover:bg-elev transition-colors"
               >
                 ✕
               </button>
@@ -273,7 +273,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
 
               {/* Interpretación principal */}
               <section>
-                <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+                <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
                   {t("modal.interpretation")}
                 </h3>
                 <p className="text-sm text-slate-700 leading-relaxed">{interp.principal}</p>
@@ -311,7 +311,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
 
               {/* Crecimiento */}
               <section className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-                <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+                <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
                   {t("modal.growth")}
                 </h3>
                 <p className="text-sm text-slate-700 leading-relaxed">{interp.growth}</p>
@@ -320,7 +320,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               {/* House interpretation if planet */}
               {target.type === "planet" && (
                 <section>
-                  <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+                  <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
                     {t("modal.in_house")} {target.planet.house}
                   </h3>
                   <p className="text-sm text-slate-500 leading-relaxed">
@@ -335,13 +335,13 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
               )}
             </>
           ) : (
-            <p className="text-sm text-slate-400 italic">{t("modal.no_interpretation")}</p>
+            <p className="text-sm text-ink-3 italic">{t("modal.no_interpretation")}</p>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-3 border-t border-slate-100 flex-shrink-0">
-          <p className="text-xs text-slate-400 font-mono text-center">
+          <p className="text-xs text-ink-3 font-mono text-center">
             {t("modal.footer")}
           </p>
         </div>

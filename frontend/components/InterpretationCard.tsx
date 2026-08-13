@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import type { TransitEvent, PlanetPosition } from "@/lib/types";
 import { getInterpretation } from "@/lib/interpretation-engine";
@@ -60,7 +60,7 @@ export default function InterpretationCard({ transit, natalPlanets }: Props) {
             <span style={{ color: aspectColor }} className="text-base font-semibold font-mono">
               {transit.transit_planet}
             </span>
-            <span className="text-slate-400 text-sm">{transit.aspect_name}</span>
+            <span className="text-ink-3 text-sm">{transit.aspect_name}</span>
             <span className="text-slate-700 text-sm">{transit.natal_planet} natal</span>
             {natalHouse && (
               <span className="text-xs font-mono text-blue-500">· Casa {natalHouse}</span>
@@ -107,17 +107,17 @@ export default function InterpretationCard({ transit, natalPlanets }: Props) {
       {/* Fechas */}
       <div className="px-5 py-3 grid grid-cols-3 gap-2 text-xs font-mono border-b border-border bg-slate-50">
         <div>
-          <span className="text-slate-400 block">Entra orbe</span>
+          <span className="text-ink-3 block">Entra orbe</span>
           <span className="text-slate-700">{formatDate(transit.enters_orb)}</span>
         </div>
         <div className="text-center">
-          <span className="text-slate-400 block">Exacto</span>
+          <span className="text-ink-3 block">Exacto</span>
           <span className="text-blue-600 font-semibold">
             {transit.exact_date ? formatDate(transit.exact_date.slice(0, 10)) : "—"}
           </span>
         </div>
         <div className="text-right">
-          <span className="text-slate-400 block">Sale orbe</span>
+          <span className="text-ink-3 block">Sale orbe</span>
           <span className="text-slate-700">{formatDate(transit.leaves_orb)}</span>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function InterpretationCard({ transit, natalPlanets }: Props) {
             <span className="text-blue-600 font-semibold font-mono">Consejo: </span>{interp.advice}
           </div>
           {interp.duration_note && (
-            <p className="text-xs text-slate-400 italic">{interp.duration_note}</p>
+            <p className="text-xs text-ink-3 italic">{interp.duration_note}</p>
           )}
 
           {/* Contexto applying/separating — Forrest "The Changing Sky" */}

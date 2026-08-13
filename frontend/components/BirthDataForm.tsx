@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { BirthData } from "@/lib/types";
@@ -251,7 +251,7 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
             <button
               type="button"
               onClick={() => setMode(mode === "day" ? "month" : mode === "month" ? "year" : "year")}
-              className="flex-1 text-center text-sm font-semibold text-ink hover:text-blue-600 transition-colors px-2 py-1 rounded-lg hover:bg-elev"
+              className="flex-1 text-center text-sm font-semibold text-ink hover:text-accent transition-colors px-2 py-1 rounded-lg hover:bg-elev"
             >
               {mode === "day"
                 ? `${MONTHS_ES[viewMonth]} ${viewYear}`
@@ -636,7 +636,7 @@ export default function BirthDataForm({
 
   const labelClass = "block text-xs font-semibold uppercase tracking-widest text-ink-2 mb-1.5";
   const inputClass = `w-full bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-ink
-    placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+    placeholder:text-ink-3 focus:outline-none focus:ring-2 focus:ring-[var(--focus)]/30 focus:border-[var(--ember)]
     transition-colors font-mono hover:border-[var(--line-strong)]`;
 
   return (
@@ -804,7 +804,7 @@ export default function BirthDataForm({
 
       <p className="text-[11px] text-ink-3 text-center leading-relaxed">
         {t("form.privacy_note")}{" "}
-        <a href="/privacidad" className="underline hover:text-blue-600">
+        <a href="/privacidad" className="underline hover:text-accent">
           {t("footer.privacy")}
         </a>
       </p>
@@ -814,7 +814,7 @@ export default function BirthDataForm({
         <button
           type="button"
           onClick={loadDemo}
-          className="text-xs text-ink-3 hover:text-blue-600 hover:underline transition-colors"
+          className="text-xs text-ink-3 hover:text-accent hover:underline transition-colors"
         >
           {t("form.demo")}
         </button>

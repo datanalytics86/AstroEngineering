@@ -157,7 +157,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
     const meaning = getRetroMeaning(retro.planet, lang);
     return (
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
-        <p className="text-xs font-mono text-slate-400 uppercase tracking-wide">
+        <p className="text-xs font-mono text-ink-3 uppercase tracking-wide">
           {t("transits.timeline.detail.title")}
         </p>
         <h3 className="font-semibold text-slate-800 text-sm">
@@ -167,13 +167,13 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
           {t("transits.timeline.detail.influence")}: {formatLocalDate(retro.start_date, dateLocale)} –{" "}
           {formatLocalDate(retro.end_date, dateLocale)} ({retro.days} {t("transits.timeline.detail.days")})
         </p>
-        <p className="text-xs text-slate-400 font-mono">
+        <p className="text-xs text-ink-3 font-mono">
           {t("transits.timeline.detail.retro_signs")}: {retro.start_sign} → {retro.end_sign}
         </p>
         {meaning && (
           <div className="space-y-1.5 pt-2 border-t border-slate-100">
             <p className="text-sm text-slate-700 leading-relaxed">{meaning.meaning}</p>
-            <p className="text-xs text-slate-400 italic leading-relaxed">{meaning.advice}</p>
+            <p className="text-xs text-ink-3 italic leading-relaxed">{meaning.advice}</p>
           </div>
         )}
       </div>
@@ -193,7 +193,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
 
     return (
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
-        <p className="text-xs font-mono text-slate-400 uppercase tracking-wide">
+        <p className="text-xs font-mono text-ink-3 uppercase tracking-wide">
           {t("transits.timeline.detail.title")}
         </p>
         <div className="flex items-center gap-2 flex-wrap">
@@ -228,7 +228,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
             {expanded ? (
               <>
                 <p className="text-xs text-slate-600 leading-relaxed">{interp.detailed}</p>
-                <p className="text-xs text-slate-400 italic leading-relaxed">{interp.advice}</p>
+                <p className="text-xs text-ink-3 italic leading-relaxed">{interp.advice}</p>
                 <button
                   type="button"
                   onClick={() => setExpanded(false)}
@@ -254,7 +254,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
 
   return (
     <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-5">
-      <p className="text-sm text-slate-400">{t("transits.timeline.detail.select_hint")}</p>
+      <p className="text-sm text-ink-3">{t("transits.timeline.detail.select_hint")}</p>
     </div>
   );
 }
@@ -280,7 +280,7 @@ function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
         <span className="font-semibold text-slate-800 text-sm capitalize">{brief.monthLabel}</span>
         <IntensityBadge label={brief.intensityLabel} />
         {brief.theme && (
-          <span className="text-xs text-slate-400 font-mono">{brief.theme}</span>
+          <span className="text-xs text-ink-3 font-mono">{brief.theme}</span>
         )}
       </div>
 
@@ -292,7 +292,7 @@ function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
       {/* Influences */}
       {brief.influences.length > 0 && (
         <div>
-          <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-1">{t("transits.influences.title")}</p>
+          <p className="text-xs font-mono text-ink-3 uppercase tracking-wide mb-1">{t("transits.influences.title")}</p>
           {brief.influences.map((inf, i) => (
             <InfluenceRow key={i} inf={inf} />
           ))}
@@ -316,7 +316,7 @@ function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
       {/* Key dates */}
       {keyDates.length > 0 && (
         <div>
-          <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("transits.key_dates.title")}</p>
+          <p className="text-xs font-mono text-ink-3 uppercase tracking-wide mb-2">{t("transits.key_dates.title")}</p>
           <div className="space-y-1">
             {keyDates.map((ev, i) => {
               let dateStr = ev.date;
@@ -327,7 +327,7 @@ function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
               const asp = ASPECT_SYMBOLS[ev.aspect] ?? ev.aspect;
               return (
                 <div key={i} className="flex items-center gap-2 text-xs font-mono text-slate-600">
-                  <span className="text-slate-400 w-12 shrink-0">{dateStr}</span>
+                  <span className="text-ink-3 w-12 shrink-0">{dateStr}</span>
                   <span>{sym} {ev.transit_planet} {asp} {ev.natal_planet} natal</span>
                 </div>
               );
@@ -356,7 +356,7 @@ function YearBriefPanel({ data, year }: YearBriefPanelProps) {
           {brief.theme}
         </span>
         <p className="text-sm text-slate-700 leading-relaxed">{brief.paragraph}</p>
-        <p className="text-xs text-slate-400 font-mono mt-1">
+        <p className="text-xs text-ink-3 font-mono mt-1">
           {t("transits.peak_month")} <span className="text-slate-600 capitalize">{brief.peakMonthLabel}</span>
         </p>
       </div>
@@ -364,7 +364,7 @@ function YearBriefPanel({ data, year }: YearBriefPanelProps) {
       {/* Cycles */}
       {brief.cycles.length > 0 && (
         <div>
-          <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("transits.cycles.title")}</p>
+          <p className="text-xs font-mono text-ink-3 uppercase tracking-wide mb-2">{t("transits.cycles.title")}</p>
           <div className="space-y-2">
             {brief.cycles.map((c, i) => {
               const dotColor = PLANET_COLOR[c.planet] ?? "#94A3B8";
@@ -376,7 +376,7 @@ function YearBriefPanel({ data, year }: YearBriefPanelProps) {
                   />
                   <div>
                     <p className="text-sm font-mono text-slate-800">{c.headline}</p>
-                    <p className="text-xs text-slate-400">{c.window}</p>
+                    <p className="text-xs text-ink-3">{c.window}</p>
                   </div>
                 </div>
               );
@@ -589,7 +589,7 @@ export default function TransitosPage() {
             {t("transits.title")}
           </h1>
           <p className="text-slate-500 font-mono text-sm mt-1">{chart.name}</p>
-          <p className="text-slate-400 text-sm mt-2 max-w-xl">{t("transits.orientation")}</p>
+          <p className="text-ink-3 text-sm mt-2 max-w-xl">{t("transits.orientation")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton variant="secondary" accent="blue" onClick={() => router.push(`/carta/${id}`)}>
@@ -756,7 +756,7 @@ export default function TransitosPage() {
                       transitPlanets={skyDots(selectedMonth.sky)}
                       transitEvents={selectedMonth.transits_active}
                     />
-                    <p className="text-xs text-slate-400 font-mono text-center">
+                    <p className="text-xs text-ink-3 font-mono text-center">
                       {capitalizeFirst(
                         format(new Date(`${selectedMonth.month}-01`), "MMMM yyyy", { locale: dateLocale })
                       )}{" "}
@@ -794,7 +794,7 @@ export default function TransitosPage() {
                     transitPlanets={skyDots(midYearMonth.sky)}
                     transitEvents={midYearMonth.transits_active}
                   />
-                  <p className="text-xs text-slate-400 font-mono text-center">
+                  <p className="text-xs text-ink-3 font-mono text-center">
                     {t("transits.wheel.midyear_caption")}
                   </p>
                 </div>

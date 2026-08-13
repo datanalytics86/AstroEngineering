@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ChartSummary, HumanProSummary } from "@/lib/types";
@@ -86,7 +86,7 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
               type="button"
               onClick={onClose}
               aria-label={t("summary.modal.close")}
-              className="w-8 h-8 flex items-center justify-center rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors flex-shrink-0 min-h-[44px] min-w-[44px]"
+              className="w-8 h-8 flex items-center justify-center rounded text-ink-3 hover:text-ink hover:bg-elev transition-colors flex-shrink-0 min-h-[44px] min-w-[44px]"
             >
               ✕
             </button>
@@ -95,28 +95,28 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
 
         <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
           <section>
-            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+            <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
               {t("summary.modal.identity")}
             </h3>
             <p className="text-sm text-slate-700 leading-relaxed">{human.identity}</p>
           </section>
 
           <section>
-            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+            <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
               {t("summary.modal.emotion")}
             </h3>
             <p className="text-sm text-slate-700 leading-relaxed">{human.emotion}</p>
           </section>
 
           <section>
-            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+            <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
               {t("summary.modal.purpose")}
             </h3>
             <p className="text-sm text-slate-700 leading-relaxed">{human.purpose}</p>
           </section>
 
           <section>
-            <h3 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+            <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
               {t("summary.modal.emphasis")}
             </h3>
             <p className="text-sm text-slate-700 leading-relaxed">{human.emphasis}</p>
@@ -164,10 +164,10 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
               className="w-full flex items-center justify-between gap-3 min-h-[44px] text-left"
               aria-expanded={techOpen}
             >
-              <span className="text-xs uppercase tracking-widest text-slate-400 font-mono">
+              <span className="text-xs uppercase tracking-widest text-ink-3 font-mono">
                 {t("summary.modal.tech")}
               </span>
-              <span className="text-slate-400 font-mono text-sm" aria-hidden>
+              <span className="text-ink-3 font-mono text-sm" aria-hidden>
                 {techOpen ? "▴" : "▾"}
               </span>
             </button>
@@ -194,7 +194,7 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
 
                 {summary.notable_aspects.length > 0 && (
                   <section>
-                    <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+                    <h4 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
                       {t("summary.modal.tech_aspects")}
                     </h4>
                     <ul className="space-y-1.5">
@@ -211,7 +211,7 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
                 )}
 
                 <section>
-                  <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-2">
+                  <h4 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
                     {t("summary.modal.tech_house")}
                   </h4>
                   <p className="text-sm text-slate-700 bg-slate-50 rounded-xl p-4 border border-slate-100">
@@ -224,7 +224,7 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
         </div>
 
         <div className="px-6 py-3 border-t border-slate-100 flex-shrink-0">
-          <p className="text-xs text-slate-400 text-center">
+          <p className="text-xs text-ink-3 text-center">
             {t("summary.modal.footer")}
           </p>
         </div>

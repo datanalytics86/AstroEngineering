@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /**
  * Archived product surface. Full mundane UI is not part of the active MVP.
@@ -16,7 +16,7 @@ export default function GeopoliticaArchivedPage() {
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
       <div className="max-w-md w-full text-center space-y-5">
-        <p className="text-xs font-mono uppercase tracking-widest text-slate-400">
+        <p className="text-xs font-mono uppercase tracking-widest text-ink-3">
           {t("archive.badge")}
         </p>
         <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
@@ -49,7 +49,7 @@ export default function GeopoliticaArchivedPage() {
         <button
           type="button"
           onClick={() => router.push("/glosario")}
-          className="text-xs font-mono text-slate-400 hover:text-blue-600 transition-colors min-h-[44px]"
+          className="text-xs font-mono text-ink-3 hover:text-accent transition-colors min-h-[44px]"
         >
           {t("archive.cta.glossary")}
         </button>

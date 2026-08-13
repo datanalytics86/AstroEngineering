@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { DIGNITY_SYMBOL, DIGNITY_COLOR } from "@/lib/zodiac-utils";
@@ -200,7 +200,7 @@ export default function GlosarioPage() {
       {/* Header */}
       <div className="mb-10">
         <div className="flex items-center gap-2 mb-4">
-          <Link href="/" className="text-sm font-mono text-slate-400 hover:text-blue-600 transition-colors">
+          <Link href="/" className="text-sm font-mono text-ink-3 hover:text-accent transition-colors">
             {t("nav.home")}
           </Link>
           <span className="text-slate-300 font-mono">/</span>
@@ -214,13 +214,13 @@ export default function GlosarioPage() {
 
       {/* Index */}
       <nav className="bg-white border border-border rounded-2xl p-5 shadow-card mb-10">
-        <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-3">{t("glossary.index")}</p>
+        <p className="text-xs font-mono text-ink-3 uppercase tracking-wide mb-3">{t("glossary.index")}</p>
         <div className="flex flex-wrap gap-2">
           {SECTIONS.map((s) => (
             <a
               key={s.id}
               href={`#${s.id}`}
-              className="text-sm font-mono text-slate-600 bg-slate-50 border border-border hover:border-blue-300 hover:text-blue-600 px-3 py-1.5 rounded-lg transition-colors"
+              className="text-sm font-mono text-slate-600 bg-slate-50 border border-border hover:border-blue-300 hover:text-accent px-3 py-1.5 rounded-lg transition-colors"
             >
               {s.label}
             </a>
@@ -247,7 +247,7 @@ export default function GlosarioPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center flex-wrap gap-2 mb-2">
                     <h3 className="font-semibold text-slate-800">{asp.name}</h3>
-                    <span className="text-xs font-mono text-slate-400 bg-slate-50 border border-border px-2 py-0.5 rounded">
+                    <span className="text-xs font-mono text-ink-3 bg-slate-50 border border-border px-2 py-0.5 rounded">
                       {asp.angle} · orbe {asp.orb}
                     </span>
                     <span
@@ -259,7 +259,7 @@ export default function GlosarioPage() {
                   </div>
                   <p className="text-xs font-mono text-blue-600 mb-2">{asp.keyword}</p>
                   <p className="text-sm text-slate-600 leading-relaxed mb-2">{asp.description}</p>
-                  <p className="text-xs text-slate-400 italic leading-relaxed">{asp.transit_note}</p>
+                  <p className="text-xs text-ink-3 italic leading-relaxed">{asp.transit_note}</p>
                 </div>
               </div>
             </div>
@@ -278,7 +278,7 @@ export default function GlosarioPage() {
             <span className="text-3xl font-mono text-red-500">℞</span>
             <div>
               <p className="font-semibold text-slate-800">¿Qué es la retrogradación?</p>
-              <p className="text-xs text-slate-400 font-mono">Todos los planetas excepto Sol y Luna retrogradán</p>
+              <p className="text-xs text-ink-3 font-mono">Todos los planetas excepto Sol y Luna retrogradán</p>
             </div>
           </div>
           <p className="text-sm text-slate-600 leading-relaxed">
@@ -328,7 +328,7 @@ export default function GlosarioPage() {
                 <p className="font-semibold text-slate-800">{d.name}</p>
               </div>
               <p className="text-sm text-slate-600 leading-relaxed mb-3">{d.description}</p>
-              <p className="text-xs text-slate-400 font-mono italic">{d.example}</p>
+              <p className="text-xs text-ink-3 font-mono italic">{d.example}</p>
             </div>
           ))}
         </div>
@@ -353,7 +353,7 @@ export default function GlosarioPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center flex-wrap gap-2 mb-1">
                     <h3 className="font-semibold text-slate-800">{p.name}</h3>
-                    <span className="text-xs font-mono text-slate-400">{p.role}</span>
+                    <span className="text-xs font-mono text-ink-3">{p.role}</span>
                   </div>
                   <p className="text-xs font-mono text-blue-600 mb-2">{p.areas}</p>
                   <p className="text-sm text-slate-600 leading-relaxed">{p.description}</p>
@@ -441,7 +441,7 @@ export default function GlosarioPage() {
       <div className="text-center pt-8 border-t border-border">
         <button
           onClick={() => window.history.back()}
-          className="text-sm font-mono text-slate-400 hover:text-blue-600 transition-colors mr-6"
+          className="text-sm font-mono text-ink-3 hover:text-accent transition-colors mr-6"
         >
           {t("glossary.back")}
         </button>

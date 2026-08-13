@@ -135,7 +135,7 @@ export default function PersonalIntensityChart({
               y={g.y + 3}
               textAnchor="end"
               fontSize={10}
-              fill="#94A3B8"
+              fill="var(--ink-3)"
               className="select-none"
             >
               {g.value}
