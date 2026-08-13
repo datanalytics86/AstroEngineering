@@ -6,7 +6,7 @@ export default function PrivacidadPage() {
   const { t } = useT();
   return (
     <article className="max-w-2xl mx-auto px-4 py-10 sm:py-14 space-y-6">
-      <p className="text-xs font-mono uppercase tracking-widest text-blue-600">
+      <p className="text-xs uppercase tracking-widest text-blue-600">
         {t("privacy.kicker")}
       </p>
       <h1 className="font-semibold text-3xl text-slate-900 tracking-tight">

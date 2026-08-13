@@ -2,10 +2,13 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { BirthData } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 
 interface Props {
   onSubmit: (data: BirthData) => void;
   loading?: boolean;
+  preset?: "einstein" | BirthData | null;
+  autoSubmit?: boolean;
 }
 
 interface GeoAddress {
@@ -384,7 +387,14 @@ function TimePicker({ value, onChange, disabled }: TimePickerProps) {
 
 // ── Componente principal ──────────────────────────────────────────────────────
 
-export default function BirthDataForm({ onSubmit, loading = false }: Props) {
+export default function BirthDataForm({
+  onSubmit,
+  loading = false,
+  preset = null,
+  autoSubmit = false,
+}: Props) {
+  const { t } = useT();
+  const presetApplied = useRef(false);
   const [form, setForm] = useState({
     name:            "",
     birth_date:      "",
@@ -549,26 +559,52 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
     setForm((prev) => ({ ...prev, birth_time: "12:00" }));
   }
 
-  function loadDemo() {
+  function applyBirthData(data: BirthData, cityLabel?: string) {
     setForm({
-      name:            DEMO_DATA.name,
-      birth_date:      DEMO_DATA.birth_date,
-      birth_time:      DEMO_DATA.birth_time,
-      latitude:        DEMO_DATA.latitude,
-      longitude:       DEMO_DATA.longitude,
-      timezone_offset: DEMO_DATA.timezone_offset,
-      city_search:     DEMO_DATA.city_search,
+      name:            data.name,
+      birth_date:      data.birth_date,
+      birth_time:      data.birth_time,
+      latitude:        String(data.latitude),
+      longitude:       String(data.longitude),
+      timezone_offset: String(data.timezone_offset),
+      city_search:     cityLabel ?? data.city ?? "",
     });
+    setTimeUnknown(false);
+  }
+
+  function loadDemo() {
+    applyBirthData({
+      name: DEMO_DATA.name,
+      birth_date: DEMO_DATA.birth_date,
+      birth_time: DEMO_DATA.birth_time,
+      latitude: parseFloat(DEMO_DATA.latitude),
+      longitude: parseFloat(DEMO_DATA.longitude),
+      timezone_offset: parseFloat(DEMO_DATA.timezone_offset),
+      city: DEMO_DATA.city_search,
+    }, DEMO_DATA.city_search);
     setIanaZone(DEMO_DATA.ianaZone);
     const offset = getHistoricalOffset(DEMO_DATA.ianaZone, DEMO_DATA.birth_date);
     if (offset !== null) {
       const sign = offset >= 0 ? "+" : "";
       setTzLabel(`${DEMO_DATA.ianaZone.split("/").pop()} · UTC${sign}${offset}`);
     }
-    setTimeUnknown(false);
     setDemoToast(true);
     setTimeout(() => setDemoToast(false), 2500);
   }
+
+  useEffect(() => {
+    if (!preset || presetApplied.current) return;
+    presetApplied.current = true;
+    if (preset === "einstein") {
+      loadDemo();
+      return;
+    }
+    applyBirthData(preset);
+    if (autoSubmit) {
+      onSubmit(preset);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- apply preset once on mount
+  }, [preset, autoSubmit]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -643,14 +679,14 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
             onClick={handleSolarChart}
             className="mt-1.5 text-xs text-blue-500 hover:text-blue-700 hover:underline transition-colors"
           >
-            No sé la hora → usar 12:00
+            {t("form.unknown_time")}
           </button>
         </div>
       </div>
 
       {timeUnknown && (
-        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          Sin hora exacta el Ascendente y las Casas serán imprecisos.
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          {t("form.unknown_time_note")}
         </p>
       )}
 
@@ -664,7 +700,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
           type="text" name="city_search" value={form.city_search}
           onChange={handleCityChange}
           onFocus={() => geoResults.length > 0 && setShowDropdown(true)}
-          placeholder="Escribe para buscar y autocompletar coordenadas"
+          placeholder={t("form.city.placeholder")}
           autoComplete="off"
           className={inputClass}
         />
@@ -683,15 +719,20 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
             ))}
           </div>
         )}
-        <p className="mt-1 text-xs text-slate-400 font-mono">
-          Si no aparece tu ciudad, añade el país: <span className="italic">Villarrica, Chile</span>
+        <p className="mt-1 text-xs text-slate-400">
+          {t("form.city_hint")}
         </p>
       </div>
 
+      <details className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2">
+        <summary className="text-xs text-slate-500 cursor-pointer min-h-[44px] flex items-center">
+          {t("form.advanced")}
+        </summary>
+        <div className="pt-3 space-y-3">
       {/* Coordenadas */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-slate-400 mb-1 font-mono">Latitud (auto)</label>
+          <label className="block text-xs text-slate-400 mb-1">{t("form.lat")}</label>
           <input
             type="number" name="latitude" value={form.latitude} onChange={handleChange}
             step="0.0001" min="-90" max="90" placeholder="-33.4489" required
@@ -699,7 +740,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1 font-mono">Longitud (auto)</label>
+          <label className="block text-xs text-slate-400 mb-1">{t("form.lng")}</label>
           <input
             type="number" name="longitude" value={form.longitude} onChange={handleChange}
             step="0.0001" min="-180" max="180" placeholder="-70.6693" required
@@ -710,7 +751,7 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
 
       {/* Zona horaria */}
       <div>
-        <label className={labelClass}>Zona horaria al nacer</label>
+        <label className={labelClass}>{t("form.timezone_label")}</label>
         {tzLabel ? (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
             <span className="text-emerald-500 text-xs">✓</span>
@@ -739,6 +780,8 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
           </select>
         )}
       </div>
+        </div>
+      </details>
 
       {/* Submit */}
       <button
@@ -752,17 +795,17 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
         {loading ? (
           <>
             <span className="inline-block w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-            Calculando carta natal…
+            {t("form.calculating")}
           </>
         ) : (
-          "Calcular Carta Natal"
+          t("form.submit")
         )}
       </button>
 
       <p className="text-[11px] text-slate-400 text-center leading-relaxed">
-        Calculamos en el momento. Fecha, hora y lugar no se guardan en el servidor — solo en este navegador.{" "}
+        {t("form.privacy_note")}{" "}
         <a href="/privacidad" className="underline hover:text-blue-600">
-          Privacidad
+          {t("footer.privacy")}
         </a>
       </p>
 
@@ -773,14 +816,14 @@ export default function BirthDataForm({ onSubmit, loading = false }: Props) {
           onClick={loadDemo}
           className="text-xs text-slate-400 hover:text-blue-600 hover:underline transition-colors"
         >
-          ¿Solo quieres probar? Usa la carta de Einstein →
+          {t("form.demo")}
         </button>
       </div>
 
       {/* Toast demo */}
       {demoToast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs font-mono px-4 py-2.5 rounded-xl shadow-lg z-50">
-          Datos de ejemplo cargados
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-4 py-2.5 rounded-xl shadow-lg z-50">
+          {t("form.demo_loaded")}
         </div>
       )}
     </form>

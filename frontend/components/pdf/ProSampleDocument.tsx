@@ -137,9 +137,6 @@ export default function ProSampleDocument({ content }: { content: ProSampleConte
           <Text style={s.h}>{content.tier1Title}</Text>
           {content.tier1.map((row) => (
             <View key={`${row.left}-${row.right}`} style={s.card} wrap={false}>
-              <Text style={s.pair}>
-                {row.left}  {row.symbol} {row.aspect}  {row.right}   <Text style={s.orb}>{row.orb}</Text>
-              </Text>
               <Text style={s.p}>{row.impact}</Text>
             </View>
           ))}

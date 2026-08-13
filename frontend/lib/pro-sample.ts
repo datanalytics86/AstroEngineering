@@ -70,7 +70,7 @@ export function getProSampleContent(lang: "es" | "en" = "es"): ProSampleContent 
         "Inside, you need emotional safety. There is room to rest when private life is tended — not postponed.",
       purpose:
         "The world tends to recognize a mark that is serious and long-game. Purpose holds when you leave work that stands.",
-      tier1Title: "What weighs most (TIER1)",
+      tier1Title: "What marks you most",
       tier1: [
         { left: "Sun", aspect: "Trine", symbol: "△", right: "Jupiter", orb: "0.31°", impact: "Your identity and how you grow flow naturally: this is a talent you already have — use it on purpose." },
         { left: "Venus", aspect: "Conjunction", symbol: "☌", right: "Mars", orb: "0.48°", impact: "How you love and how you act travel together and intensify: this is one of your clearest signatures." },
@@ -120,7 +120,7 @@ export function getProSampleContent(lang: "es" | "en" = "es"): ProSampleContent 
       "Por dentro necesitas seguridad emocional. Hay calma para descansar cuando la vida privada se cuida — no se posterga.",
     purpose:
       "El mundo tiende a reconocerte por una marca seria y de largo aliento. El propósito se sostiene cuando dejas una obra que se aguante.",
-    tier1Title: "Lo que más pesa (TIER1)",
+    tier1Title: "Lo que más te marca",
     tier1: [
       { left: "Sol", aspect: "Trígono", symbol: "△", right: "Júpiter", orb: "0.31°", impact: "Tu identidad y tu forma de crecer fluyen con naturalidad: este es un talento que ya tienes, úsalo a propósito." },
       { left: "Venus", aspect: "Conjunción", symbol: "☌", right: "Marte", orb: "0.48°", impact: "Tu forma de amar y tu forma de actuar van juntas y se intensifican: es una de tus firmas más claras." },

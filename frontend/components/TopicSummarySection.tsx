@@ -27,7 +27,6 @@ import ActionButton from "@/components/ActionButton";
 import PersonalIntensityChart from "@/components/PersonalIntensityChart";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { useT, type Lang } from "@/lib/i18n";
-import { ASPECT_COLORS } from "@/lib/zodiac-utils";
 import { savePayWaitlistEmail, trackLearning } from "@/lib/learning";
 import { getProSampleContent } from "@/lib/pro-sample";
 import { downloadProSamplePdf } from "@/lib/download-preview-pdf";
@@ -44,6 +43,8 @@ export interface TopicSummarySectionProps {
   yearError?: string | null;
   chart?: ChartResponse;
   chartId?: string;
+  onSolar?: () => void;
+  solarLoading?: boolean;
 }
 
 const STRENGTH_STYLE: Record<
@@ -126,11 +127,7 @@ function ProPreviewModal({
         <ul className="space-y-2">
           {sample.tier1.slice(0, 3).map((row) => (
             <li key={`${row.left}-${row.right}`} className="bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5">
-              <p className="text-xs font-medium text-slate-800">
-                {row.left} {row.symbol} {row.aspect} {row.right}{" "}
-                <span className="text-violet-600 font-mono">{row.orb}</span>
-              </p>
-              <p className="text-sm text-slate-600 mt-1 leading-snug">{row.impact}</p>
+              <p className="text-sm text-slate-600 leading-snug">{row.impact}</p>
             </li>
           ))}
         </ul>
@@ -274,18 +271,7 @@ function Tier1List({
           key={`${a.planet1}-${a.aspect_name}-${a.planet2}`}
           className="bg-white border border-slate-100 rounded-xl px-3 py-3 space-y-1.5"
         >
-          <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm min-h-[28px]">
-            <span className="font-medium text-slate-800">{a.planet1}</span>
-            <span style={{ color: ASPECT_COLORS[a.nature] ?? "#64748B" }}>
-              {a.aspect_symbol} {a.aspect_name}
-            </span>
-            <span className="font-medium text-slate-800">{a.planet2}</span>
-            <span className="text-violet-600 ml-auto font-mono text-[11px]">
-              {a.orb.toFixed(2)}°
-              {a.applying ? " ↗" : " ↘"}
-            </span>
-          </div>
-          <p className="text-sm text-slate-600 leading-snug">{impact}</p>
+          <p className="text-sm text-slate-700 leading-snug">{impact}</p>
         </li>
       ))}
     </ul>
@@ -304,6 +290,8 @@ export default function TopicSummarySection({
   yearError = null,
   chart,
   chartId,
+  onSolar,
+  solarLoading = false,
 }: TopicSummarySectionProps) {
   const { t, lang } = useT();
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
@@ -311,6 +299,8 @@ export default function TopicSummarySection({
   const [payEmail, setPayEmail] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sampleBusy, setSampleBusy] = useState(false);
+  const [topicsOpened, setTopicsOpened] = useState(0);
+  const [pdfTaken, setPdfTaken] = useState(false);
   const [checkoutEnabled, setCheckoutEnabled] = useState<boolean | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -417,7 +407,10 @@ export default function TopicSummarySection({
             <span className="self-start sm:self-end text-[10px] sm:text-xs font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
               {t("chart.topics.free_badge")}
             </span>
-            <DownloadPreviewPdfButton content={preview} />
+            <DownloadPreviewPdfButton
+              content={preview}
+              onDownloaded={() => setPdfTaken(true)}
+            />
           </div>
         </div>
 
@@ -426,10 +419,29 @@ export default function TopicSummarySection({
             <TopicCard
               key={topic.id}
               topic={topic}
-              onOpened={() => trackLearning("topics_opened")}
+              onOpened={() => {
+                setTopicsOpened((n) => n + 1);
+                trackLearning("topics_opened");
+              }}
             />
           ))}
         </div>
+        {!isPro && (topicsOpened >= 2 || pdfTaken) && (
+          <div className="mt-4 rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <p className="text-sm text-slate-700">{t("chart.pro.soft_chip")}</p>
+            <button
+              type="button"
+              className="text-sm font-semibold text-indigo-700 hover:text-indigo-900 min-h-[44px] text-left"
+              onClick={() =>
+                document
+                  .getElementById("pro-unlock-panel")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" })
+              }
+            >
+              {t("chart.pro.soft_chip_cta")}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* PRO block — engineering upgrade */}
@@ -465,6 +477,30 @@ export default function TopicSummarySection({
 
           {!isPro && (
             <>
+              {preview.sections[0]?.headline && (
+                <div className="bg-white border border-slate-100 rounded-xl px-4 py-3">
+                  <p className="text-[11px] uppercase tracking-widest text-slate-400 mb-1.5">
+                    {t("chart.pro.teaser.locked_label")}
+                  </p>
+                  <p className="text-sm text-slate-700 leading-snug blur-[5px] select-none">
+                    {preview.sections[0].headline}
+                  </p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-600 w-36 shrink-0">{t("chart.pro.teaser.peak")}</span>
+                  <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                    <div className="h-full w-[85%] bg-indigo-500 rounded-full" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-600 w-36 shrink-0">{t("chart.pro.teaser.ease")}</span>
+                  <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
+                    <div className="h-full w-[30%] bg-indigo-300 rounded-full" />
+                  </div>
+                </div>
+              </div>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {[
                   t("chart.pro.feature.summary"),
@@ -476,7 +512,7 @@ export default function TopicSummarySection({
                     key={label}
                     className="text-xs sm:text-sm text-slate-600 bg-white border border-slate-100 rounded-lg px-3 py-2.5 flex items-start gap-2 min-h-[44px]"
                   >
-                    <span className="text-indigo-500 mt-0.5 shrink-0 font-mono" aria-hidden>
+                    <span className="text-indigo-500 mt-0.5 shrink-0" aria-hidden>
                       ·
                     </span>
                     <span>{label}</span>
@@ -502,7 +538,11 @@ export default function TopicSummarySection({
                   className="w-full sm:w-auto min-h-[48px] text-base"
                   disabled={checkoutBusy}
                 >
-                  {checkoutBusy ? t("pay.checkout.redirecting") : t("chart.pro.unlock_cta")}
+                  {checkoutBusy
+                    ? t("pay.checkout.redirecting")
+                    : checkoutEnabled
+                      ? t("chart.pro.unlock_cta")
+                      : t("chart.pro.unlock_cta_trial")}
                 </ActionButton>
                 <p className="text-[11px] sm:text-xs text-slate-400">
                   {checkoutEnabled ? t("chart.pro.unlock_note_live") : t("chart.pro.unlock_note")}
@@ -739,6 +779,18 @@ export default function TopicSummarySection({
                     <p className="text-sm text-slate-500">{t("chart.pro.transits_empty")}</p>
                   )}
                 </div>
+              )}
+              {onSolar && (
+                <button
+                  type="button"
+                  onClick={onSolar}
+                  disabled={solarLoading}
+                  className="text-sm text-slate-500 hover:text-indigo-700 min-h-[44px] disabled:opacity-50"
+                >
+                  {solarLoading
+                    ? t("chart.nav.transits_loading")
+                    : t("chart.nav.solar_link").replace("{year}", String(new Date().getFullYear()))}
+                </button>
               )}
             </div>
           )}

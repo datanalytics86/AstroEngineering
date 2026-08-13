@@ -10,12 +10,14 @@ interface DownloadPreviewPdfButtonProps {
   content: TierMinus1Content;
   variant?: "primary" | "secondary";
   className?: string;
+  onDownloaded?: () => void;
 }
 
 export default function DownloadPreviewPdfButton({
   content,
   variant = "primary",
   className = "",
+  onDownloaded,
 }: DownloadPreviewPdfButtonProps) {
   const { t } = useT();
   const [busy, setBusy] = useState(false);
@@ -26,6 +28,7 @@ export default function DownloadPreviewPdfButton({
     setError(null);
     try {
       await downloadTierMinus1Pdf(content);
+      onDownloaded?.();
     } catch {
       setError(t("chart.pdf.error"));
     } finally {
@@ -54,7 +57,7 @@ export default function DownloadPreviewPdfButton({
         )}
       </ActionButton>
       {error && (
-        <p className="text-[11px] text-red-600 font-mono max-w-xs sm:text-right" role="alert">
+        <p className="text-[11px] text-red-600 max-w-xs sm:text-right" role="alert">
           {error}
         </p>
       )}

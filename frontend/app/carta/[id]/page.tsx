@@ -29,6 +29,7 @@ import {
 import ActionButton from "@/components/ActionButton";
 import { useT } from "@/lib/i18n";
 import { trackLearning } from "@/lib/learning";
+import { shareChartUrl } from "@/lib/share";
 
 export default function CartaPage() {
   const router = useRouter();
@@ -48,6 +49,8 @@ export default function CartaPage() {
   const [showSummary, setShowSummary] = useState(false);
   const [proUnlocked, setProUnlocked] = useState(false);
   const [techOpen, setTechOpen] = useState(false);
+  const [wheelOpen, setWheelOpen] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
   const [yearTick, setYearTick] = useState(0);
   const [checkoutBanner, setCheckoutBanner] = useState<"success" | "cancel" | "error" | null>(
     null,
@@ -168,52 +171,6 @@ export default function CartaPage() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function handleOpenSummary() {
-    if (id && isProUnlocked(id)) {
-      setProUnlocked(true);
-      setShowSummary(true);
-      return;
-    }
-    document
-      .getElementById("astro-pro-section")
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  async function handleCalcTransits() {
-    if (!chart || !birthData) return;
-    setLoadingTransits(true);
-    setTransitError(null);
-
-    const year = new Date().getFullYear();
-    const req = {
-      natal_planets: chart.planets,
-      start_date: `${year}-01-01`,
-      end_date: `${year}-12-31`,
-      latitude: birthData.latitude,
-      longitude: birthData.longitude,
-    };
-
-    try {
-      const res = await postWithWakingRetry("/api/transits", req, () =>
-        setTransitError(t("common.error.waking"))
-      );
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: "Error al calcular tránsitos" }));
-        throw new Error(err.detail ?? `HTTP ${res.status}`);
-      }
-      setTransitError(null);
-      const data = await res.json();
-      saveYearTransits(id, year, data);
-      setYearTick((n) => n + 1);
-      trackLearning("year_calculated", { stay: false });
-      router.push(`/transitos/${id}`);
-    } catch (e) {
-      setTransitError(e instanceof Error ? e.message : "Error desconocido");
-    } finally {
-      setLoadingTransits(false);
-    }
-  }
-
   async function handleCalcYear() {
     if (!chart || !birthData || !id) return;
     setLoadingTransits(true);
@@ -304,7 +261,8 @@ export default function CartaPage() {
           <p className="text-slate-500 text-sm mt-1">
             {[chart.birth_date, chart.birth_time, birthData?.city].filter(Boolean).join(" · ")}
           </p>
-          <p className="text-[11px] sm:text-xs font-mono text-slate-400 mt-2">
+          <p className="text-sm text-slate-700 mt-3">{t("chart.ready")}</p>
+          <p className="text-[11px] sm:text-xs text-slate-400 mt-2">
             {t("chart.trust_strip")}
           </p>
         </div>
@@ -321,41 +279,24 @@ export default function CartaPage() {
           {preview && (
             <DownloadPreviewPdfButton content={preview} variant="secondary" />
           )}
-          <ActionButton
-            variant="secondary"
-            accent="indigo"
-            onClick={handleOpenSummary}
-            className="min-h-[44px]"
-          >
-            {proUnlocked ? t("chart.nav.summary") : t("chart.pro.summary_locked")}
-          </ActionButton>
-          <ActionButton
-            variant="secondary"
-            accent="blue"
-            onClick={handleCalcTransits}
-            disabled={loadingTransits}
-            className="min-h-[44px]"
-          >
-            {loadingTransits ? (
-              <>
-                <span className="inline-block w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                {t("chart.nav.transits_loading")}
-              </>
-            ) : (
-              t("chart.nav.transits")
-            )}
-          </ActionButton>
         </div>
-        <button
-          type="button"
-          onClick={handleSolarReturn}
-          disabled={loadingSR}
-          className="self-start text-sm text-slate-400 hover:text-amber-700 transition-colors min-h-[44px] disabled:opacity-50"
-        >
-          {loadingSR
-            ? t("chart.nav.transits_loading")
-            : t("chart.nav.solar_link").replace("{year}", String(new Date().getFullYear()))}
-        </button>
+        {birthData && (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await navigator.clipboard.writeText(shareChartUrl(birthData));
+                setShareCopied(true);
+                window.setTimeout(() => setShareCopied(false), 2000);
+              } catch {
+                /* ignore */
+              }
+            }}
+            className="self-start text-sm text-slate-400 hover:text-blue-600 min-h-[44px]"
+          >
+            {shareCopied ? t("chart.share.copied") : t("chart.share.copy")}
+          </button>
+        )}
       </div>
 
       {checkoutBanner && (
@@ -378,13 +319,13 @@ export default function CartaPage() {
       )}
 
       {transitError && (
-        <div className="mb-5 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600 font-mono">
+        <div className="mb-5 bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-600">
           {t("chart.error.transit")}: {transitError}
         </div>
       )}
 
       {srError && (
-        <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-700 font-mono">
+        <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-700">
           {t("chart.error.solar")}: {srError}
         </div>
       )}
@@ -392,82 +333,12 @@ export default function CartaPage() {
       {loadingTransits && (
         <div className="mb-5 bg-white border border-border rounded-xl p-5 text-center shadow-card">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-700 text-sm font-mono mb-1">{t("chart.nav.transits_loading")}</p>
+          <p className="text-slate-700 text-sm mb-1">{t("chart.nav.transits_loading")}</p>
           <p className="text-slate-400 text-xs">{t("chart.loading_hint")}</p>
         </div>
       )}
 
-      {/* 3. Hero wheel — always visible, free */}
-      <section className="mb-10" aria-labelledby="chart-hero-heading">
-        <div className="text-center mb-4">
-          <p className="text-xs font-mono uppercase tracking-widest text-blue-600 mb-1.5">
-            {t("chart.hero.badge")}
-          </p>
-          <h2
-            id="chart-hero-heading"
-            className="font-semibold text-xl sm:text-2xl text-slate-900 tracking-tight"
-          >
-            {t("chart.wheel.title")}
-          </h2>
-        </div>
-
-        <div
-          className="relative mx-auto max-w-[680px] rounded-[28px] border border-indigo-100/80 p-1.5 sm:p-5 shadow-card-md"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 38%, #FFFFFF 0%, #F8FAFC 52%, #EEF2FF 100%)",
-          }}
-        >
-          <ChartWheel
-            size="hero"
-            planets={chart.planets}
-            houses={chart.houses}
-            ascendant={chart.ascendant}
-            midheaven={chart.midheaven}
-            aspects={chart.aspects}
-            highlightedPlanet={highlighted}
-            onPlanetClick={(name) =>
-              setHighlighted((prev) => (prev === name ? undefined : name))
-            }
-            onElementClick={(target) => setModalTarget(target)}
-          />
-        </div>
-
-        {highlighted ? (
-          <p className="text-xs text-center text-blue-600 mt-3">
-            {highlighted} — {t("chart.wheel.deselect")}
-          </p>
-        ) : (
-          <p className="text-xs text-slate-400 text-center mt-3">{t("chart.wheel.hint")}</p>
-        )}
-
-        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto mt-4">
-          <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-card">
-            <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono mb-0.5">
-              {t("chart.ascendant")}
-            </div>
-            <div className="text-blue-600 font-semibold text-base leading-tight">
-              {chart.ascendant.sign}
-            </div>
-            <div className="text-slate-500 font-mono text-xs mt-0.5">
-              {chart.ascendant.degree_display}
-            </div>
-          </div>
-          <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-card">
-            <div className="text-[10px] text-slate-400 uppercase tracking-widest font-mono mb-0.5">
-              {t("chart.mc")}
-            </div>
-            <div className="text-teal-600 font-semibold text-base leading-tight">
-              {chart.midheaven.sign}
-            </div>
-            <div className="text-slate-500 font-mono text-xs mt-0.5">
-              {chart.midheaven.degree_display}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. Topics free + Pro */}
+      {/* Topics first — the actual product */}
       <div id="astro-pro-section" className="mb-10">
         <TopicSummarySection
           preview={preview}
@@ -484,8 +355,97 @@ export default function CartaPage() {
           yearError={transitError}
           chart={chart}
           chartId={id}
+          onSolar={handleSolarReturn}
+          solarLoading={loadingSR}
         />
       </div>
+
+      {/* Wheel — collapsed by default */}
+      <section className="mb-10 border-t border-slate-200 pt-8" aria-labelledby="chart-hero-heading">
+        <button
+          type="button"
+          onClick={() => setWheelOpen((v) => !v)}
+          className="w-full flex items-start sm:items-center justify-between gap-3 text-left mb-5 min-h-[44px] group"
+          aria-expanded={wheelOpen}
+        >
+          <div>
+            <p className="text-xs uppercase tracking-widest text-slate-400 mb-1">
+              {t("chart.hero.badge")}
+            </p>
+            <h2
+              id="chart-hero-heading"
+              className="font-semibold text-lg sm:text-xl text-slate-900 tracking-tight group-hover:text-blue-700 transition-colors"
+            >
+              {t("chart.wheel.title")}
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              {wheelOpen ? t("chart.wheel.toggle_hide") : t("chart.wheel.toggle_show")}
+            </p>
+          </div>
+          <span className="shrink-0 text-slate-400 text-sm mt-1" aria-hidden>
+            {wheelOpen ? "▴" : "▾"}
+          </span>
+        </button>
+
+        {wheelOpen && (
+          <>
+            <div
+              className="relative mx-auto max-w-[680px] rounded-[28px] border border-indigo-100/80 p-1.5 sm:p-5 shadow-card-md"
+              style={{
+                background:
+                  "radial-gradient(circle at 50% 38%, #FFFFFF 0%, #F8FAFC 52%, #EEF2FF 100%)",
+              }}
+            >
+              <ChartWheel
+                size="hero"
+                planets={chart.planets}
+                houses={chart.houses}
+                ascendant={chart.ascendant}
+                midheaven={chart.midheaven}
+                aspects={chart.aspects}
+                highlightedPlanet={highlighted}
+                onPlanetClick={(name) =>
+                  setHighlighted((prev) => (prev === name ? undefined : name))
+                }
+                onElementClick={(target) => setModalTarget(target)}
+              />
+            </div>
+
+            {highlighted ? (
+              <p className="text-xs text-center text-blue-600 mt-3">
+                {highlighted} — {t("chart.wheel.deselect")}
+              </p>
+            ) : (
+              <p className="text-xs text-slate-400 text-center mt-3">{t("chart.wheel.hint")}</p>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 max-w-md mx-auto mt-4">
+              <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-card">
+                <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">
+                  {t("chart.ascendant")}
+                </div>
+                <div className="text-blue-600 font-semibold text-base leading-tight">
+                  {chart.ascendant.sign}
+                </div>
+                <div className="text-slate-500 text-xs mt-0.5">
+                  {chart.ascendant.degree_display}
+                </div>
+              </div>
+              <div className="bg-white border border-border rounded-xl px-4 py-3 shadow-card">
+                <div className="text-[10px] text-slate-400 uppercase tracking-widest mb-0.5">
+                  {t("chart.mc")}
+                </div>
+                <div className="text-teal-600 font-semibold text-base leading-tight">
+                  {chart.midheaven.sign}
+                </div>
+                <div className="text-slate-500 text-xs mt-0.5">
+                  {chart.midheaven.degree_display}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </section>
 
       {/* 5. Positions + aspects — secondary, collapsed */}
       <section className="border-t border-slate-200 pt-8" aria-labelledby="tech-chart-heading">

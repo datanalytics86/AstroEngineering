@@ -6,7 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "AstroEngine",
-  description: "Tu carta natal en 6 áreas de la vida real — amor, dinero, trabajo, salud, familia y crecimiento.",
+  description: "Cómo te va el amor, el dinero y el trabajo — en claro. Seis lecturas gratis en 30 segundos.",
   icons: { icon: "/favicon.svg" },
 };
 

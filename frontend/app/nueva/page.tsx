@@ -8,6 +8,7 @@ import { saveChart, listCharts, deleteChart, type SavedChartMeta } from "@/lib/s
 import { postWithWakingRetry } from "@/lib/api-fetch";
 import { useT } from "@/lib/i18n";
 import { trackLearning } from "@/lib/learning";
+import { decodeSharePayload } from "@/lib/share";
 
 const SIGN_COLORS: Record<string, string> = {
   Aries: "#EF4444", Tauro: "#16A34A", "Géminis": "#EAB308", "Cáncer": "#2563EB",
@@ -23,16 +24,40 @@ export default function NuevaCartaPage() {
   const [saved, setSaved]           = useState<SavedChartMeta[]>([]);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [fromHint, setFromHint] = useState<string | null>(null);
+  const [preset, setPreset] = useState<"einstein" | BirthData | null>(null);
+  const [autoSubmit, setAutoSubmit] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
 
   useEffect(() => {
     setSaved(listCharts());
     try {
-      const from = new URLSearchParams(window.location.search).get("from");
+      const params = new URLSearchParams(window.location.search);
+      const from = params.get("from");
       if (from === "pdf_pro" || from === "pro_sample_pdf") setFromHint(from);
+      if (params.get("demo") === "1") {
+        setPreset("einstein");
+        return;
+      }
+      const share = params.get("share");
+      if (share) {
+        const data = decodeSharePayload(share);
+        if (data) {
+          const appliedKey = `astro_share_applied:${share}`;
+          const already = sessionStorage.getItem(appliedKey);
+          setPreset(data);
+          if (!already) {
+            sessionStorage.setItem(appliedKey, "1");
+            setAutoSubmit(true);
+            setShareBusy(true);
+          }
+        } else {
+          setError(t("nueva.share.invalid"));
+        }
+      }
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [t]);
 
   async function handleSubmit(data: BirthData) {
     setLoading(true);
@@ -53,6 +78,7 @@ export default function NuevaCartaPage() {
       setError(e instanceof Error ? e.message : "Error al calcular la carta");
     } finally {
       setLoading(false);
+      setShareBusy(false);
     }
   }
 
@@ -86,12 +112,21 @@ export default function NuevaCartaPage() {
         </div>
 
         {/* Formulario */}
+        {shareBusy && (
+          <p className="mb-4 text-sm text-slate-500 text-center">{t("nueva.share.calculating")}</p>
+        )}
+
         <div className="bg-white border border-border rounded-2xl p-6 shadow-card">
-          <BirthDataForm onSubmit={handleSubmit} loading={loading} />
+          <BirthDataForm
+            onSubmit={handleSubmit}
+            loading={loading}
+            preset={preset}
+            autoSubmit={autoSubmit}
+          />
         </div>
 
         {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600 font-mono">
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600">
             {error}
           </div>
         )}
