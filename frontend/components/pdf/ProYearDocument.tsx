@@ -292,11 +292,19 @@ function LifeWheel({ wheel }: { wheel: YearMapWheel }) {
   );
 }
 
-function YearClimateWheel({ months, year }: { months: YearMonthBlock[]; year: number }) {
+function YearClimateWheel({
+  months,
+  year,
+  size = 236,
+}: {
+  months: YearMonthBlock[];
+  year: number;
+  size?: number;
+}) {
   const cx = 118;
   const cy = 118;
   return (
-    <Svg width={236} height={236} viewBox="0 0 236 236">
+    <Svg width={size} height={size} viewBox="0 0 236 236">
       <Circle cx={cx} cy={cy} r={114} fill="#F8FAFC" />
       {months.map((m, i) => {
         const start = i * 30;
@@ -487,35 +495,66 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
           </View>
         </View>
         <View style={s.rule} />
-        <Text style={s.h}>{en ? "What you already have" : "Lo que ya tienes"}</Text>
-        {content.natal.strengths.map((line) => (
-          <Text key={line} style={s.p}>
-            ·  {line}
-          </Text>
-        ))}
+        <View style={s.row}>
+          <View style={s.col}>
+            <Text style={s.h}>{en ? "What you already have" : "Lo que ya tienes"}</Text>
+            {content.natal.strengths.map((line) => (
+              <Text key={line} style={s.p}>
+                ·  {line}
+              </Text>
+            ))}
+          </View>
+          <View style={s.col}>
+            <Text style={s.h}>{en ? "Where to practice" : "Dónde practicar"}</Text>
+            {content.natal.challenges.map((line) => (
+              <Text key={line} style={s.p}>
+                ·  {line}
+              </Text>
+            ))}
+            <Text style={s.small}>{content.natal.advice}</Text>
+          </View>
+        </View>
       </Chrome>
 
       <Chrome content={content} page={3} total={TOTAL}>
-        <Text style={s.kicker}>{en ? "Climate of the year" : "Clima del año"}</Text>
+        <Text style={s.kicker}>{en ? "The tone of this year" : "El tono de este año"}</Text>
         <View style={s.row}>
           <View style={{ width: 236 }}>
-            <YearClimateWheel months={content.months} year={content.year} />
+            <LifeWheel wheel={content.solarWheel} />
+            <Text style={{ fontSize: 7.5, color: MUTED, textAlign: "center", marginTop: 4 }}>
+              {content.solarIsOwn
+                ? en
+                  ? "This year's opening — life zones, not a lab chart"
+                  : "La apertura de este año — zonas de vida, no una carta de laboratorio"
+                : en
+                  ? "Year map from your natal sky (calculate solar return for a distinct wheel)"
+                  : "Mapa del año desde tu cielo natal (calcula el retorno solar para una rueda distinta)"}
+            </Text>
           </View>
           <View style={s.col}>
             <Text style={s.headline}>{content.solar.headline}</Text>
             <Text style={s.p}>{content.solar.body}</Text>
             <Text style={s.p}>{content.solar.publicMark}</Text>
-            <Text style={[s.h, { marginTop: 6 }]}>{content.yearPulse.headline}</Text>
+            <Text style={[s.p, { fontFamily: "Helvetica-Bold", color: INK }]}>
+              {content.solar.practice}
+            </Text>
+            <Text style={[s.h, { marginTop: 8 }]}>{content.yearPulse.headline}</Text>
             <Text style={s.p}>{content.yearPulse.body}</Text>
           </View>
         </View>
-        <View style={{ marginTop: 10 }}>
-          {content.months.map((m) => (
-            <View key={m.key} style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
-              <Text style={{ width: 28, fontSize: 7.5, color: MUTED }}>{m.shortLabel}</Text>
-              <IntensityBar value={m.intensity} climate={m.climate} width={360} />
-            </View>
-          ))}
+        <View style={{ marginTop: 8, flexDirection: "row", gap: 12, alignItems: "center" }}>
+          <YearClimateWheel months={content.months} year={content.year} size={168} />
+          <View style={{ flexGrow: 1 }}>
+            {content.months.map((m) => (
+              <View key={m.key} style={{ flexDirection: "row", alignItems: "center", marginBottom: 2.5 }}>
+                <Text style={{ width: 26, fontSize: 7, color: MUTED }}>{m.shortLabel}</Text>
+                <IntensityBar value={m.intensity} climate={m.climate} width={168} />
+                <Text style={{ width: 52, fontSize: 7, color: CLIMATE_INK[m.climate], marginLeft: 6 }}>
+                  {m.climateLabel}
+                </Text>
+              </View>
+            ))}
+          </View>
         </View>
       </Chrome>
 
@@ -570,25 +609,65 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
       ))}
 
       <Chrome content={content} page={9} total={TOTAL}>
-        <View style={{ marginTop: 48 }}>
-          <Text style={s.kicker}>{en ? "KEEP THIS MAP" : "QUÉDATE CON ESTE MAPA"}</Text>
-          <Text style={{ fontFamily: "Times-Roman", fontSize: 22, lineHeight: 1.2, marginBottom: 12 }}>
-            {en
-              ? "Print it, or open it on the first of each month."
-              : "Imprímelo, o ábrelo el día uno de cada mes."}
-          </Text>
-          <Text style={[s.p, { fontSize: 11, lineHeight: 1.5, maxWidth: 420 }]}>
-            {en
-              ? "The value is not reading it once. The value is returning when the month starts and doing one thing the card asks."
-              : "El valor no es leerlo una vez. El valor es volver cuando empieza el mes y hacer una cosa que pide la ficha."}
-          </Text>
-          <View style={s.rule} />
-          <Text style={s.p}>
-            {en
-              ? "Your chart stays at astro-engineering.vercel.app — never lose the year by going home empty."
-              : "Tu carta sigue en astro-engineering.vercel.app — no pierdas el año yendo a una home vacía."}
-          </Text>
+        <Text style={s.kicker}>{en ? "KEEP THIS MAP" : "QUÉDATE CON ESTE MAPA"}</Text>
+        <Text style={{ fontFamily: "Times-Roman", fontSize: 18, lineHeight: 1.2, marginBottom: 8 }}>
+          {en
+            ? "Print it, or open it on the first of each month."
+            : "Imprímelo, o ábrelo el día uno de cada mes."}
+        </Text>
+        <Text style={s.p}>
+          {en
+            ? "The value is not reading it once. The value is returning when the month starts and doing one thing the card asks."
+            : "El valor no es leerlo una vez. El valor es volver cuando empieza el mes y hacer una cosa que pide la ficha."}
+        </Text>
+        <View style={s.rule} />
+        <Text style={s.h}>{en ? "Year at a glance" : "El año de un vistazo"}</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {content.months.map((m) => (
+            <View
+              key={m.key}
+              style={{
+                width: "31%",
+                borderWidth: 1,
+                borderColor: CLIMATE_BAR[m.climate],
+                backgroundColor: CLIMATE_BG[m.climate],
+                borderRadius: 5,
+                padding: 6,
+              }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
+                <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: CLIMATE_INK[m.climate] }}>
+                  {m.shortLabel}
+                </Text>
+                <Text style={{ fontSize: 7, color: CLIMATE_INK[m.climate] }}>{m.climateLabel}</Text>
+              </View>
+              <Text style={{ fontSize: 7.5, lineHeight: 1.3, color: CLIMATE_INK[m.climate] }}>
+                {m.featured[0]?.title ?? ""} · {m.featured[0]?.feel ?? ""}
+              </Text>
+            </View>
+          ))}
         </View>
+        <View style={s.legendRow}>
+          {legend.map((c) => (
+            <View
+              key={c.climate}
+              style={[
+                s.legendItem,
+                { borderColor: CLIMATE_BAR[c.climate], backgroundColor: CLIMATE_BG[c.climate] },
+              ]}
+            >
+              <Text style={[s.legendTitle, { color: CLIMATE_INK[c.climate] }]}>{c.label}</Text>
+              <Text style={[s.small, { color: CLIMATE_INK[c.climate] }]}>{c.hint}</Text>
+            </View>
+          ))}
+        </View>
+        <View style={s.rule} />
+        {howTo.map((step, i) => (
+          <View key={`end-${step}`} style={s.step}>
+            <Text style={s.stepN}>{i + 1}</Text>
+            <Text style={[s.p, { marginBottom: 0, flexGrow: 1 }]}>{step}</Text>
+          </View>
+        ))}
       </Chrome>
     </Document>
   );

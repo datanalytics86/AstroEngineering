@@ -73,6 +73,15 @@ for (const lang of ["es", "en"]) {
       console.error(`FAIL ${lang} ${label}: wheel/moves missing`);
       failed += 1;
     }
+    if (!content.solar?.practice) {
+      console.error(`FAIL ${lang} ${label}: solar.practice missing`);
+      failed += 1;
+    }
+    const asks = content.months.map((m) => m.executive);
+    if (label === "sample" && new Set(asks).size < 6) {
+      console.error(`FAIL ${lang} ${label}: executives too repetitive`);
+      failed += 1;
+    }
     const blobs = [
       content.natal.headline,
       content.solar.body,

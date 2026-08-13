@@ -77,6 +77,7 @@ export interface SolarYearTone {
   headline: string;
   body: string;
   publicMark: string;
+  practice: string;
 }
 
 export interface YearMapZone {
@@ -109,6 +110,7 @@ export interface YearMapContent {
   solarPoints: number[];
   natalWheel: YearMapWheel;
   solarWheel: YearMapWheel;
+  solarIsOwn: boolean;
   yearPulse: { headline: string; body: string };
   forecast: {
     headline: string;
@@ -419,15 +421,51 @@ const BASELINE: Record<TopicId, Record<YearMonthBlock["climate"], { es: string; 
   },
 };
 
+const ALT_LINE: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
+  amor: {
+    apretado: { es: "Una frase dicha vale más que tres gestos grandes.", en: "One said sentence beats three grand gestures." },
+    abierto: { es: "Invita. El año responde a lo concreto.", en: "Invite. The year answers the concrete." },
+    suave: { es: "Riega lo que ya está vivo. No forces un capítulo.", en: "Water what is already alive. Do not force a chapter." },
+  },
+  dinero: {
+    apretado: { es: "Ponle nombre a un techo antes de firmar.", en: "Name a ceiling before you sign." },
+    abierto: { es: "Mueve un recurso hacia algo que puedas tocar.", en: "Move one resource toward something you can touch." },
+    suave: { es: "Ordena una cuenta. Sin drama.", en: "Tidy one account. No drama." },
+  },
+  trabajo: {
+    apretado: { es: "Una prioridad. El resto espera.", en: "One priority. The rest can wait." },
+    abierto: { es: "Haz visible un avance. No lo guardes.", en: "Make one advance visible. Do not hide it." },
+    suave: { es: "Cierra y limpia. Eso también es oficio.", en: "Close and clean. That is craft too." },
+  },
+  salud: {
+    apretado: { es: "Duerme primero. Luego decides.", en: "Sleep first. Then decide." },
+    abierto: { es: "Un hábito de quince minutos, no un plan heroico.", en: "A fifteen-minute habit, not a heroic plan." },
+    suave: { es: "Agua, sueño, un paseo. Punto.", en: "Water, sleep, a walk. Stop there." },
+  },
+  familia: {
+    apretado: { es: "Un límite, dicho una vez, con calma.", en: "One limit, said once, calmly." },
+    abierto: { es: "Está, sin resolverlo todo.", en: "Be there without fixing everything." },
+    suave: { es: "Una rutina compartida vale más que un plan grande.", en: "One shared routine beats a big plan." },
+  },
+  crecimiento: {
+    apretado: { es: "Quédate con la pregunta incómoda.", en: "Stay with the uncomfortable question." },
+    abierto: { es: "Prueba un ángulo nuevo dos semanas.", en: "Try a new angle for two weeks." },
+    suave: { es: "Anota lo ya aprendido. Eso también es crecer.", en: "Write down what you already learned. That is growth too." },
+  },
+};
+
 function topicLine(
   id: TopicId,
   climate: YearMonthBlock["climate"],
   extra: string | undefined,
   lang: Lang,
+  variant = 0,
 ): string {
-  const base = lang === "en" ? BASELINE[id][climate].en : BASELINE[id][climate].es;
-  if (!extra) return base;
-  return `${base} ${extra}`;
+  if (extra) return extra;
+  if (variant % 2 === 1) {
+    return lang === "en" ? ALT_LINE[id][climate].en : ALT_LINE[id][climate].es;
+  }
+  return lang === "en" ? BASELINE[id][climate].en : BASELINE[id][climate].es;
 }
 
 function executiveFor(
@@ -435,21 +473,47 @@ function executiveFor(
   climate: YearMonthBlock["climate"],
   hotTopics: string[],
   lang: Lang,
+  variant = 0,
 ): string {
   const focus = hotTopics.slice(0, 2).join(lang === "en" ? " and " : " y ");
+  const v = variant % 3;
   if (climate === "apretado") {
-    return lang === "en"
-      ? `${label} tightens. Leave margin${focus ? ` in ${focus}` : ""}. Don't fill the calendar to the brim.`
-      : `${label} se aprieta. Deja margen${focus ? ` en ${focus}` : ""}. No llenes el calendario hasta el borde.`;
+    const es = [
+      `${label} se aprieta. Deja margen${focus ? ` en ${focus}` : ""}. No llenes el calendario hasta el borde.`,
+      `${label} pide menos frentes${focus ? ` — sobre todo ${focus}` : ""}. Una prioridad. El resto espera.`,
+      `${label} viene cargado${focus ? ` en ${focus}` : ""}. Protege el sueño y no improvises planes extra.`,
+    ];
+    const en = [
+      `${label} tightens. Leave margin${focus ? ` in ${focus}` : ""}. Don't fill the calendar to the brim.`,
+      `${label} asks for fewer fronts${focus ? ` — especially ${focus}` : ""}. One priority. The rest can wait.`,
+      `${label} comes loaded${focus ? ` in ${focus}` : ""}. Protect sleep and do not add extra plans.`,
+    ];
+    return lang === "en" ? en[v] : es[v];
   }
   if (climate === "abierto") {
-    return lang === "en"
-      ? `${label} opens a window${focus ? ` in ${focus}` : ""}. Take one visible step. Don't wait for a perfect week.`
-      : `${label} abre una ventana${focus ? ` en ${focus}` : ""}. Da un paso que se note. No esperes la semana perfecta.`;
+    const es = [
+      `${label} abre una ventana${focus ? ` en ${focus}` : ""}. Da un paso que se note. No esperes la semana perfecta.`,
+      `${label} deja aire${focus ? ` para ${focus}` : ""}. Propón. Este mes escucha.`,
+      `${label} premia lo visible${focus ? ` en ${focus}` : ""}. Un gesto concreto basta.`,
+    ];
+    const en = [
+      `${label} opens a window${focus ? ` in ${focus}` : ""}. Take one visible step. Don't wait for a perfect week.`,
+      `${label} leaves room${focus ? ` for ${focus}` : ""}. Propose. This month listens.`,
+      `${label} rewards what can be seen${focus ? ` in ${focus}` : ""}. One concrete gesture is enough.`,
+    ];
+    return lang === "en" ? en[v] : es[v];
   }
-  return lang === "en"
-    ? `${label} is for integrating${focus ? ` — especially ${focus}` : ""}. Consistency beats a dramatic push.`
-    : `${label} sirve para integrar${focus ? ` — sobre todo ${focus}` : ""}. La constancia gana a un empujón dramático.`;
+  const es = [
+    `${label} sirve para integrar${focus ? ` — sobre todo ${focus}` : ""}. La constancia gana a un empujón dramático.`,
+    `${label} pide cierre${focus ? ` en ${focus}` : ""}. No abras diez frentes nuevos.`,
+    `${label} es nido${focus ? ` para ${focus}` : ""}. Recupera. Luego empujas.`,
+  ];
+  const en = [
+    `${label} is for integrating${focus ? ` — especially ${focus}` : ""}. Consistency beats a dramatic push.`,
+    `${label} asks you to close${focus ? ` in ${focus}` : ""}. Do not open ten new fronts.`,
+    `${label} is a nest${focus ? ` for ${focus}` : ""}. Recover. Then push.`,
+  ];
+  return lang === "en" ? en[v] : es[v];
 }
 
 function solarTone(sr: ChartResponse | null, lang: Lang): SolarYearTone {
@@ -467,10 +531,15 @@ function solarTone(sr: ChartResponse | null, lang: Lang): SolarYearTone {
     lang === "en"
       ? `The world tends to meet you this year through a mark that is ${publicV.style}. Let that be a direction, not a costume.`
       : `El mundo tiende a encontrarte este año por una marca ${publicV.style}. Que sea dirección, no disfraz.`;
+  const practice =
+    lang === "en"
+      ? `One practice for the year: when you feel the pull toward ${style.shadow}, return to ${style.fuel}. That is the whole map, used.`
+      : `Una práctica del año: cuando te tire ${style.shadow}, vuelve a ${style.fuel}. Ese es el mapa, usado.`;
   warn("solar.headline", headline);
   warn("solar.body", body);
   warn("solar.public", publicMark);
-  return { headline, body, publicMark };
+  warn("solar.practice", practice);
+  return { headline, body, publicMark, practice };
 }
 
 function eventsForMonth(transits: TransitResponse | null, key: string): TransitEvent[] {
@@ -510,7 +579,7 @@ function buildMonth(
   const byId = new Map(grouped.map((g) => [g.topicId, g.items]));
   const topics: YearTopicLine[] = TOPIC_ORDER.map((id) => {
     const extra = byId.get(id)?.[0]?.replace(/^[^:]+:\s*/, "");
-    const line = extra || topicLine(id, climate, undefined, lang);
+    const line = extra || topicLine(id, climate, undefined, lang, monthIndex0);
     const feel = lang === "en" ? FEEL[id][climate].en : FEEL[id][climate].es;
     warn(`month.${key}.${id}`, line);
     return {
@@ -529,7 +598,7 @@ function buildMonth(
   const featured = ranked.slice(0, 2).map((t) => ({ ...t, featured: true }));
   const rest = ranked.slice(2).map((t) => ({ ...t, featured: false }));
   const hot = featured.map((t) => t.title.toLowerCase());
-  const executive = executiveFor(label, climate, hot, lang);
+  const executive = executiveFor(label, climate, hot, lang, monthIndex0);
   warn(`month.${key}.exec`, executive);
   return {
     key,
@@ -632,6 +701,7 @@ export function buildYearMap(opts: {
     solarPoints: (opts.solar?.planets ?? opts.chart.planets).map((p) => p.longitude),
     natalWheel,
     solarWheel,
+    solarIsOwn: Boolean(opts.solar),
     yearPulse: {
       headline: pulse?.headline ?? (lang === "en" ? "Your year has a pulse" : "Tu año tiene pulso"),
       body:
@@ -658,7 +728,7 @@ export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
     const topics: YearTopicLine[] = TOPIC_ORDER.map((id) => ({
       id,
       title: lang === "en" ? TOPIC_TITLE[id].en : TOPIC_TITLE[id].es,
-      line: topicLine(id, climate, undefined, lang),
+      line: topicLine(id, climate, undefined, lang, i),
       featured: false,
       feel: lang === "en" ? FEEL[id][climate].en : FEEL[id][climate].es,
     }));
@@ -679,7 +749,7 @@ export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
       intensity: value,
       climate,
       climateLabel: climateLabelOf(climate, lang),
-      executive: executiveFor(label, climate, hot, lang),
+      executive: executiveFor(label, climate, hot, lang, i),
       topics,
       featured,
       rest,
@@ -746,11 +816,16 @@ export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
         lang === "en"
           ? "The world tends to meet you this year through a mark that is visible and steady. Let that be a direction, not a costume."
           : "El mundo tiende a encontrarte este año por una marca visible y firme. Que sea dirección, no disfraz.",
+      practice:
+        lang === "en"
+          ? "One practice for the year: when you feel the pull toward rushing, return to work that stands. That is the whole map, used."
+          : "Una práctica del año: cuando te tire apurar, vuelve a una obra que se aguante. Ese es el mapa, usado.",
     },
     natalPoints,
     solarPoints,
     natalWheel: fallbackWheel(natalPoints, lang),
     solarWheel: fallbackWheel(solarPoints, lang),
+    solarIsOwn: true,
     yearPulse: {
       headline:
         lang === "en"
