@@ -250,6 +250,7 @@ export default function TopicSummarySection({
   onUnlock,
   intensityData,
   yearLoading = false,
+  chartId,
   yearMap = null,
 }: TopicSummarySectionProps) {
   const { t, lang } = useT();
