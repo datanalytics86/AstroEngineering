@@ -5,7 +5,7 @@
  * (TIER1 aspects, intensity chart, technical summary access).
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   Aspect,
   ChartResponse,
@@ -13,23 +13,15 @@ import type {
   StrengthLevel,
   TierMinus1Content,
   TierMinus1Section,
-  TransitEvent,
 } from "@/lib/types";
-import { groupTransitsByTopic } from "@/lib/topic-summary";
-import { loadYearTransits } from "@/lib/storage";
-import {
-  buildTier1Readings,
-  generateHumanProSummary,
-  humanTransitLine,
-  readIntensityYear,
-} from "@/lib/pro-human";
 import ActionButton from "@/components/ActionButton";
 import PersonalIntensityChart from "@/components/PersonalIntensityChart";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
 import { useT, type Lang } from "@/lib/i18n";
 import { savePayWaitlistEmail, trackLearning } from "@/lib/learning";
 import { getProSampleContent } from "@/lib/pro-sample";
-import { downloadProSamplePdf } from "@/lib/download-preview-pdf";
+import { downloadProSamplePdf, downloadProYearPdf } from "@/lib/download-preview-pdf";
+import type { YearMapContent } from "@/lib/year-map";
 
 export interface TopicSummarySectionProps {
   preview: TierMinus1Content;
@@ -45,6 +37,7 @@ export interface TopicSummarySectionProps {
   chartId?: string;
   onSolar?: () => void;
   solarLoading?: boolean;
+  yearMap?: YearMapContent | null;
 }
 
 const STRENGTH_STYLE: Record<
@@ -251,56 +244,23 @@ function TopicCard({
   );
 }
 
-function Tier1List({
-  aspects,
-  emptyLabel,
-  lang,
-}: {
-  aspects: Aspect[];
-  emptyLabel: string;
-  lang: Lang;
-}) {
-  const readings = buildTier1Readings(aspects, lang);
-  if (readings.length === 0) {
-    return <p className="text-sm text-slate-500 leading-relaxed">{emptyLabel}</p>;
-  }
-  return (
-    <ul className="space-y-2">
-      {readings.map(({ aspect: a, impact }) => (
-        <li
-          key={`${a.planet1}-${a.aspect_name}-${a.planet2}`}
-          className="bg-white border border-slate-100 rounded-xl px-3 py-3 space-y-1.5"
-        >
-          <p className="text-sm text-slate-700 leading-snug">{impact}</p>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export default function TopicSummarySection({
   preview,
   isPro,
   onUnlock,
-  tier1Aspects,
   intensityData,
-  onOpenTechnicalSummary,
-  onCalcYear,
   yearLoading = false,
-  yearError = null,
-  chart,
-  chartId,
-  onSolar,
-  solarLoading = false,
+  yearMap = null,
 }: TopicSummarySectionProps) {
   const { t, lang } = useT();
-  const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
   const [payOpen, setPayOpen] = useState(false);
   const [payEmail, setPayEmail] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [sampleBusy, setSampleBusy] = useState(false);
   const [topicsOpened, setTopicsOpened] = useState(0);
   const [pdfTaken, setPdfTaken] = useState(false);
+  const [openMonth, setOpenMonth] = useState<string | null>(null);
+  const [yearPdfBusy, setYearPdfBusy] = useState(false);
   const [checkoutEnabled, setCheckoutEnabled] = useState<boolean | null>(null);
   const [checkoutBusy, setCheckoutBusy] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -352,37 +312,6 @@ export default function TopicSummarySection({
     }
     setPayOpen(true);
   }
-
-  const human = useMemo(
-    () => (isPro && chart ? generateHumanProSummary(chart, locale) : null),
-    [isPro, chart, locale]
-  );
-
-  const yearReading = useMemo(
-    () => (isPro ? readIntensityYear(intensityData, locale) : null),
-    [isPro, intensityData, locale]
-  );
-
-  const transitPreview = useMemo(() => {
-    if (!isPro || !chart || !chartId) return null;
-    const year = new Date().getFullYear();
-    const data = loadYearTransits(chartId, year);
-    if (!data) return null;
-    const events: TransitEvent[] = [
-      ...data.current_transits,
-      ...data.timeline.flatMap((m) => m.transits_active),
-    ];
-    const seen = new Set<string>();
-    const unique = events.filter((e) => {
-      const k = `${e.transit_planet}|${e.aspect_name}|${e.natal_planet}`;
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-    return groupTransitsByTopic(chart.planets, unique, locale, (ev) =>
-      humanTransitLine(ev, locale)
-    );
-  }, [isPro, chart, chartId, locale]);
 
   return (
     <section className="space-y-8" aria-labelledby="topic-summaries-heading">
@@ -636,162 +565,117 @@ export default function TopicSummarySection({
             </div>
           )}
 
-          {isPro && (
-            <div className="space-y-7 pt-2 border-t border-slate-200/80">
-              {/* 1. Human summary */}
-              <div>
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono">
-                    {t("chart.pro.section.summary")}
-                  </h4>
-                  {onOpenTechnicalSummary && (
-                    <ActionButton
-                      variant="secondary"
-                      accent="blue"
-                      onClick={onOpenTechnicalSummary}
-                      className="!py-2 !px-3 text-xs min-h-[44px]"
-                    >
-                      {t("chart.pro.open_summary")}
-                    </ActionButton>
-                  )}
-                </div>
-                {human && (
-                  <div className="bg-white border border-slate-100 rounded-xl p-4 space-y-2">
-                    <p className="text-sm font-semibold text-indigo-700 leading-snug">
-                      {human.headline}
-                    </p>
-                    <p className="text-sm text-slate-700 leading-relaxed">{human.identity}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed">{human.purpose}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* 2. Year pulse — one empty CTA */}
-              <div>
-                <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
-                  {t("chart.pro.section.year")}
-                </h4>
-                {yearLoading ? (
-                  <div className="bg-white border border-slate-100 rounded-xl p-5 text-center">
-                    <div className="w-7 h-7 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-                    <p className="text-sm text-slate-600">{t("chart.pro.year.loading")}</p>
-                  </div>
-                ) : intensityData.length > 0 ? (
-                  <div className="space-y-3">
-                    {yearReading && (
-                      <div className="bg-white border border-slate-100 rounded-xl p-4 space-y-1.5">
-                        <p className="text-sm font-semibold text-slate-900">{yearReading.headline}</p>
-                        <p className="text-sm text-slate-600 leading-relaxed">{yearReading.body}</p>
-                      </div>
-                    )}
-                    <div className="bg-white border border-slate-100 rounded-xl p-3 sm:p-4">
-                      <PersonalIntensityChart data={intensityData} />
-                    </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      {t("chart.pro.intensity.explain")}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="bg-white border border-dashed border-indigo-200 rounded-xl p-5 space-y-3 text-center sm:text-left">
-                    <p className="text-sm text-slate-600 leading-relaxed">
-                      {t("chart.pro.intensity.empty")}
-                    </p>
-                    {yearError && (
-                      <p className="text-sm text-red-600" role="alert">
-                        {yearError}
-                      </p>
-                    )}
-                    {onCalcYear && (
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <ActionButton
-                          variant="primary"
-                          accent="indigo"
-                          onClick={onCalcYear}
-                          className="w-full sm:w-auto min-h-[48px]"
-                        >
-                          {t("chart.pro.intensity.cta_transits")}
-                        </ActionButton>
-                        <p className="text-[11px] text-slate-400">
-                          {t("chart.pro.intensity.cta_note")}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* 3. TIER1 with meaning */}
-              <div>
-                <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
-                  {t("chart.pro.tier1.title")}
-                </h4>
-                <Tier1List
-                  aspects={tier1Aspects}
-                  emptyLabel={t("chart.pro.tier1_empty")}
-                  lang={locale}
-                />
-              </div>
-
-              {/* 4. Year by topic — only with data */}
-              {intensityData.length > 0 && (
-                <div>
-                  <h4 className="text-xs uppercase tracking-widest text-slate-400 font-mono mb-3">
-                    {t("chart.pro.section.transits")}
-                  </h4>
-                  {transitPreview && transitPreview.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {transitPreview.map((g) => (
-                        <div
-                          key={g.topicId}
-                          className="bg-white border border-slate-100 rounded-xl p-3"
-                        >
-                          <button
-                            type="button"
-                            className="w-full text-left flex items-center justify-between gap-2 min-h-[44px]"
-                            onClick={() =>
-                              setExpandedTopic((prev) =>
-                                prev === g.topicId ? null : g.topicId
-                              )
-                            }
-                          >
-                            <span className="text-sm font-semibold text-slate-800">{g.title}</span>
-                            <span className="text-xs font-mono text-slate-400">{g.items.length}</span>
-                          </button>
-                          {(expandedTopic === g.topicId || expandedTopic === null) && (
-                            <ul className="mt-2 space-y-1">
-                              {(expandedTopic === g.topicId
-                                ? g.items
-                                : g.items.slice(0, 2)
-                              ).map((item) => (
-                                <li
-                                  key={item}
-                                  className="text-sm text-slate-600 leading-snug"
-                                >
-                                  {item}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-slate-500">{t("chart.pro.transits_empty")}</p>
-                  )}
-                </div>
-              )}
-              {onSolar && (
-                <button
-                  type="button"
-                  onClick={onSolar}
-                  disabled={solarLoading}
-                  className="text-sm text-slate-500 hover:text-indigo-700 min-h-[44px] disabled:opacity-50"
+          {isPro && yearMap && (
+            <div className="space-y-8 pt-2 border-t border-slate-200/80">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <ActionButton
+                  variant="primary"
+                  accent="indigo"
+                  className="w-full sm:w-auto min-h-[48px]"
+                  disabled={yearPdfBusy}
+                  onClick={async () => {
+                    setYearPdfBusy(true);
+                    try {
+                      await downloadProYearPdf(yearMap);
+                    } finally {
+                      setYearPdfBusy(false);
+                    }
+                  }}
                 >
-                  {solarLoading
-                    ? t("chart.nav.transits_loading")
-                    : t("chart.nav.solar_link").replace("{year}", String(new Date().getFullYear()))}
-                </button>
-              )}
+                  {yearPdfBusy ? t("chart.pro.year.downloading") : t("chart.pro.year.pdf")}
+                </ActionButton>
+                {yearLoading && (
+                  <p className="text-sm text-slate-500">{t("chart.pro.year.loading")}</p>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-3">
+                  {t("chart.pro.section.summary")}
+                </h4>
+                <div className="bg-white border border-slate-100 rounded-xl p-4 space-y-2">
+                  <p className="text-sm font-semibold text-indigo-700 leading-snug">
+                    {yearMap.natal.headline}
+                  </p>
+                  <p className="text-sm text-slate-700 leading-relaxed">{yearMap.natal.purpose}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{yearMap.natal.advice}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-3">
+                  {t("chart.pro.solar.title")}
+                </h4>
+                <div className="bg-white border border-slate-100 rounded-xl p-4 space-y-2">
+                  <p className="text-sm font-semibold text-slate-900">{yearMap.solar.headline}</p>
+                  <p className="text-sm text-slate-700 leading-relaxed">{yearMap.solar.body}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{yearMap.solar.publicMark}</p>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-3">
+                  {t("chart.pro.forecast.title")}
+                </h4>
+                <div className="bg-white border border-slate-100 rounded-xl p-4 space-y-2">
+                  <p className="text-sm font-semibold text-slate-900">{yearMap.forecast.headline}</p>
+                  <p className="text-sm text-slate-700 leading-relaxed">{yearMap.forecast.body}</p>
+                  <p className="text-sm text-slate-600 leading-relaxed">{yearMap.yearPulse.body}</p>
+                </div>
+                {intensityData.length > 0 && (
+                  <div className="bg-white border border-slate-100 rounded-xl p-3 sm:p-4 mt-3">
+                    <PersonalIntensityChart data={intensityData} />
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-xs uppercase tracking-widest text-slate-400 mb-3">
+                  {t("chart.pro.months.title")}
+                </h4>
+                <div className="space-y-2">
+                  {yearMap.months.map((month) => {
+                    const open = openMonth === month.key;
+                    return (
+                      <article
+                        key={month.key}
+                        className="bg-white border border-slate-100 rounded-xl overflow-hidden"
+                      >
+                        <button
+                          type="button"
+                          className="w-full text-left px-4 py-3 min-h-[52px]"
+                          onClick={() => setOpenMonth(open ? null : month.key)}
+                          aria-expanded={open}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold text-slate-900">{month.label}</p>
+                              <p className="text-sm text-slate-600 mt-1 leading-snug">
+                                {month.executive}
+                              </p>
+                            </div>
+                            <span className="text-xs text-indigo-600 shrink-0 mt-1">
+                              {open ? t("chart.pro.month.close") : t("chart.pro.month.open")}
+                            </span>
+                          </div>
+                        </button>
+                        {open && (
+                          <div className="px-4 pb-4 grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+                            {month.topics.map((topic) => (
+                              <div key={topic.id}>
+                                <p className="text-[11px] uppercase tracking-widest text-indigo-600 mb-1">
+                                  {topic.title}
+                                </p>
+                                <p className="text-sm text-slate-700 leading-snug">{topic.line}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
         </div>

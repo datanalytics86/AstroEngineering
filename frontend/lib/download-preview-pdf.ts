@@ -3,6 +3,7 @@ import type { DocumentProps } from "@react-pdf/renderer";
 import type { TierMinus1Content } from "./types";
 import { trackLearning } from "./learning";
 import { getProSampleContent } from "./pro-sample";
+import type { YearMapContent } from "./year-map";
 
 export function slugifyPdfName(name: string): string {
   const slug = name
@@ -57,4 +58,25 @@ export async function downloadProSamplePdf(lang: "es" | "en" = "es"): Promise<vo
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 1500);
   trackLearning("pro_sample_pdf", { lang });
+}
+
+export async function downloadProYearPdf(content: YearMapContent): Promise<void> {
+  const [{ pdf }, { default: ProYearDocument }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("@/components/pdf/ProYearDocument"),
+  ]);
+  const doc = createElement(ProYearDocument, { content }) as unknown as ReactElement<DocumentProps>;
+  const blob = await pdf(doc).toBlob();
+  const prefix = content.lang === "en" ? "year-map" : "mapa-del-anio";
+  const filename = `${prefix}-${content.year}-${slugifyPdfName(content.name)}.pdf`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1500);
+  trackLearning("year_calculated", { pdf: true, lang: content.lang });
 }
