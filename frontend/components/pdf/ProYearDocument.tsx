@@ -1,12 +1,29 @@
 /**
- * TIER 1 Pro year-map PDF — natal wheel + reading, solar wheel + year tone,
- * remaining-year forecast, 12 executive months × 6 life areas.
+ * TIER 1 Pro year-map PDF.
+ * Cover (how-to + key months) → natal life-zone wheel → year climate →
+ * forecast → 12 usable month cards → close.
  * No planets, signs, houses, orbs in the copy.
  */
 
 import type { ReactNode } from "react";
-import { Circle, Document, Line, Page, Svg, Text, View, StyleSheet } from "@react-pdf/renderer";
-import type { YearMapContent, YearMonthBlock } from "@/lib/year-map";
+import {
+  Circle,
+  Document,
+  G,
+  Page,
+  Path,
+  Svg,
+  Text,
+  View,
+  StyleSheet,
+} from "@react-pdf/renderer";
+import type {
+  YearClimate,
+  YearMapContent,
+  YearMapWheel,
+  YearMonthBlock,
+} from "@/lib/year-map";
+import { describeSector, makeToAngle, polarXY } from "@/lib/wheel-geometry";
 
 const INK = "#1E293B";
 const SLATE = "#475569";
@@ -15,21 +32,45 @@ const RULE = "#E2E8F0";
 const WASH = "#F8FAFC";
 const PAPER = "#FFFEFB";
 const ACCENT = "#4F46E5";
-const ACCENT_SOFT = "#C7D2FE";
+
+const CLIMATE_INK: Record<YearClimate, string> = {
+  apretado: "#B45309",
+  abierto: "#047857",
+  suave: "#0369A1",
+};
+const CLIMATE_BG: Record<YearClimate, string> = {
+  apretado: "#FFF7ED",
+  abierto: "#ECFDF5",
+  suave: "#F0F9FF",
+};
+const CLIMATE_BAR: Record<YearClimate, string> = {
+  apretado: "#F59E0B",
+  abierto: "#10B981",
+  suave: "#38BDF8",
+};
+
+const TOPIC_COLOR: Record<string, string> = {
+  amor: "#DB2777",
+  dinero: "#059669",
+  trabajo: "#2563EB",
+  salud: "#D97706",
+  familia: "#7C3AED",
+  crecimiento: "#4F46E5",
+};
 
 const s = StyleSheet.create({
   page: {
     backgroundColor: PAPER,
-    paddingTop: 46,
-    paddingBottom: 42,
-    paddingHorizontal: 48,
+    paddingTop: 40,
+    paddingBottom: 38,
+    paddingHorizontal: 40,
     fontFamily: "Helvetica",
     color: INK,
   },
   brand: {
     position: "absolute",
-    top: 24,
-    left: 48,
+    top: 20,
+    left: 40,
     fontSize: 8,
     letterSpacing: 2.4,
     color: MUTED,
@@ -37,90 +78,104 @@ const s = StyleSheet.create({
   },
   footer: {
     position: "absolute",
-    bottom: 20,
-    left: 48,
-    right: 48,
+    bottom: 16,
+    left: 40,
+    right: 40,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
   },
-  footerText: { fontSize: 8, color: MUTED },
+  footerText: { fontSize: 7.5, color: MUTED },
   kicker: {
-    fontSize: 9,
-    letterSpacing: 2,
+    fontSize: 8.5,
+    letterSpacing: 2.2,
     textTransform: "uppercase",
     color: ACCENT,
-    marginBottom: 10,
-  },
-  name: { fontFamily: "Times-Roman", fontSize: 26, marginBottom: 8 },
-  title: { fontFamily: "Times-Italic", fontSize: 16, color: SLATE, marginBottom: 10 },
-  rule: { height: 1, backgroundColor: RULE, marginVertical: 12 },
-  h: { fontSize: 11, fontFamily: "Helvetica-Bold", marginBottom: 7, color: INK },
-  p: { fontSize: 10, lineHeight: 1.5, color: SLATE, marginBottom: 7 },
-  headline: { fontFamily: "Times-Italic", fontSize: 13, lineHeight: 1.35, marginBottom: 10 },
-  card: {
-    backgroundColor: WASH,
-    borderRadius: 6,
-    padding: 10,
     marginBottom: 8,
   },
-  monthTitle: { fontSize: 12, fontFamily: "Helvetica-Bold", marginBottom: 4 },
-  topicRow: { marginBottom: 3 },
-  topicName: {
+  name: { fontFamily: "Times-Roman", fontSize: 26, marginBottom: 4, lineHeight: 1.1 },
+  title: { fontFamily: "Times-Italic", fontSize: 16, color: SLATE, marginBottom: 8 },
+  rule: { height: 1, backgroundColor: RULE, marginVertical: 11 },
+  h: { fontSize: 10.5, fontFamily: "Helvetica-Bold", color: INK, marginBottom: 6 },
+  p: { fontSize: 9.5, lineHeight: 1.48, color: SLATE, marginBottom: 6 },
+  small: { fontSize: 8.5, lineHeight: 1.4, color: SLATE },
+  headline: { fontFamily: "Times-Italic", fontSize: 13, lineHeight: 1.35, marginBottom: 8 },
+  row: { flexDirection: "row", gap: 14 },
+  col: { flexGrow: 1, flexShrink: 1 },
+  step: { flexDirection: "row", gap: 8, marginBottom: 6, alignItems: "flex-start" },
+  stepN: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: ACCENT,
+    color: "#fff",
     fontSize: 8,
-    letterSpacing: 1,
-    color: ACCENT,
-    textTransform: "uppercase",
-    marginBottom: 1,
+    textAlign: "center",
+    paddingTop: 2,
   },
-  topicLine: { fontSize: 9, lineHeight: 1.4, color: SLATE },
-  wheelWrap: { alignItems: "center", marginVertical: 10 },
-  wheelCaption: { fontSize: 8, color: MUTED, marginTop: 6, textAlign: "center" },
-  barRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
-  barLabel: { width: 56, fontSize: 8, color: MUTED },
-  barTrack: { width: 280, height: 6, backgroundColor: "#EEF2FF", borderRadius: 3 },
-  barFill: { height: 6, backgroundColor: ACCENT, borderRadius: 3 },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    flexGrow: 1,
+  },
+  chipName: { fontSize: 9, fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  chipWhy: { fontSize: 8, lineHeight: 1.35 },
+  badge: {
+    fontSize: 7.5,
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  monthCard: {
+    borderWidth: 1,
+    borderColor: RULE,
+    borderRadius: 7,
+    padding: 10,
+    marginBottom: 8,
+    backgroundColor: WASH,
+  },
+  monthHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 5,
+  },
+  monthName: { fontFamily: "Times-Roman", fontSize: 13 },
+  ask: { fontSize: 9.5, lineHeight: 1.4, color: INK, marginBottom: 6 },
+  feat: { flexDirection: "row", gap: 6, marginBottom: 4, alignItems: "flex-start" },
+  featBar: { width: 3, height: 18, borderRadius: 1, marginTop: 1 },
+  featTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", marginBottom: 1 },
+  featLine: { fontSize: 8, color: SLATE, lineHeight: 1.3 },
+  pills: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 5 },
+  pill: {
+    fontSize: 7.5,
+    color: SLATE,
+    borderWidth: 1,
+    borderColor: RULE,
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    backgroundColor: "#fff",
+  },
+  barTrack: { height: 5, backgroundColor: "#E2E8F0", borderRadius: 3 },
+  barFill: { height: 5, borderRadius: 3 },
+  legendRow: { flexDirection: "row", gap: 8, marginTop: 10 },
+  legendItem: { flexGrow: 1, borderWidth: 1, borderRadius: 5, padding: 7 },
+  legendTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", marginBottom: 2 },
+  move: { flexDirection: "row", gap: 8, marginBottom: 5, alignItems: "flex-start" },
+  moveN: {
+    width: 12,
+    fontSize: 8,
+    fontFamily: "Helvetica-Bold",
+    color: ACCENT,
+    marginTop: 1,
+  },
 });
-
-function polar(cx: number, cy: number, r: number, deg: number) {
-  const rad = ((180 - deg) * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy - r * Math.sin(rad) };
-}
-
-function PdfWheel({ points, stroke }: { points: number[]; stroke: string }) {
-  const size = 200;
-  const cx = 100;
-  const cy = 100;
-  const outer = 92;
-  const inner = 34;
-  const ticks = Array.from({ length: 12 }, (_, i) => {
-    const a = i * 30;
-    const a0 = polar(cx, cy, outer - 2, a);
-    const a1 = polar(cx, cy, outer - 10, a);
-    return { x1: a0.x, y1: a0.y, x2: a1.x, y2: a1.y, key: a };
-  });
-  return (
-    <Svg width={size} height={size} viewBox="0 0 200 200">
-      <Circle cx={cx} cy={cy} r={outer} stroke={stroke} strokeWidth={1.4} fill="#F8FAFC" />
-      <Circle cx={cx} cy={cy} r={inner} stroke={ACCENT_SOFT} strokeWidth={1} fill="#FFFFFF" />
-      {ticks.map((tk) => (
-        <Line
-          key={tk.key}
-          x1={tk.x1}
-          y1={tk.y1}
-          x2={tk.x2}
-          y2={tk.y2}
-          stroke={ACCENT_SOFT}
-          strokeWidth={1}
-        />
-      ))}
-      {points.map((lon, i) => {
-        const p = polar(cx, cy, 62, lon);
-        return <Circle key={`${lon}-${i}`} cx={p.x} cy={p.y} r={3.2} fill={stroke} />;
-      })}
-      <Circle cx={cx} cy={cy} r={3} fill={stroke} />
-    </Svg>
-  );
-}
 
 function Chrome({
   content,
@@ -134,50 +189,212 @@ function Chrome({
   children: ReactNode;
 }) {
   const sample = Boolean(content.sample);
+  const en = content.lang === "en";
   return (
     <Page size="A4" style={s.page}>
       <Text style={s.brand}>
         {sample
-          ? `AstroEngine Pro · ${content.year} · ${content.lang === "en" ? "sample" : "ejemplo"}`
-          : `AstroEngine Pro · ${content.year}`}
+          ? `ASTROENGINE · ${content.year} · ${en ? "SAMPLE" : "EJEMPLO"}`
+          : `ASTROENGINE · ${content.year}`}
       </Text>
       {children}
       <View style={s.footer} fixed>
         <Text style={s.footerText}>
-          {content.lang === "en"
-            ? "A personal year map. Not a lab report."
-            : "Un mapa del año. No un informe de laboratorio."}
+          {en ? "A personal year map. Not a lab report." : "Un mapa del año. No un informe de laboratorio."}
         </Text>
         <Text style={s.footerText}>
-          {page} / {total}
+          {page}/{total}
         </Text>
       </View>
     </Page>
   );
 }
 
-function MonthCard({ month }: { month: YearMonthBlock }) {
+function ClimateBadge({ climate, label }: { climate: YearClimate; label: string }) {
   return (
-    <View style={s.card} wrap={false}>
-      <Text style={s.monthTitle}>{month.label}</Text>
-      <Text style={s.p}>{month.executive}</Text>
-      {month.topics.map((topic) => (
-        <View key={topic.id} style={s.topicRow}>
-          <Text style={s.topicName}>{topic.title}</Text>
-          <Text style={s.topicLine}>{topic.line}</Text>
-        </View>
-      ))}
+    <Text
+      style={[
+        s.badge,
+        { color: CLIMATE_INK[climate], backgroundColor: CLIMATE_BG[climate] },
+      ]}
+    >
+      {label}
+    </Text>
+  );
+}
+
+function IntensityBar({
+  value,
+  climate,
+  width,
+}: {
+  value: number;
+  climate: YearClimate;
+  width: number;
+}) {
+  const fill = Math.max(5, Math.min(width, (value / 10) * width));
+  return (
+    <View style={[s.barTrack, { width }]}>
+      <View style={[s.barFill, { width: fill, backgroundColor: CLIMATE_BAR[climate] }]} />
     </View>
   );
 }
 
+function LifeWheel({ wheel }: { wheel: YearMapWheel }) {
+  const cx = 118;
+  const cy = 118;
+  const toAngle = makeToAngle(wheel.ascLongitude);
+  const zones = [...wheel.zones].sort((a, b) => a.house - b.house);
+  return (
+    <Svg width={236} height={236} viewBox="0 0 236 236">
+      <Circle cx={cx} cy={cy} r={114} fill="#F8FAFC" />
+      {zones.map((z, i) => {
+        const next = zones[(i + 1) % zones.length];
+        const start = toAngle(z.cuspLongitude);
+        let end = toAngle(next.cuspLongitude);
+        if (end <= start) end += 360;
+        const mid = start + (end - start) / 2;
+        const labelPt = polarXY(cx, cy, 100, mid);
+        return (
+          <G key={z.house}>
+            <Path
+              d={describeSector(cx, cy, 62, 92, start, end)}
+              fill={z.color}
+              fillOpacity={0.22}
+              stroke={z.color}
+              strokeWidth={0.7}
+            />
+            <Text
+              x={labelPt.x}
+              y={labelPt.y + 2}
+              style={{
+                fontSize: 5.4,
+                fill: "#334155",
+                textAnchor: "middle",
+                fontFamily: "Helvetica",
+              }}
+            >
+              {z.label}
+            </Text>
+          </G>
+        );
+      })}
+      <Circle cx={cx} cy={cy} r={62} fill="#FFFEFB" stroke="#E2E8F0" strokeWidth={0.8} />
+      {wheel.dots.map((d, i) => {
+        const pt = polarXY(cx, cy, 48, toAngle(d.longitude));
+        return (
+          <Circle key={`${d.role}-${i}`} cx={pt.x} cy={pt.y} r={3} fill={d.color} />
+        );
+      })}
+      <Circle cx={cx} cy={cy} r={10} fill="#4F46E5" fillOpacity={0.12} />
+      <Circle cx={cx} cy={cy} r={3.2} fill={ACCENT} />
+    </Svg>
+  );
+}
+
+function YearClimateWheel({ months, year }: { months: YearMonthBlock[]; year: number }) {
+  const cx = 118;
+  const cy = 118;
+  return (
+    <Svg width={236} height={236} viewBox="0 0 236 236">
+      <Circle cx={cx} cy={cy} r={114} fill="#F8FAFC" />
+      {months.map((m, i) => {
+        const start = i * 30;
+        const end = start + 30;
+        const inner = 50;
+        const outer = 70 + (m.intensity / 10) * 26;
+        const labelPt = polarXY(cx, cy, 108, start + 15);
+        return (
+          <G key={m.key}>
+            <Path
+              d={describeSector(cx, cy, inner, outer, start, end)}
+              fill={CLIMATE_BAR[m.climate]}
+              fillOpacity={0.88}
+              stroke="#FFFEFB"
+              strokeWidth={1}
+            />
+            <Text
+              x={labelPt.x}
+              y={labelPt.y + 2}
+              style={{
+                fontSize: 6.2,
+                fill: "#475569",
+                textAnchor: "middle",
+                fontFamily: "Helvetica-Bold",
+              }}
+            >
+              {m.shortLabel}
+            </Text>
+          </G>
+        );
+      })}
+      <Circle cx={cx} cy={cy} r={46} fill="#FFFEFB" />
+      <Text
+        x={cx}
+        y={cy + 3}
+        style={{
+          fontSize: 9,
+          fill: ACCENT,
+          textAnchor: "middle",
+          fontFamily: "Helvetica-Bold",
+        }}
+      >
+        {String(year)}
+      </Text>
+    </Svg>
+  );
+}
+
+function MonthCard({ month }: { month: YearMonthBlock }) {
+  const featured = month.featured?.length ? month.featured : month.topics.slice(0, 2);
+  const rest = month.rest?.length ? month.rest : month.topics.slice(2);
+  return (
+    <View style={s.monthCard} wrap={false}>
+      <View style={s.monthHead}>
+        <Text style={s.monthName}>{month.label}</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+          <IntensityBar value={month.intensity} climate={month.climate} width={72} />
+          <ClimateBadge climate={month.climate} label={month.climateLabel} />
+        </View>
+      </View>
+      <Text style={s.ask}>{month.executive}</Text>
+      {featured.map((f) => (
+        <View key={f.id} style={s.feat}>
+          <View style={[s.featBar, { backgroundColor: TOPIC_COLOR[f.id] ?? ACCENT }]} />
+          <View style={{ flexGrow: 1 }}>
+            <Text style={s.featTitle}>{f.title}</Text>
+            <Text style={s.featLine}>{f.line}</Text>
+          </View>
+        </View>
+      ))}
+      <View style={s.pills}>
+        {rest.map((r) => (
+          <Text key={r.id} style={s.pill}>
+            {r.title}: {r.feel ?? r.line}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+const TOTAL = 9;
+
 export default function ProYearDocument({ content }: { content: YearMapContent }) {
-  const pairs: YearMonthBlock[][] = [];
-  for (let i = 0; i < content.months.length; i += 2) {
-    pairs.push(content.months.slice(i, i + 2));
-  }
-  const total = 4 + pairs.length;
   const en = content.lang === "en";
+  const chunks = [
+    content.months.slice(0, 3),
+    content.months.slice(3, 6),
+    content.months.slice(6, 9),
+    content.months.slice(9, 12),
+  ];
+  const roles = content.natalWheel.dots.filter(
+    (d, i, arr) => arr.findIndex((x) => x.role === d.role) === i
+  );
+  const howTo = content.howTo ?? [];
+  const keyMonths = content.keyMonths ?? [];
+  const legend = content.climateLegend ?? [];
+  const moves = content.forecast.moves ?? [];
 
   return (
     <Document
@@ -186,112 +403,193 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
       subject={en ? "Personal year map" : "Mapa personal del año"}
       language={en ? "en" : "es"}
     >
-      <Chrome content={content} page={1} total={total}>
-        <View style={{ marginTop: 28 }}>
-          <Text style={s.kicker}>{en ? "Your year map" : "Tu mapa del año"}</Text>
+      <Chrome content={content} page={1} total={TOTAL}>
+        <View style={{ marginTop: 40 }}>
+          <Text style={s.kicker}>{en ? "YEAR MAP · PRO" : "MAPA DEL AÑO · PRO"}</Text>
           <Text style={s.name}>{content.name}</Text>
-          <Text style={s.title}>{content.year}</Text>
-          <View style={s.rule} />
-          <Text style={s.headline}>{content.natal.headline}</Text>
+          <Text style={s.title}>
+            {en ? `Your map of ${content.year}` : `Tu mapa de ${content.year}`}
+          </Text>
           <Text style={s.p}>
             {en
-              ? "Your chart. Who you are. How this year wants to feel. Twelve months, six life areas. Written so you can use it — not decode it."
-              : "Tu carta. Quién eres. Cómo quiere sentirse este año. Doce meses, seis áreas. Escrito para usarlo — no para descifrarlo."}
+              ? "This is not a report. It is a year operating system: climate, key months, and what each area asks — in language you can use."
+              : "Esto no es un informe. Es un sistema operativo del año: clima, meses clave y lo que pide cada área — en lenguaje que se puede usar."}
           </Text>
           {content.sample && (
-            <Text style={s.p}>
-              {en
-                ? "This is a sample. Your Pro uses your sky."
-                : "Esto es un ejemplo. Tu Pro usa tu cielo."}
+            <Text style={s.small}>
+              {en ? "This is a sample. Your Pro uses your sky." : "Esto es un ejemplo. Tu Pro usa tu cielo."}
             </Text>
           )}
         </View>
-      </Chrome>
-
-      <Chrome content={content} page={2} total={total}>
-        <View style={{ marginTop: 12 }}>
-          <Text style={s.kicker}>{en ? "Your chart · who you are" : "Tu carta · quién eres"}</Text>
-          <View style={s.wheelWrap}>
-            <PdfWheel points={content.natalPoints} stroke={ACCENT} />
-            <Text style={s.wheelCaption}>
-              {en ? "Your natal chart" : "Tu carta natal"}
-            </Text>
+        <View style={s.rule} />
+        <Text style={s.h}>{en ? "How to use this map" : "Cómo usar este mapa"}</Text>
+        {howTo.map((step, i) => (
+          <View key={step} style={s.step}>
+            <Text style={s.stepN}>{i + 1}</Text>
+            <Text style={[s.p, { marginBottom: 0, flexGrow: 1 }]}>{step}</Text>
           </View>
-          <Text style={s.headline}>{content.natal.headline}</Text>
-          <Text style={s.p}>{content.natal.identity}</Text>
-          <Text style={s.p}>{content.natal.emotion}</Text>
-          <Text style={s.p}>{content.natal.purpose}</Text>
-          <View style={s.rule} />
-          <Text style={s.h}>{en ? "To lean on" : "En qué apoyarte"}</Text>
-          {content.natal.strengths.map((line) => (
-            <Text key={line} style={s.p}>
-              · {line}
-            </Text>
-          ))}
-          <Text style={s.h}>{en ? "To practice" : "Dónde practicar"}</Text>
-          {content.natal.challenges.map((line) => (
-            <Text key={line} style={s.p}>
-              · {line}
-            </Text>
-          ))}
-          <Text style={s.p}>{content.natal.advice}</Text>
-        </View>
-      </Chrome>
-
-      <Chrome content={content} page={3} total={total}>
+        ))}
         <View style={{ marginTop: 12 }}>
-          <Text style={s.kicker}>{en ? "The tone of this year" : "El tono de este año"}</Text>
-          <View style={s.wheelWrap}>
-            <PdfWheel points={content.solarPoints} stroke="#0F766E" />
-            <Text style={s.wheelCaption}>
-              {en ? "This year's chart" : "La carta de este año"}
-            </Text>
-          </View>
-          <Text style={s.headline}>{content.solar.headline}</Text>
-          <Text style={s.p}>{content.solar.body}</Text>
-          <Text style={s.p}>{content.solar.publicMark}</Text>
-          <View style={s.rule} />
-          <Text style={s.h}>{content.yearPulse.headline}</Text>
-          <Text style={s.p}>{content.yearPulse.body}</Text>
-          <View style={{ marginTop: 8 }}>
-            {content.months.map((m) => (
-              <View key={m.key} style={s.barRow}>
-                <Text style={s.barLabel}>{m.label}</Text>
-                <View style={s.barTrack}>
-                  <View style={[s.barFill, { width: Math.round((m.intensity / 10) * 280) }]} />
-                </View>
+          <Text style={s.h}>{en ? "Key months" : "Meses clave"}</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {keyMonths.map((k) => (
+              <View
+                key={k.key}
+                style={[
+                  s.chip,
+                  { borderColor: CLIMATE_BAR[k.climate], backgroundColor: CLIMATE_BG[k.climate] },
+                ]}
+              >
+                <Text style={[s.chipName, { color: CLIMATE_INK[k.climate] }]}>{k.label}</Text>
+                <Text style={[s.chipWhy, { color: CLIMATE_INK[k.climate] }]}>
+                  {k.climateLabel} · {k.executive}
+                </Text>
               </View>
             ))}
           </View>
         </View>
-      </Chrome>
-
-      <Chrome content={content} page={4} total={total}>
-        <View style={{ marginTop: 12 }}>
-          <Text style={s.kicker}>{en ? "From here to December" : "De aquí a diciembre"}</Text>
-          <Text style={s.headline}>{content.forecast.headline}</Text>
-          <Text style={s.p}>{content.forecast.body}</Text>
-          <View style={s.rule} />
-          {content.forecast.remaining.map((m) => (
-            <Text key={m.key} style={s.p}>
-              {m.label} — {m.executive}
-            </Text>
+        <View style={s.legendRow}>
+          {legend.map((c) => (
+            <View
+              key={c.climate}
+              style={[
+                s.legendItem,
+                { borderColor: CLIMATE_BAR[c.climate], backgroundColor: CLIMATE_BG[c.climate] },
+              ]}
+            >
+              <Text style={[s.legendTitle, { color: CLIMATE_INK[c.climate] }]}>{c.label}</Text>
+              <Text style={[s.small, { color: CLIMATE_INK[c.climate] }]}>{c.hint}</Text>
+            </View>
           ))}
         </View>
       </Chrome>
 
-      {pairs.map((pair, idx) => (
-        <Chrome key={pair[0].key} content={content} page={5 + idx} total={total}>
-          <View style={{ marginTop: 12 }}>
-            <Text style={s.kicker}>
-              {en ? "Month by month · six areas" : "Mes a mes · seis áreas"}
-            </Text>
-            {pair.map((month) => (
-              <MonthCard key={month.key} month={month} />
-            ))}
+      <Chrome content={content} page={2} total={TOTAL}>
+        <Text style={s.kicker}>{en ? "Who you are" : "Quién eres"}</Text>
+        <View style={s.row}>
+          <View style={{ width: 236 }}>
+            <LifeWheel wheel={content.natalWheel} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 8 }}>
+              {roles.slice(0, 8).map((d) => (
+                <View key={d.role} style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: d.color }} />
+                  <Text style={{ fontSize: 7, color: SLATE }}>{d.role}</Text>
+                </View>
+              ))}
+            </View>
           </View>
+          <View style={s.col}>
+            <Text style={s.headline}>{content.natal.headline}</Text>
+            <Text style={s.p}>{content.natal.identity}</Text>
+            <Text style={s.p}>{content.natal.emotion}</Text>
+            <Text style={s.p}>{content.natal.purpose}</Text>
+            <Text style={s.small}>{content.natal.emphasis}</Text>
+          </View>
+        </View>
+        <View style={s.rule} />
+        <Text style={s.h}>{en ? "What you already have" : "Lo que ya tienes"}</Text>
+        {content.natal.strengths.map((line) => (
+          <Text key={line} style={s.p}>
+            ·  {line}
+          </Text>
+        ))}
+      </Chrome>
+
+      <Chrome content={content} page={3} total={TOTAL}>
+        <Text style={s.kicker}>{en ? "Climate of the year" : "Clima del año"}</Text>
+        <View style={s.row}>
+          <View style={{ width: 236 }}>
+            <YearClimateWheel months={content.months} year={content.year} />
+          </View>
+          <View style={s.col}>
+            <Text style={s.headline}>{content.solar.headline}</Text>
+            <Text style={s.p}>{content.solar.body}</Text>
+            <Text style={s.p}>{content.solar.publicMark}</Text>
+            <Text style={[s.h, { marginTop: 6 }]}>{content.yearPulse.headline}</Text>
+            <Text style={s.p}>{content.yearPulse.body}</Text>
+          </View>
+        </View>
+        <View style={{ marginTop: 10 }}>
+          {content.months.map((m) => (
+            <View key={m.key} style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+              <Text style={{ width: 28, fontSize: 7.5, color: MUTED }}>{m.shortLabel}</Text>
+              <IntensityBar value={m.intensity} climate={m.climate} width={360} />
+            </View>
+          ))}
+        </View>
+      </Chrome>
+
+      <Chrome content={content} page={4} total={TOTAL}>
+        <Text style={s.kicker}>{en ? "From now to December" : "De ahora a diciembre"}</Text>
+        <Text style={[s.headline, { fontSize: 16 }]}>{content.forecast.headline}</Text>
+        <Text style={[s.p, { fontSize: 11, lineHeight: 1.5 }]}>{content.forecast.body}</Text>
+        <View style={s.rule} />
+        <Text style={s.h}>{en ? "Three moves" : "Tres movimientos"}</Text>
+        {moves.map((mv, i) => (
+          <View key={mv} style={s.move}>
+            <Text style={s.moveN}>{i + 1}.</Text>
+            <Text style={[s.p, { marginBottom: 0, flexGrow: 1 }]}>{mv}</Text>
+          </View>
+        ))}
+        <View style={{ marginTop: 14 }}>
+          <Text style={s.h}>{en ? "Hold these months" : "Quédate con estos meses"}</Text>
+          {keyMonths.map((k) => (
+            <View
+              key={k.key}
+              style={[
+                s.monthCard,
+                { backgroundColor: CLIMATE_BG[k.climate], borderColor: CLIMATE_BAR[k.climate] },
+              ]}
+            >
+              <View style={s.monthHead}>
+                <Text style={s.monthName}>{k.label}</Text>
+                <ClimateBadge climate={k.climate} label={k.climateLabel} />
+              </View>
+              <Text style={s.ask}>{k.executive}</Text>
+            </View>
+          ))}
+        </View>
+      </Chrome>
+
+      {chunks.map((group, gi) => (
+        <Chrome key={gi} content={content} page={5 + gi} total={TOTAL}>
+          <Text style={s.kicker}>
+            {en
+              ? `Month cards · ${group[0]?.shortLabel}–${group[group.length - 1]?.shortLabel}`
+              : `Fichas del mes · ${group[0]?.shortLabel}–${group[group.length - 1]?.shortLabel}`}
+          </Text>
+          <Text style={[s.small, { marginBottom: 8 }]}>
+            {en
+              ? "Read the ask first. Featured areas get a line. The rest is climate, not homework."
+              : "Lee primero lo que pide el mes. Las áreas destacadas llevan una línea. El resto es clima, no tarea."}
+          </Text>
+          {group.map((month) => (
+            <MonthCard key={month.key} month={month} />
+          ))}
         </Chrome>
       ))}
+
+      <Chrome content={content} page={9} total={TOTAL}>
+        <View style={{ marginTop: 48 }}>
+          <Text style={s.kicker}>{en ? "KEEP THIS MAP" : "QUÉDATE CON ESTE MAPA"}</Text>
+          <Text style={{ fontFamily: "Times-Roman", fontSize: 22, lineHeight: 1.2, marginBottom: 12 }}>
+            {en
+              ? "Print it, or open it on the first of each month."
+              : "Imprímelo, o ábrelo el día uno de cada mes."}
+          </Text>
+          <Text style={[s.p, { fontSize: 11, lineHeight: 1.5, maxWidth: 420 }]}>
+            {en
+              ? "The value is not reading it once. The value is returning when the month starts and doing one thing the card asks."
+              : "El valor no es leerlo una vez. El valor es volver cuando empieza el mes y hacer una cosa que pide la ficha."}
+          </Text>
+          <View style={s.rule} />
+          <Text style={s.p}>
+            {en
+              ? "Your chart stays at astro-engineering.vercel.app — never lose the year by going home empty."
+              : "Tu carta sigue en astro-engineering.vercel.app — no pierdas el año yendo a una home vacía."}
+          </Text>
+        </View>
+      </Chrome>
     </Document>
   );
 }
