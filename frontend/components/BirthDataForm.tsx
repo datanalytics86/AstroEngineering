@@ -222,15 +222,15 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full bg-white border rounded-xl px-4 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-          open ? "border-blue-500" : "border-border hover:border-slate-300"
-        } ${value ? "text-slate-900" : "text-slate-400"} font-mono`}
+        className={`w-full bg-card border rounded-xl px-4 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
+          open ? "border-blue-500" : "border-border hover:border-[var(--line-strong)]"
+        } ${value ? "text-ink" : "text-ink-3"} font-mono`}
       >
         {value ? formatDisplay(value) : "Selecciona fecha"}
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1.5 bg-white border border-border rounded-2xl shadow-card-md p-3 w-72">
+        <div className="absolute z-50 mt-1.5 bg-card border border-border rounded-2xl shadow-card-md p-3 w-72">
           {/* Header de navegación */}
           <div className="flex items-center justify-between mb-2 gap-1">
             <button
@@ -245,13 +245,13 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                   setViewYear((y) => y - 10);
                 }
               }}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 text-sm"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-2 hover:bg-elev text-sm"
             >‹</button>
 
             <button
               type="button"
               onClick={() => setMode(mode === "day" ? "month" : mode === "month" ? "year" : "year")}
-              className="flex-1 text-center text-sm font-semibold text-slate-800 hover:text-blue-600 transition-colors px-2 py-1 rounded-lg hover:bg-slate-50"
+              className="flex-1 text-center text-sm font-semibold text-ink hover:text-blue-600 transition-colors px-2 py-1 rounded-lg hover:bg-elev"
             >
               {mode === "day"
                 ? `${MONTHS_ES[viewMonth]} ${viewYear}`
@@ -272,7 +272,7 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                   setViewYear((y) => y + 10);
                 }
               }}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 text-sm"
+              className="w-8 h-8 flex items-center justify-center rounded-lg text-ink-2 hover:bg-elev text-sm"
             >›</button>
           </div>
 
@@ -281,7 +281,7 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
             <>
               <div className="grid grid-cols-7 mb-1">
                 {["Lu","Ma","Mi","Ju","Vi","Sá","Do"].map((d) => (
-                  <div key={d} className="text-center text-xs text-slate-400 py-1 font-mono">{d}</div>
+                  <div key={d} className="text-center text-xs text-ink-3 py-1 font-mono">{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-y-0.5">
@@ -298,10 +298,10 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                       onClick={() => selectDay(day)}
                       className={`h-8 w-full rounded-lg text-xs font-mono transition-colors ${
                         selected
-                          ? "bg-blue-600 text-white font-semibold"
+                          ? "bg-[var(--ember)] text-[var(--bg)] font-semibold"
                           : disabled
-                            ? "text-slate-300 cursor-not-allowed"
-                            : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                            ? "text-ink-3 cursor-not-allowed"
+                            : "text-ink-2 hover:bg-[var(--accent-soft)] hover:text-ink"
                       }`}
                     >
                       {day}
@@ -322,8 +322,8 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                   onClick={() => { setViewMonth(i); setMode("day"); }}
                   className={`py-2 rounded-xl text-xs font-mono transition-colors ${
                     i === viewMonth
-                      ? "bg-blue-600 text-white font-semibold"
-                      : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                      ? "bg-[var(--ember)] text-[var(--bg)] font-semibold"
+                      : "text-ink-2 hover:bg-[var(--accent-soft)] hover:text-ink"
                   }`}
                 >
                   {m.slice(0, 3)}
@@ -343,10 +343,10 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                   onClick={() => { setViewYear(y); setMode("month"); }}
                   className={`py-2 rounded-xl text-xs font-mono transition-colors ${
                     y === viewYear
-                      ? "bg-blue-600 text-white font-semibold"
+                      ? "bg-[var(--ember)] text-[var(--bg)] font-semibold"
                       : y > today.getFullYear() || y < 1900
-                        ? "text-slate-300 cursor-not-allowed"
-                        : "text-slate-700 hover:bg-blue-50 hover:text-blue-700"
+                        ? "text-ink-3 cursor-not-allowed"
+                        : "text-ink-2 hover:bg-[var(--accent-soft)] hover:text-ink"
                   }`}
                 >
                   {y}
@@ -377,10 +377,10 @@ function TimePicker({ value, onChange, disabled }: TimePickerProps) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-mono text-slate-900
+      className={`w-full bg-card border rounded-xl px-4 py-2.5 text-sm font-mono text-ink
         focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
         border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed
-        hover:border-slate-300`}
+        hover:border-[var(--line-strong)]`}
     />
   );
 }
@@ -634,10 +634,10 @@ export default function BirthDataForm({
     return <span className="text-emerald-500 text-xs ml-1.5">✓</span>;
   }
 
-  const labelClass = "block text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5";
-  const inputClass = `w-full bg-white border border-border rounded-xl px-4 py-2.5 text-sm text-slate-900
+  const labelClass = "block text-xs font-semibold uppercase tracking-widest text-ink-2 mb-1.5";
+  const inputClass = `w-full bg-card border border-border rounded-xl px-4 py-2.5 text-sm text-ink
     placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
-    transition-colors font-mono hover:border-slate-300`;
+    transition-colors font-mono hover:border-[var(--line-strong)]`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -705,34 +705,34 @@ export default function BirthDataForm({
           className={inputClass}
         />
         {showDropdown && geoResults.length > 0 && (
-          <div className="absolute z-10 w-full mt-1.5 bg-white border border-border rounded-xl shadow-card-md overflow-hidden">
+          <div className="absolute z-10 w-full mt-1.5 bg-card border border-border rounded-xl shadow-card-md overflow-hidden">
             {geoResults.map((r, i) => (
               <button
                 key={i} type="button"
                 onClick={() => selectCity(r)}
                 className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-border last:border-0"
               >
-                <span className="text-sm text-slate-700 font-mono block truncate">
+                <span className="text-sm text-ink-2 font-mono block truncate">
                   {formatCityLabel(r.display_name, r.address)}
                 </span>
               </button>
             ))}
           </div>
         )}
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-ink-3">
           {t("form.city_hint")}
         </p>
       </div>
 
       <details className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2">
-        <summary className="text-xs text-slate-500 cursor-pointer min-h-[44px] flex items-center">
+        <summary className="text-xs text-ink-2 cursor-pointer min-h-[44px] flex items-center">
           {t("form.advanced")}
         </summary>
         <div className="pt-3 space-y-3">
       {/* Coordenadas */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-slate-400 mb-1">{t("form.lat")}</label>
+          <label className="block text-xs text-ink-3 mb-1">{t("form.lat")}</label>
           <input
             type="number" name="latitude" value={form.latitude} onChange={handleChange}
             step="0.0001" min="-90" max="90" placeholder="-33.4489" required
@@ -740,7 +740,7 @@ export default function BirthDataForm({
           />
         </div>
         <div>
-          <label className="block text-xs text-slate-400 mb-1">{t("form.lng")}</label>
+          <label className="block text-xs text-ink-3 mb-1">{t("form.lng")}</label>
           <input
             type="number" name="longitude" value={form.longitude} onChange={handleChange}
             step="0.0001" min="-180" max="180" placeholder="-70.6693" required
@@ -755,11 +755,11 @@ export default function BirthDataForm({
         {tzLabel ? (
           <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
             <span className="text-emerald-500 text-xs">✓</span>
-            <span className="font-mono text-slate-700 text-xs">{tzLabel}</span>
+            <span className="font-mono text-ink-2 text-xs">{tzLabel}</span>
             <button
               type="button"
               onClick={() => setTzLabel(null)}
-              className="ml-auto text-xs text-slate-400 hover:text-slate-600"
+              className="ml-auto text-xs text-ink-3 hover:text-slate-600"
             >
               ajustar
             </button>
@@ -788,8 +788,8 @@ export default function BirthDataForm({
         type="submit" disabled={loading || !allValid}
         className={`w-full font-semibold py-3.5 rounded-xl transition-all text-sm flex items-center justify-center gap-2 ${
           allValid
-            ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
-            : "bg-slate-100 text-slate-400 cursor-not-allowed"
+            ? "bg-[var(--ember)] hover:brightness-110 text-[var(--bg)]"
+            : "bg-elev text-ink-3 cursor-not-allowed"
         }`}
       >
         {loading ? (
@@ -802,7 +802,7 @@ export default function BirthDataForm({
         )}
       </button>
 
-      <p className="text-[11px] text-slate-400 text-center leading-relaxed">
+      <p className="text-[11px] text-ink-3 text-center leading-relaxed">
         {t("form.privacy_note")}{" "}
         <a href="/privacidad" className="underline hover:text-blue-600">
           {t("footer.privacy")}
@@ -814,7 +814,7 @@ export default function BirthDataForm({
         <button
           type="button"
           onClick={loadDemo}
-          className="text-xs text-slate-400 hover:text-blue-600 hover:underline transition-colors"
+          className="text-xs text-ink-3 hover:text-blue-600 hover:underline transition-colors"
         >
           {t("form.demo")}
         </button>

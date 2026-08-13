@@ -5,6 +5,8 @@ export const es = {
   "nav.learn": "Aprende",
   "nav.menu_open": "Abrir menú",
   "nav.menu_close": "Cerrar menú",
+  "theme.to_light": "Cambiar a modo claro",
+  "theme.to_dark": "Cambiar a modo oscuro",
 
   // ── Común ──
   "common.error.waking": "Estamos calculando tu cielo. La primera vez del día tarda un poco. No cierres.",

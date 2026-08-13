@@ -6,13 +6,13 @@ export default function LangToggle() {
   const { lang, setLang } = useT();
 
   return (
-    <div className="flex items-center gap-1 text-xs font-mono border border-border rounded-lg overflow-hidden">
+    <div className="flex items-center gap-1 text-xs font-mono border border-border rounded-[var(--r-sm)] overflow-hidden">
       <button
         onClick={() => setLang("es")}
         className={`px-2.5 py-1 transition-colors ${
           lang === "es"
-            ? "bg-blue-600 text-white"
-            : "text-slate-400 hover:text-slate-700"
+            ? "bg-[var(--ember)] text-[var(--bg)]"
+            : "text-ink-3 hover:text-ink"
         }`}
       >
         ES
@@ -21,8 +21,8 @@ export default function LangToggle() {
         onClick={() => setLang("en")}
         className={`px-2.5 py-1 transition-colors ${
           lang === "en"
-            ? "bg-blue-600 text-white"
-            : "text-slate-400 hover:text-slate-700"
+            ? "bg-[var(--ember)] text-[var(--bg)]"
+            : "text-ink-3 hover:text-ink"
         }`}
       >
         EN

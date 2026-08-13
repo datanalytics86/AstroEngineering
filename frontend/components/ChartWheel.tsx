@@ -29,34 +29,39 @@ const R_ASPECT     = 88;
 const R_CENTER     = 22;
 
 // ── Design tokens (Agente 1) ─────────────────────────────────────────────────
-const EL_GLYPH = ["#BE123C", "#047857", "#B45309", "#1D4ED8"] as const;
+const EL_GLYPH = [
+  "var(--wheel-glyph-fire)",
+  "var(--wheel-glyph-earth)",
+  "var(--wheel-glyph-air)",
+  "var(--wheel-glyph-water)",
+] as const;
 
 const PLANET_COLOR: Record<string, string> = {
-  Sol:          "#D97706",
-  Luna:         "#64748B",
-  Mercurio:     "#4F46E5",
-  Venus:        "#DB2777",
-  Marte:        "#E11D48",
-  Júpiter:      "#059669",
-  Saturno:      "#6D28D9",
-  Urano:        "#0891B2",
-  Neptuno:      "#2563EB",
-  Plutón:       "#6B21A8",
-  "Nodo Norte": "#64748B",
-  Quirón:       "#7C3AED",
+  Sol:          "var(--ember)",
+  Luna:         "var(--ink)",
+  Mercurio:     "var(--accent)",
+  Venus:        "var(--wheel-glyph-fire)",
+  Marte:        "var(--ember)",
+  Júpiter:      "var(--wheel-glyph-earth)",
+  Saturno:      "var(--ink-2)",
+  Urano:        "var(--accent)",
+  Neptuno:      "var(--wheel-hair-mid)",
+  Plutón:       "var(--wheel-hair-outer)",
+  "Nodo Norte": "var(--ink-2)",
+  Quirón:       "var(--accent-2)",
 };
 
 const LUMINARY = new Set(["Sol", "Luna"]);
 
 const ASPECT_LINE_COLOR: Record<string, string> = {
-  Conjunción:       "#334155",
-  Oposición:        "#DC2626",
-  Cuadratura:       "#EA580C",
-  Trígono:          "#2563EB",
-  Sextil:           "#059669",
-  Quincuncio:       "#7C3AED",
-  Sesquicuadratura: "#D97706",
-  "Semi-sextil":    "#0891B2",
+  Conjunción:       "var(--ink-2)",
+  Oposición:        "var(--ember)",
+  Cuadratura:       "var(--accent-2)",
+  Trígono:          "var(--accent)",
+  Sextil:           "var(--ok)",
+  Quincuncio:       "var(--ink-3)",
+  Sesquicuadratura: "var(--ember)",
+  "Semi-sextil":    "var(--accent)",
 };
 
 const ASPECT_LINE_WIDTH: Record<string, number> = {
@@ -174,10 +179,10 @@ export default function ChartWheel({
 
   const anglePoints = useMemo(() => (
     [
-      ascendant ? { lon: ascendant.longitude,               label: "ASC", color: "#2563EB", obj: ascendant } : null,
-      ascendant ? { lon: (ascendant.longitude + 180) % 360, label: "DSC", color: "#64748B", obj: ascendant } : null,
-      midheaven ? { lon: midheaven.longitude,               label: "MC",  color: "#0F766E", obj: midheaven } : null,
-      midheaven ? { lon: (midheaven.longitude + 180) % 360, label: "IC",  color: "#64748B", obj: midheaven } : null,
+      ascendant ? { lon: ascendant.longitude,               label: "ASC", color: "var(--ember)", obj: ascendant } : null,
+      ascendant ? { lon: (ascendant.longitude + 180) % 360, label: "DSC", color: "var(--ink-3)", obj: ascendant } : null,
+      midheaven ? { lon: midheaven.longitude,               label: "MC",  color: "var(--accent)", obj: midheaven } : null,
+      midheaven ? { lon: (midheaven.longitude + 180) % 360, label: "IC",  color: "var(--ink-3)", obj: midheaven } : null,
     ] as Array<{ lon: number; label: string; color: string; obj: AnglePoint } | null>
   ).filter((x): x is { lon: number; label: string; color: string; obj: AnglePoint } => x !== null),
   [ascendant, midheaven]);
@@ -195,32 +200,37 @@ export default function ChartWheel({
       >
         <defs>
           <radialGradient id={`${uid}-sky`} cx="50%" cy="42%" r="68%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="58%" stopColor="#F8FAFC" />
-            <stop offset="100%" stopColor="#EEF2FF" />
+            <stop offset="0%" stopColor="var(--wheel-sky-0)" />
+            <stop offset="58%" stopColor="var(--wheel-sky-1)" />
+            <stop offset="100%" stopColor="var(--wheel-sky-2)" />
           </radialGradient>
           <radialGradient id={`${uid}-inner`} cx="50%" cy="50%" r="70%">
-            <stop offset="0%" stopColor="#FFFFFF" />
-            <stop offset="100%" stopColor="#F1F5F9" />
+            <stop offset="0%" stopColor="var(--wheel-inner-0)" />
+            <stop offset="100%" stopColor="var(--wheel-inner-1)" />
           </radialGradient>
           <radialGradient id={`${uid}-fire`} cx="50%" cy="50%" r="100%">
-            <stop offset="0%" stopColor="#FFF7F7" />
-            <stop offset="100%" stopColor="#FECDD3" />
+            <stop offset="0%" stopColor="var(--wheel-fire-0)" />
+            <stop offset="100%" stopColor="var(--wheel-fire-1)" />
           </radialGradient>
           <radialGradient id={`${uid}-earth`} cx="50%" cy="50%" r="100%">
-            <stop offset="0%" stopColor="#F7FDF9" />
-            <stop offset="100%" stopColor="#A7F3D0" />
+            <stop offset="0%" stopColor="var(--wheel-earth-0)" />
+            <stop offset="100%" stopColor="var(--wheel-earth-1)" />
           </radialGradient>
           <radialGradient id={`${uid}-air`} cx="50%" cy="50%" r="100%">
-            <stop offset="0%" stopColor="#FFFDF5" />
-            <stop offset="100%" stopColor="#FDE68A" />
+            <stop offset="0%" stopColor="var(--wheel-air-0)" />
+            <stop offset="100%" stopColor="var(--wheel-air-1)" />
           </radialGradient>
           <radialGradient id={`${uid}-water`} cx="50%" cy="50%" r="100%">
-            <stop offset="0%" stopColor="#F8FBFF" />
-            <stop offset="100%" stopColor="#BFDBFE" />
+            <stop offset="0%" stopColor="var(--wheel-water-0)" />
+            <stop offset="100%" stopColor="var(--wheel-water-1)" />
           </radialGradient>
+          <filter id={`${uid}-grain`} x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n" />
+            <feColorMatrix type="saturate" values="0" in="n" result="g" />
+            <feBlend in="SourceGraphic" in2="g" mode="overlay" />
+          </filter>
           <filter id={`${uid}-disc-shadow`} x="-20%" y="-20%" width="140%" height="140%">
-            <feDropShadow dx="0" dy="1.2" stdDeviation="2.4" floodColor="#0F172A" floodOpacity="0.10" />
+            <feDropShadow dx="0" dy="2" stdDeviation="3.2" floodColor="#05070c" floodOpacity="0.45" />
           </filter>
           <filter id={`${uid}-glow-sun`} x="-90%" y="-90%" width="280%" height="280%">
             <feGaussianBlur stdDeviation="3.4" result="b" />
@@ -264,7 +274,7 @@ export default function ChartWheel({
               <path
                 d={describeSector(cx, cy, R_ZODIAC_IN, R_ZODIAC_OUT, startDeg, endDeg)}
                 fill={`url(#${uid}-${el})`}
-                stroke="#E2E8F0"
+                stroke="var(--line)"
                 strokeWidth={0.35}
               />
               <text
@@ -290,7 +300,7 @@ export default function ChartWheel({
             <line
               key={`div-${i}`}
               x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-              stroke="#94A3B8" strokeWidth={0.55} opacity={0.7}
+              stroke="var(--wheel-tick)" strokeWidth={0.55} opacity={0.55}
             />
           );
         })}
@@ -308,21 +318,21 @@ export default function ChartWheel({
             <line
               key={`tick-${i}`}
               x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-              stroke="#94A3B8"
+              stroke="var(--wheel-tick)"
               strokeWidth={isMajor ? 0.7 : 0.35}
               opacity={isMajor ? 0.75 : 0.45}
             />
           );
         })}
 
-        <circle cx={cx} cy={cy} r={R_ZODIAC_OUT} fill="none" stroke="#C7D2FE" strokeWidth={2.2} />
-        <circle cx={cx} cy={cy} r={R_ZODIAC_OUT - 2.4} fill="none" stroke="#94A3B8" strokeWidth={0.7} />
-        <circle cx={cx} cy={cy} r={R_ZODIAC_IN} fill="none" stroke="#CBD5E1" strokeWidth={1.05} />
+        <circle cx={cx} cy={cy} r={R_ZODIAC_OUT} fill="none" stroke="var(--wheel-hair-outer)" strokeWidth={1.7} />
+        <circle cx={cx} cy={cy} r={R_ZODIAC_OUT - 2.6} fill="none" stroke="var(--wheel-hair-mid)" strokeWidth={0.55} opacity={0.7} />
+        <circle cx={cx} cy={cy} r={R_ZODIAC_IN} fill="none" stroke="var(--line)" strokeWidth={1} />
 
         {/* ── PLANET RING ── */}
-        <circle cx={cx} cy={cy} r={R_PLANET_OUT - 0.5} fill="#F8FAFC" />
+        <circle cx={cx} cy={cy} r={R_PLANET_OUT - 0.5} fill="var(--wheel-sky-1)" />
         <circle cx={cx} cy={cy} r={R_PLANET_IN} fill={`url(#${uid}-inner)`} />
-        <circle cx={cx} cy={cy} r={R_PLANET_IN} fill="none" stroke="#E2E8F0" strokeWidth={0.8} />
+        <circle cx={cx} cy={cy} r={R_PLANET_IN} fill="none" stroke="var(--line)" strokeWidth={0.8} />
 
         {/* ── HOUSE LINES ── */}
         {houses.map((house) => {
@@ -340,7 +350,7 @@ export default function ChartWheel({
             <g key={house.number}>
               <line
                 x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-                stroke={isAngular ? "#60A5FA" : "#E2E8F0"}
+                stroke={isAngular ? "var(--accent)" : "var(--line)"}
                 strokeWidth={isAngular ? 1.35 : 0.65}
                 strokeDasharray={isAngular ? undefined : "3,3"}
                 opacity={isAngular ? 0.85 : 0.9}
@@ -349,7 +359,7 @@ export default function ChartWheel({
                 x={numPos.x} y={numPos.y}
                 textAnchor="middle" dominantBaseline="central"
                 fontSize={compact ? 10 : 9.5}
-                fill={isAngular ? "#64748B" : "#94A3B8"}
+                fill={isAngular ? "var(--ink-2)" : "var(--ink-3)"}
                 fontFamily="JetBrains Mono, monospace"
                 className="cursor-pointer select-none"
                 onClick={() => onElementClick?.({ type: "house", house })}
@@ -369,7 +379,7 @@ export default function ChartWheel({
           const a2    = toAngle(p2.longitude);
           const pt1   = polarXY(cx, cy, R_ASPECT, a1);
           const pt2   = polarXY(cx, cy, R_ASPECT, a2);
-          const color = ASPECT_LINE_COLOR[asp.aspect_name] ?? "#94A3B8";
+          const color = ASPECT_LINE_COLOR[asp.aspect_name] ?? "var(--ink-3)";
           const lw    = ASPECT_LINE_WIDTH[asp.aspect_name] ?? 0.7;
           const isHl  = !!highlightedPlanet &&
             (asp.planet1 === highlightedPlanet || asp.planet2 === highlightedPlanet);
@@ -407,7 +417,7 @@ export default function ChartWheel({
               {label === "ASC" && (
                 <circle
                   cx={outer.x} cy={outer.y} r={7}
-                  fill="#2563EB" opacity={0.16}
+                  fill="var(--ember)" opacity={0.22}
                   filter={`url(#${uid}-glow-asc)`}
                   className="pointer-events-none"
                 />
@@ -427,7 +437,7 @@ export default function ChartWheel({
         {resolvedPlanets.map((p) => {
           const ang       = toAngle(p.longitude);
           const isHl      = highlightedPlanet === p.name;
-          const color     = isHl ? "#1D4ED8" : (PLANET_COLOR[p.name] ?? "#1E293B");
+          const color     = isHl ? "var(--accent)" : (PLANET_COLOR[p.name] ?? "var(--ink)");
           const glyphR    = R_GLYPH    + p.rOffset;
           const needleEnd = R_NEEDLE_END + p.rOffset;
           const degR      = R_DEG_LABEL + p.rOffset;
@@ -461,7 +471,7 @@ export default function ChartWheel({
               )}
               <circle
                 cx={glyphPos.x} cy={glyphPos.y} r={discR}
-                fill="#FFFFFF"
+                fill="var(--wheel-planet-disc)"
                 stroke={color}
                 strokeWidth={isHl ? 1.85 : 1.15}
                 className="cursor-pointer"
@@ -508,7 +518,7 @@ export default function ChartWheel({
               {p.retrograde && (
                 <text
                   x={glyphPos.x + 11} y={glyphPos.y - 10}
-                  fontSize={7.5} fill="#DC2626" fontWeight="700"
+                  fontSize={7.5} fill="var(--ember)" fontWeight="700"
                   className="select-none pointer-events-none"
                 >℞</text>
               )}
@@ -526,7 +536,7 @@ export default function ChartWheel({
                 <text key={p.name}
                   x={pos.x} y={pos.y}
                   textAnchor="middle" dominantBaseline="central"
-                  fontSize={11} fill="#60A5FA" opacity={0.9}
+                  fontSize={11} fill="var(--accent)" opacity={0.9}
                   className="select-none pointer-events-none"
                 >
                   {p.symbol}
@@ -568,8 +578,8 @@ export default function ChartWheel({
         })}
 
         {/* ── CENTER ── */}
-        <circle cx={cx} cy={cy} r={R_CENTER} fill="#FFFFFF" stroke="#E2E8F0" strokeWidth={1} />
-        <circle cx={cx} cy={cy} r={R_CENTER - 6} fill="none" stroke="#C7D2FE" strokeWidth={0.9} opacity={0.85} />
+        <circle cx={cx} cy={cy} r={R_CENTER} fill="var(--wheel-center)" stroke="var(--line)" strokeWidth={1} />
+        <circle cx={cx} cy={cy} r={R_CENTER - 6} fill="none" stroke="var(--wheel-center-ring)" strokeWidth={0.9} opacity={0.85} />
 
         {/* ── TOOLTIP ── */}
         {tooltip && (() => {
@@ -581,7 +591,7 @@ export default function ChartWheel({
             <g className="pointer-events-none">
               <rect
                 x={tx - tw / 2} y={ty} width={tw} height={th} rx={8}
-                fill="#0F172A" opacity={0.90}
+                fill="var(--bg-elev)" opacity={0.94}
               />
               <text
                 x={tx} y={ty + th / 2}

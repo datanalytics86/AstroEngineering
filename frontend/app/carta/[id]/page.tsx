@@ -267,8 +267,8 @@ export default function CartaPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-slate-400 font-mono text-sm">{t("chart.loading")}</p>
+          <div className="w-8 h-8 border-2 border-[var(--ember)] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-ink-3 font-mono text-sm">{t("chart.loading")}</p>
         </div>
       </div>
     );
@@ -279,12 +279,12 @@ export default function CartaPage() {
       {/* 1. Header */}
       <div className="flex flex-col gap-4 mb-5">
         <div>
-          <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">{chart.name}</h1>
-          <p className="text-slate-500 text-sm mt-1">
+          <h1 className="font-display text-3xl text-ink tracking-tight">{chart.name}</h1>
+          <p className="text-ink-2 text-sm mt-1 font-mono">
             {[chart.birth_date, chart.birth_time, birthData?.city].filter(Boolean).join(" · ")}
           </p>
-          <p className="text-sm text-slate-700 mt-3">{t("chart.ready")}</p>
-          <p className="text-[11px] sm:text-xs text-slate-400 mt-2">
+          <p className="text-sm text-ink-2 mt-3">{t("chart.ready")}</p>
+          <p className="kicker mt-3">
             {t("chart.trust_strip")}
           </p>
         </div>
@@ -331,7 +331,7 @@ export default function CartaPage() {
                 /* ignore */
               }
             }}
-            className="self-start text-sm text-slate-400 hover:text-blue-600 min-h-[44px]"
+            className="self-start text-sm text-ink-3 hover:text-accent min-h-[44px]"
           >
             {shareCopied ? t("chart.share.copied") : t("chart.share.copy")}
           </button>
@@ -380,24 +380,18 @@ export default function CartaPage() {
       {/* 1. Wheel — expectation: "quiero ver mi carta" */}
       <section className="mb-10" aria-labelledby="chart-hero-heading">
         <div className="text-center mb-4">
-          <p className="text-xs uppercase tracking-widest text-blue-600 mb-1.5">
+          <p className="kicker mb-2">
             {t("chart.hero.badge")}
           </p>
           <h2
             id="chart-hero-heading"
-            className="font-semibold text-xl sm:text-2xl text-slate-900 tracking-tight"
+            className="font-display text-xl sm:text-2xl text-ink tracking-tight"
           >
             {t("chart.wheel.title")}
           </h2>
-          <p className="text-sm text-slate-500 mt-1">{t("chart.wheel.hint")}</p>
+          <p className="text-sm text-ink-2 mt-1">{t("chart.wheel.hint")}</p>
         </div>
-        <div
-          className="relative mx-auto max-w-[680px] rounded-[28px] border border-indigo-100/80 p-1.5 sm:p-5 shadow-card-md"
-          style={{
-            background:
-              "radial-gradient(circle at 50% 38%, #FFFFFF 0%, #F8FAFC 52%, #EEF2FF 100%)",
-          }}
-        >
+        <div className="relative mx-auto max-w-[680px] wheel-stage p-2 sm:p-5">
           <ChartWheel
             size="hero"
             planets={chart.planets}
@@ -416,19 +410,19 @@ export default function CartaPage() {
       {/* 2. Who you are — prevents intimidation */}
       {human && (
         <section className="mb-10 max-w-2xl mx-auto" aria-labelledby="who-heading">
-          <p className="text-xs uppercase tracking-widest text-blue-600 mb-1.5">
+          <p className="kicker mb-2">
             {t("chart.who.badge")}
           </p>
           <h2
             id="who-heading"
-            className="font-semibold text-2xl sm:text-3xl text-slate-900 tracking-tight"
+            className="font-display text-2xl sm:text-3xl text-ink tracking-tight"
           >
             {human.headline}
           </h2>
-          <p className="text-sm text-slate-500 mt-2 mb-5">{t("chart.who.subtitle")}</p>
+          <p className="text-sm text-ink-2 mt-2 mb-5">{t("chart.who.subtitle")}</p>
           <div className="space-y-3">
-            <p className="text-base text-slate-700 leading-relaxed">{human.identity}</p>
-            <p className="text-base text-slate-700 leading-relaxed">{human.emotion}</p>
+            <p className="text-base text-ink-2 leading-relaxed">{human.identity}</p>
+            <p className="text-base text-ink-2 leading-relaxed">{human.emotion}</p>
           </div>
         </section>
       )}

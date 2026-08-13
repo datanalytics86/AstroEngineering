@@ -93,17 +93,17 @@ export default function NuevaCartaPage() {
       <div className="w-full max-w-lg">
         {/* Hero */}
         <div className="text-center mb-8">
-          <h1 className="font-semibold text-3xl text-slate-900 tracking-tight mb-2">
+          <h1 className="font-display text-3xl text-ink tracking-tight mb-2">
             {t("nueva.title")}
           </h1>
-          <p className="text-slate-500 leading-relaxed text-sm whitespace-pre-line">
+          <p className="text-ink-2 leading-relaxed text-sm whitespace-pre-line">
             {t("nueva.subtitle")}
           </p>
-          <p className="text-[11px] font-mono text-slate-400 mt-3">
+          <p className="text-[11px] font-mono text-ink-3 mt-3">
             {t("nueva.trust")}
           </p>
           {fromHint && (
-            <p className="mt-4 text-sm text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl px-3 py-2.5 leading-relaxed">
+            <p className="mt-4 text-sm text-ink-2 bg-elev border border-border rounded-xl px-3 py-2.5 leading-relaxed">
               {fromHint === "pro_sample_pdf"
                 ? t("nueva.from_sample")
                 : t("nueva.from_pdf")}
@@ -113,10 +113,10 @@ export default function NuevaCartaPage() {
 
         {/* Formulario */}
         {shareBusy && (
-          <p className="mb-4 text-sm text-slate-500 text-center">{t("nueva.share.calculating")}</p>
+          <p className="mb-4 text-sm text-ink-2 text-center">{t("nueva.share.calculating")}</p>
         )}
 
-        <div className="bg-white border border-border rounded-2xl p-6 shadow-card">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-card">
           <BirthDataForm
             onSubmit={handleSubmit}
             loading={loading}
@@ -134,7 +134,7 @@ export default function NuevaCartaPage() {
         {/* ── Cartas guardadas ── */}
         {saved.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-widest font-mono mb-3">
+            <h2 className="text-sm font-semibold text-ink-2 uppercase tracking-widest font-mono mb-3">
               {t("nueva.saved.title")}
             </h2>
             <div className="space-y-2">
@@ -145,7 +145,7 @@ export default function NuevaCartaPage() {
                 return (
                   <div
                     key={c.id}
-                    className="bg-white border border-border rounded-xl px-4 py-3 shadow-card flex items-center gap-3"
+                    className="bg-card border border-border rounded-xl px-4 py-3 shadow-card flex items-center gap-3"
                   >
                     {/* Color dot */}
                     <div
@@ -155,8 +155,8 @@ export default function NuevaCartaPage() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-800 truncate">{c.name}</p>
-                      <p className="text-xs font-mono text-slate-400">
+                      <p className="text-sm font-semibold text-ink truncate">{c.name}</p>
+                      <p className="text-xs font-mono text-ink-3">
                         {c.birth_date} · {c.birth_time} ·{" "}
                         <span style={{ color }} className="font-semibold">{asc} ASC</span>
                       </p>
@@ -178,7 +178,7 @@ export default function NuevaCartaPage() {
                           trackLearning("returned_same_chart");
                           router.push(`/carta/${c.id}`);
                         }}
-                        className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 hover:text-slate-800 transition-colors min-h-[44px]"
+                        className="text-xs font-mono px-2 py-1 rounded-lg border border-border text-ink-2 hover:border-slate-400 hover:text-ink transition-colors min-h-[44px]"
                       >
                         {t("nueva.saved.view")}
                       </button>
@@ -192,7 +192,7 @@ export default function NuevaCartaPage() {
                           </button>
                           <button
                             onClick={() => setDeleteTarget(null)}
-                            className="text-xs font-mono px-2 py-1 rounded-lg border border-slate-200 text-slate-400 hover:border-slate-400 transition-colors"
+                            className="text-xs font-mono px-2 py-1 rounded-lg border border-border text-ink-3 hover:border-slate-400 transition-colors"
                           >
                             {t("nueva.saved.cancel")}
                           </button>
@@ -201,7 +201,7 @@ export default function NuevaCartaPage() {
                         <button
                           onClick={() => setDeleteTarget(c.id)}
                           title="Eliminar"
-                          className="text-xs font-mono w-7 h-7 rounded-lg border border-slate-200 text-slate-300 hover:border-red-300 hover:text-red-400 transition-colors flex items-center justify-center"
+                          className="text-xs font-mono w-7 h-7 rounded-lg border border-border text-slate-300 hover:border-red-300 hover:text-red-400 transition-colors flex items-center justify-center"
                         >
                           ✕
                         </button>
@@ -221,9 +221,9 @@ export default function NuevaCartaPage() {
             { label: t("nueva.features.planets"), sub: t("nueva.features.planets.sub") },
             { label: t("nueva.features.transits"), sub: t("nueva.features.transits.sub") },
           ].map((item) => (
-            <div key={item.label} className="bg-white border border-border rounded-xl p-3 shadow-card">
-              <div className="text-xs font-semibold text-slate-700">{item.label}</div>
-              <div className="text-xs text-slate-400 font-mono mt-0.5">{item.sub}</div>
+            <div key={item.label} className="bg-card border border-border rounded-xl p-3 shadow-card">
+              <div className="text-xs font-semibold text-ink-2">{item.label}</div>
+              <div className="text-xs text-ink-3 font-mono mt-0.5">{item.sub}</div>
             </div>
           ))}
         </div>
