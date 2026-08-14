@@ -35,6 +35,11 @@ import { registerLabFonts } from "./register-lab-fonts";
 
 registerLabFonts();
 
+function clip(text: string, n = 108): string {
+  if (text.length <= n) return text;
+  return `${text.slice(0, n).replace(/\s+\S*$/, "")}…`;
+}
+
 const s = StyleSheet.create({
   page: {
     backgroundColor: Lab.paper,
@@ -132,13 +137,14 @@ const s = StyleSheet.create({
   barTrack: { height: 4, backgroundColor: Lab.hair, borderRadius: 2 },
   barFill: { height: 4, borderRadius: 2 },
   glanceCell: {
-    width: "24%",
+    width: "32%",
     borderWidth: 0.7,
     borderRadius: 2,
-    padding: 6,
-    marginBottom: 6,
+    padding: 7,
+    marginBottom: 7,
     marginRight: "1.3%",
   },
+  inventory: { fontSize: 8.5, fontFamily: Fonts.mono, color: Lab.slate, lineHeight: 1.55, letterSpacing: 0.3 },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 0.5,
@@ -308,6 +314,9 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
           <Text style={{ fontFamily: Fonts.mono, fontSize: 11, color: Lab.copper, marginTop: 6, letterSpacing: 1.4 }}>
             {content.year}
           </Text>
+          <Text style={[s.small, { marginTop: 6 }]}>
+            {[content.born, content.place].filter(Boolean).join("  ·  ")}
+          </Text>
           <View style={s.rule} />
           <Text style={s.italic}>
             {en
@@ -319,6 +328,11 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
               {en ? "Sample document. Your Pro uses your sky." : "Documento de muestra. Tu Pro usa tu cielo."}
             </Text>
           ) : null}
+          <Text style={[s.inventory, { marginTop: 10 }]}>
+            {en
+              ? "01  YEAR AT A GLANCE     02  WHO YOU ARE     03  TONE OF THE YEAR\n04  OPERATING TABLE      05–07  TWELVE MONTH INSTRUMENTS"
+              : "01  EL AÑO DE UN VISTAZO     02  QUIÉN ERES     03  TONO DEL AÑO\n04  TABLA DE OPERACIÓN        05–07  DOCE FICHAS DEL MES"}
+          </Text>
         </View>
         <View style={{ marginTop: 14 }}>
           <Text style={s.h}>{en ? "How to read" : "Cómo se lee"}</Text>
@@ -382,9 +396,9 @@ export default function ProYearDocument({ content }: { content: YearMapContent }
                   {m.climateLabel}
                 </Text>
               </View>
-              <IntensityBar value={m.intensity} climate={m.climate} width={92} />
-              <Text style={{ fontSize: 7.5, lineHeight: 1.3, color: ClimateInk[m.climate], marginTop: 4 }}>
-                {m.featured[0]?.title ?? ""} · {m.featured[0]?.feel ?? ""}
+              <IntensityBar value={m.intensity} climate={m.climate} width={128} />
+              <Text style={{ fontSize: 8.5, lineHeight: 1.32, color: ClimateInk[m.climate], marginTop: 5 }}>
+                {clip(m.executive)}
               </Text>
             </View>
           ))}

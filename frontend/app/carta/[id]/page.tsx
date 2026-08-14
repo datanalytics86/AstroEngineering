@@ -157,8 +157,9 @@ export default function CartaPage() {
       solar: loadSolarReturn(id),
       year,
       lang: locale,
+      place: birthData?.city,
     });
-  }, [chart, id, locale, yearTick, solarTick, proUnlocked]);
+  }, [chart, id, locale, yearTick, solarTick, proUnlocked, birthData]);
 
   function handleUnlockPro() {
     if (!id) return;

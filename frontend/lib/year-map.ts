@@ -103,6 +103,8 @@ export interface YearMapContent {
   lang: Lang;
   name: string;
   year: number;
+  born: string;
+  place: string;
   sample?: boolean;
   natal: HumanProSummary;
   solar: SolarYearTone;
@@ -221,6 +223,15 @@ const TENSE = new Set(["Cuadratura", "Oposición"]);
 
 function monthName(index0: number, lang: Lang): string {
   return lang === "en" ? MONTH_EN[index0] : MONTH_ES[index0];
+}
+
+function formatBorn(iso: string, time: string, lang: Lang): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return [iso, time].filter(Boolean).join(" · ");
+  const label = monthName(Number(m[2]) - 1, lang);
+  const date =
+    lang === "en" ? `${label} ${Number(m[3])}, ${m[1]}` : `${Number(m[3])} de ${label.toLowerCase()} de ${m[1]}`;
+  return time ? `${date} · ${time}` : date;
 }
 
 function monthShort(index0: number, lang: Lang): string {
@@ -621,6 +632,7 @@ export function buildYearMap(opts: {
   solar: ChartResponse | null;
   year?: number;
   lang?: Lang;
+  place?: string;
 }): YearMapContent {
   const lang = opts.lang === "en" ? "en" : "es";
   const year = opts.year ?? new Date().getFullYear();
@@ -695,6 +707,8 @@ export function buildYearMap(opts: {
     lang,
     name: opts.chart.name,
     year,
+    born: formatBorn(opts.chart.birth_date, opts.chart.birth_time, lang),
+    place: (opts.place ?? "").trim(),
     natal,
     solar: solarTone(opts.solar, lang),
     natalPoints: opts.chart.planets.map((p) => p.longitude),
@@ -762,6 +776,8 @@ export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
     lang,
     name: "Alex Rivera",
     year,
+    born: lang === "en" ? "March 14, 1988 · 07:40" : "14 de marzo de 1988 · 07:40",
+    place: "Santiago, Chile",
     sample: true,
     natal: {
       headline:
