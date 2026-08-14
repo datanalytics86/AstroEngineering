@@ -43,10 +43,19 @@ export async function downloadProSamplePdf(lang: "es" | "en" = "es"): Promise<vo
 }
 
 export async function downloadProYearPdf(content: YearMapContent): Promise<void> {
-  const [{ pdf }, { default: ProYearDocument }] = await Promise.all([
+  const [{ pdf, Font }, { default: ProYearDocument }, { registerLabFonts }] = await Promise.all([
     import("@react-pdf/renderer"),
     import("@/components/pdf/ProYearDocument"),
+    import("@/components/pdf/register-lab-fonts"),
   ]);
+  registerLabFonts();
+  await Promise.all([
+    Font.load({ fontFamily: "LabSerif" }),
+    Font.load({ fontFamily: "LabSans" }),
+    Font.load({ fontFamily: "LabMono" }),
+  ]).catch(() => {
+    /* built-in fallbacks if a face fails to fetch */
+  });
   const doc = createElement(ProYearDocument, { content }) as unknown as ReactElement<DocumentProps>;
   const blob = await pdf(doc).toBlob();
   const prefix = content.lang === "en" ? "year-map" : "mapa-del-anio";
