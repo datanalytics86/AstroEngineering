@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { BirthData } from "@/lib/types";
@@ -185,6 +185,14 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
+  useEffect(() => {
+    if (!value) return;
+    const d = new Date(value + "T12:00:00");
+    if (Number.isNaN(d.getTime())) return;
+    setViewYear(d.getFullYear());
+    setViewMonth(d.getMonth());
+  }, [value]);
+
   function formatDisplay(v: string): string {
     if (!v) return "";
     const d = new Date(v + "T12:00:00");
@@ -222,8 +230,8 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`w-full bg-card border rounded-xl px-4 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500/30 ${
-          open ? "border-blue-500" : "border-border hover:border-[var(--line-strong)]"
+        className={`w-full bg-card border rounded-xl px-4 py-2.5 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--focus)]/30 ${
+          open ? "border-[var(--ember)]" : "border-border hover:border-[var(--line-strong)]"
         } ${value ? "text-ink" : "text-ink-3"} font-mono`}
       >
         {value ? formatDisplay(value) : "Selecciona fecha"}
@@ -339,12 +347,12 @@ function DatePicker({ value, onChange, maxDate }: DatePickerProps) {
                 <button
                   key={y}
                   type="button"
-                  disabled={y > today.getFullYear() || y < 1900}
+                  disabled={y > today.getFullYear() || y < 1800}
                   onClick={() => { setViewYear(y); setMode("month"); }}
                   className={`py-2 rounded-xl text-xs font-mono transition-colors ${
                     y === viewYear
                       ? "bg-[var(--ember)] text-[var(--bg)] font-semibold"
-                      : y > today.getFullYear() || y < 1900
+                      : y > today.getFullYear() || y < 1800
                         ? "text-ink-3 cursor-not-allowed"
                         : "text-ink-2 hover:bg-[var(--accent-soft)] hover:text-ink"
                   }`}
@@ -378,7 +386,7 @@ function TimePicker({ value, onChange, disabled }: TimePickerProps) {
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
       className={`w-full bg-card border rounded-xl px-4 py-2.5 text-sm font-mono text-ink
-        focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500
+        focus:outline-none focus:ring-2 focus:ring-[var(--focus)]/30 focus:border-[var(--ember)]
         border-border transition-colors disabled:opacity-40 disabled:cursor-not-allowed
         hover:border-[var(--line-strong)]`}
     />
@@ -572,8 +580,8 @@ export default function BirthDataForm({
     setTimeUnknown(false);
   }
 
-  function loadDemo() {
-    applyBirthData({
+  function einsteinPayload(): BirthData {
+    return {
       name: DEMO_DATA.name,
       birth_date: DEMO_DATA.birth_date,
       birth_time: DEMO_DATA.birth_time,
@@ -581,22 +589,34 @@ export default function BirthDataForm({
       longitude: parseFloat(DEMO_DATA.longitude),
       timezone_offset: parseFloat(DEMO_DATA.timezone_offset),
       city: DEMO_DATA.city_search,
-    }, DEMO_DATA.city_search);
+    };
+  }
+
+  function fillEinstein(): BirthData {
+    const data = einsteinPayload();
+    applyBirthData(data, DEMO_DATA.city_search);
     setIanaZone(DEMO_DATA.ianaZone);
     const offset = getHistoricalOffset(DEMO_DATA.ianaZone, DEMO_DATA.birth_date);
     if (offset !== null) {
       const sign = offset >= 0 ? "+" : "";
       setTzLabel(`${DEMO_DATA.ianaZone.split("/").pop()} · UTC${sign}${offset}`);
+      setForm((prev) => ({ ...prev, timezone_offset: String(offset) }));
     }
-    setDemoToast(true);
-    setTimeout(() => setDemoToast(false), 2500);
+    return data;
+  }
+
+  function loadDemo() {
+    if (loading) return;
+    const data = fillEinstein();
+    onSubmit(data);
   }
 
   useEffect(() => {
     if (!preset || presetApplied.current) return;
     presetApplied.current = true;
     if (preset === "einstein") {
-      loadDemo();
+      const data = fillEinstein();
+      if (autoSubmit) onSubmit(data);
       return;
     }
     applyBirthData(preset);
@@ -631,7 +651,7 @@ export default function BirthDataForm({
 
   function FieldCheck({ ok }: { ok: boolean }) {
     if (!ok) return null;
-    return <span className="text-emerald-500 text-xs ml-1.5">✓</span>;
+    return <span className="text-[var(--ok)] text-xs ml-1.5">✓</span>;
   }
 
   const labelClass = "block text-xs font-semibold uppercase tracking-widest text-ink-2 mb-1.5";
@@ -677,7 +697,7 @@ export default function BirthDataForm({
           <button
             type="button"
             onClick={handleSolarChart}
-            className="mt-1.5 text-xs text-blue-500 hover:text-blue-700 hover:underline transition-colors"
+            className="mt-1.5 text-xs text-accent hover:text-ink hover:underline transition-colors min-h-[44px]"
           >
             {t("form.unknown_time")}
           </button>
@@ -685,7 +705,7 @@ export default function BirthDataForm({
       </div>
 
       {timeUnknown && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        <p className="text-xs lab-note lab-note-warn rounded-lg px-3 py-2">
           {t("form.unknown_time_note")}
         </p>
       )}
@@ -694,7 +714,7 @@ export default function BirthDataForm({
       <div className="relative" ref={dropdownRef}>
         <label className={labelClass}>
           Ciudad de nacimiento
-          {geoLoading && <span className="ml-2 text-blue-500 animate-pulse font-normal normal-case">buscando…</span>}
+          {geoLoading && <span className="ml-2 text-accent animate-pulse font-normal normal-case">buscando…</span>}
         </label>
         <input
           type="text" name="city_search" value={form.city_search}
@@ -710,7 +730,7 @@ export default function BirthDataForm({
               <button
                 key={i} type="button"
                 onClick={() => selectCity(r)}
-                className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition-colors border-b border-border last:border-0"
+                className="w-full text-left px-4 py-2.5 hover:bg-elev transition-colors border-b border-border last:border-0"
               >
                 <span className="text-sm text-ink-2 font-mono block truncate">
                   {formatCityLabel(r.display_name, r.address)}
@@ -724,7 +744,7 @@ export default function BirthDataForm({
         </p>
       </div>
 
-      <details className="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-2">
+      <details className="rounded-xl border border-border bg-elev px-3 py-2">
         <summary className="text-xs text-ink-2 cursor-pointer min-h-[44px] flex items-center">
           {t("form.advanced")}
         </summary>
@@ -753,13 +773,13 @@ export default function BirthDataForm({
       <div>
         <label className={labelClass}>{t("form.timezone_label")}</label>
         {tzLabel ? (
-          <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm">
-            <span className="text-emerald-500 text-xs">✓</span>
+          <div className="flex items-center gap-2 px-4 py-2.5 lab-note lab-note-ok rounded-xl text-sm">
+            <span className="text-[var(--ok)] text-xs">✓</span>
             <span className="font-mono text-ink-2 text-xs">{tzLabel}</span>
             <button
               type="button"
               onClick={() => setTzLabel(null)}
-              className="ml-auto text-xs text-ink-3 hover:text-slate-600"
+              className="ml-auto text-xs text-ink-3 hover:text-ink"
             >
               ajustar
             </button>
@@ -814,7 +834,8 @@ export default function BirthDataForm({
         <button
           type="button"
           onClick={loadDemo}
-          className="text-xs text-ink-3 hover:text-accent hover:underline transition-colors"
+          disabled={loading}
+          className="focus-lab w-full min-h-[44px] text-sm text-accent hover:text-ink border border-border hover:border-[var(--line-strong)] rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {t("form.demo")}
         </button>

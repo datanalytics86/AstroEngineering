@@ -44,6 +44,28 @@ export const Fonts = {
   mono: "LabMono",
 } as const;
 
+/** A4 grid. Every column and rail is derived from these — no magic widths. */
+const PAGE_W = 595.28;
+const PAGE_X = 40;
+const GUTTER = 12;
+const CONTENT = PAGE_W - PAGE_X * 2;
+const RAIL = 2.4;
+const WHEEL = 188;
+
+export const Layout = {
+  pageW: PAGE_W,
+  pageH: 841.89,
+  x: PAGE_X,
+  gutter: GUTTER,
+  content: CONTENT,
+  rail: RAIL,
+  wheel: WHEEL,
+  col2: (CONTENT - GUTTER) / 2,
+  col3: (CONTENT - GUTTER * 2) / 3,
+  text: CONTENT - WHEEL - GUTTER,
+  inner3: (CONTENT - GUTTER * 2) / 3 - RAIL - 16,
+} as const;
+
 /** 4-step rhythm. Use only these — no one-off margins. */
 export const Space = {
   1: 3,
@@ -53,11 +75,11 @@ export const Space = {
   5: 16,
   6: 24,
   7: 32,
-  pageX: 38,
-  pageTop: 40,
-  pageBottom: 30,
+  pageX: PAGE_X,
+  pageTop: 42,
+  pageBottom: 32,
   mast: 20,
-  content: 519,
+  content: CONTENT,
 } as const;
 
 /**

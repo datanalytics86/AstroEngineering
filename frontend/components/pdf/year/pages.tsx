@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, View } from "@react-pdf/renderer";
 import type { YearMapContent, YearMonthBlock } from "@/lib/year-map";
-import { ClimateInk, Fonts, Lab, Space, TopicInk } from "../lab-theme";
+import { ClimateInk, Fonts, Lab, Layout, Space, TopicInk } from "../lab-theme";
 import { copy } from "./copy";
 import { LifeWheel } from "./LifeWheel";
 import {
@@ -52,7 +52,7 @@ export function CoverPage({ content }: { content: YearMapContent }) {
 
       <View style={{ marginTop: Space[6] }}>
         <Text style={s.label}>{t.holdThese}</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        <View style={{ flexDirection: "row", gap: Layout.gutter }}>
           {keyMonths.map((k) => (
             <KeyMonthPlate key={k.key} month={k} />
           ))}
@@ -109,7 +109,7 @@ export function GlancePage({ content }: { content: YearMapContent }) {
       <Text style={s.title}>{content.yearPulse.headline}</Text>
       <Text style={[s.body, { marginTop: 6, marginBottom: Space[4] }]}>{content.yearPulse.body}</Text>
       <YearRibbon months={content.months} keyKeys={keyKeys} />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: Layout.gutter }}>
         {content.months.map((m) => (
           <GlanceCell key={m.key} month={m} marked={keyKeys.has(m.key)} mark={t.keyMark} />
         ))}
@@ -128,58 +128,67 @@ export function WhoPage({ content }: { content: YearMapContent }) {
   return (
     <Chrome content={content} page={3}>
       <Kicker>{t.who}</Kicker>
-      <View style={{ flexDirection: "row" }}>
-        <View style={{ width: 188, marginRight: 16 }}>
+      <View style={{ flexDirection: "row", gap: Layout.gutter }}>
+        <View style={{ width: Layout.wheel }}>
           <LifeWheel wheel={content.natalWheel} zonesLabel={t.zones} />
         </View>
-        <View style={{ width: 315 }}>
+        <View style={{ width: Layout.text }}>
           <Text style={s.lead}>{content.natal.headline}</Text>
-          <Text style={[s.body, { marginTop: Space[3], width: 315 }]}>{content.natal.identity}</Text>
-          <Text style={[s.body, { width: 315 }]}>{content.natal.emotion}</Text>
-          <Text style={[s.body, { width: 315 }]}>{content.natal.purpose}</Text>
+          <Text style={[s.body, { marginTop: Space[3], width: Layout.text }]}>{content.natal.identity}</Text>
+          <Text style={[s.body, { width: Layout.text }]}>{content.natal.emotion}</Text>
+          <Text style={[s.body, { width: Layout.text }]}>{content.natal.purpose}</Text>
           {content.natal.emphasis ? (
             <View
               style={{
-                marginTop: 4,
-                paddingLeft: 8,
-                borderLeftWidth: 1.6,
+                marginTop: Space[2],
+                paddingLeft: Space[3],
+                borderLeftWidth: Layout.rail,
                 borderLeftColor: Lab.copper,
-                width: 307,
+                width: Layout.text,
               }}
             >
-              <Text style={[s.small, { color: Lab.ink, width: 295 }]}>{content.natal.emphasis}</Text>
+              <Text style={[s.small, { color: Lab.ink, width: Layout.text - Space[3] }]}>
+                {content.natal.emphasis}
+              </Text>
             </View>
           ) : null}
         </View>
       </View>
       <Rule />
-      <View style={{ flexDirection: "row" }}>
+      <View style={{ flexDirection: "row", gap: Layout.gutter }}>
         <View
           style={{
-            width: 248,
+            width: Layout.col2,
             minHeight: 118,
-            marginRight: 23,
             borderWidth: 0.55,
             borderColor: Lab.hair,
-            padding: 10,
+            padding: Space[3],
           }}
         >
           <Text style={s.label}>{t.lean}</Text>
           {content.natal.strengths.map((line) => (
-            <Text key={line} style={[s.body, { width: 226 }]}>
+            <Text key={line} style={[s.body, { width: Layout.col2 - Space[5] }]}>
               {line}
             </Text>
           ))}
         </View>
-        <View style={{ width: 248, minHeight: 118, borderWidth: 0.55, borderColor: Lab.hair, padding: 10 }}>
+        <View
+          style={{
+            width: Layout.col2,
+            minHeight: 118,
+            borderWidth: 0.55,
+            borderColor: Lab.hair,
+            padding: Space[3],
+          }}
+        >
           <Text style={s.label}>{t.practice}</Text>
           {content.natal.challenges.map((line) => (
-            <Text key={line} style={[s.body, { width: 226 }]}>
+            <Text key={line} style={[s.body, { width: Layout.col2 - Space[5] }]}>
               {line}
             </Text>
           ))}
           {content.natal.advice ? (
-            <Text style={[s.small, { marginTop: 4, color: Lab.ink, width: 226 }]}>
+            <Text style={[s.small, { marginTop: 4, color: Lab.ink, width: Layout.col2 - Space[5] }]}>
               {content.natal.advice}
             </Text>
           ) : null}
@@ -201,18 +210,18 @@ export function ToneTablePage({ content }: { content: YearMapContent }) {
   return (
     <Chrome content={content} page={4}>
       <Kicker>{t.tone}</Kicker>
-      <View style={{ flexDirection: "row" }}>
-        <View style={{ width: 188, marginRight: 16 }}>
+      <View style={{ flexDirection: "row", gap: Layout.gutter }}>
+        <View style={{ width: Layout.wheel }}>
           <LifeWheel
             wheel={content.solarWheel}
             caption={content.solarIsOwn ? t.solarOwn : t.solarNatal}
             compact
           />
         </View>
-        <View style={{ width: 315 }}>
+        <View style={{ width: Layout.text }}>
           <Text style={s.lead}>{content.solar.headline}</Text>
-          <Text style={[s.body, { marginTop: Space[3], width: 315 }]}>{content.solar.body}</Text>
-          <Text style={[s.body, { width: 315 }]}>{content.solar.publicMark}</Text>
+          <Text style={[s.body, { marginTop: Space[3], width: Layout.text }]}>{content.solar.body}</Text>
+          <Text style={[s.body, { width: Layout.text }]}>{content.solar.publicMark}</Text>
         </View>
       </View>
 
@@ -223,23 +232,23 @@ export function ToneTablePage({ content }: { content: YearMapContent }) {
       <Text style={s.label}>{t.table}</Text>
       <Text style={[s.body, { marginBottom: Space[3] }]}>{content.forecast.body}</Text>
       <View style={s.tableHead}>
-        <Text style={[s.tableHeadText, { width: 78 }]}>{t.colMonth}</Text>
-        <Text style={[s.tableHeadText, { width: 64 }]}>{t.colClimate}</Text>
-        <Text style={[s.tableHeadText, { width: 44 }]} />
-        <Text style={[s.tableHeadText, { flexGrow: 1 }]}>{t.colAsk}</Text>
+        <Text style={[s.tableHeadText, { width: 86 }]}>{t.colMonth}</Text>
+        <Text style={[s.tableHeadText, { width: 70 }]}>{t.colClimate}</Text>
+        <Text style={[s.tableHeadText, { width: 52 }]} />
+        <Text style={[s.tableHeadText, { width: Layout.content - 86 - 70 - 52 }]}>{t.colAsk}</Text>
       </View>
       {remaining.map((m) => (
         <View key={m.key} style={s.tableRow} wrap={false}>
-          <Text style={{ width: 78, fontSize: 9, fontFamily: Fonts.serif, color: Lab.ink }}>
+          <Text style={{ width: 86, fontSize: 9, fontFamily: Fonts.serif, color: Lab.ink }}>
             {m.label}
           </Text>
-          <Text style={{ width: 64, fontSize: 7.5, fontFamily: Fonts.mono, color: ClimateInk[m.climate] }}>
+          <Text style={{ width: 70, fontSize: 7.5, fontFamily: Fonts.mono, color: ClimateInk[m.climate] }}>
             {m.climateLabel}
           </Text>
-          <View style={{ width: 44, paddingTop: 3 }}>
-            <IntensityBar value={m.intensity} climate={m.climate} width={36} />
+          <View style={{ width: 52, paddingTop: 3 }}>
+            <IntensityBar value={m.intensity} climate={m.climate} width={44} />
           </View>
-          <Text style={{ width: 320, fontSize: 8, color: Lab.slate, lineHeight: 1.32 }}>
+          <Text style={{ width: Layout.content - 86 - 70 - 52, fontSize: 8, color: Lab.slate, lineHeight: 1.32 }}>
             {m.executive}
           </Text>
         </View>
@@ -254,29 +263,33 @@ function MonthCard({ month }: { month: YearMonthBlock }) {
   return (
     <View style={s.monthCard} wrap={false}>
       <View style={[s.monthRail, { backgroundColor: ClimateInk[month.climate] }]} />
-      <View style={s.monthHead}>
-        <Text style={s.monthName}>{month.label}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
-          <IntensityBar value={month.intensity} climate={month.climate} width={52} />
-          <Badge climate={month.climate} label={month.climateLabel} />
-        </View>
-      </View>
-      <Text style={[s.ask, { marginBottom: 5 }]}>{month.executive}</Text>
-      {featured.map((f) => (
-        <View key={f.id} style={s.feat}>
-          <View style={[s.featBar, { backgroundColor: TopicInk[f.id] ?? Lab.copper }]} />
-          <View style={{ flexGrow: 1 }}>
-            <Text style={[s.featTitle, { color: TopicInk[f.id] ?? Lab.copper }]}>{f.title}</Text>
-            <Text style={s.featLine}>{f.line}</Text>
+      <View style={s.monthBody}>
+        <View style={s.monthHead}>
+          <Text style={s.monthName}>{month.label}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+            <IntensityBar value={month.intensity} climate={month.climate} width={52} />
+            <Badge climate={month.climate} label={month.climateLabel} />
           </View>
         </View>
-      ))}
-      <View style={s.restRow}>
-        {rest.map((r) => (
-          <Text key={r.id} style={s.restItem}>
-            {r.title.toUpperCase()}  ·  {r.feel ?? r.line}
-          </Text>
+        <Text style={[s.ask, { marginBottom: 5, width: Layout.content - Layout.rail - 16 }]}>
+          {month.executive}
+        </Text>
+        {featured.map((f) => (
+          <View key={f.id} style={s.feat}>
+            <View style={[s.featBar, { backgroundColor: TopicInk[f.id] ?? Lab.copper }]} />
+            <View style={{ width: Layout.content - Layout.rail - 24 }}>
+              <Text style={[s.featTitle, { color: TopicInk[f.id] ?? Lab.copper }]}>{f.title}</Text>
+              <Text style={s.featLine}>{f.line}</Text>
+            </View>
+          </View>
         ))}
+        <View style={s.restRow}>
+          {rest.map((r) => (
+            <Text key={r.id} style={s.restItem}>
+              {r.title.toUpperCase()}  ·  {r.feel ?? r.line}
+            </Text>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -319,11 +332,11 @@ export function ProtocolPage({ content }: { content: YearMapContent }) {
       <Text style={[s.body, { marginTop: 6, marginBottom: Space[4] }]}>{t.protocolLead}</Text>
 
       <Text style={s.label}>{t.howTo}</Text>
-      <View style={{ flexDirection: "row", marginBottom: Space[4] }}>
+      <View style={{ flexDirection: "row", gap: Layout.gutter, marginBottom: Space[4] }}>
         {howTo.map((step, i) => (
-          <View key={step} style={[s.keyCard, { marginRight: i < howTo.length - 1 ? 9 : 0 }]}>
+          <View key={step} style={s.keyCard}>
             <Text style={s.stepN}>{String(i + 1).padStart(2, "0")}</Text>
-            <Text style={[s.small, { width: 151 }]}>{step}</Text>
+            <Text style={[s.small, { width: Layout.inner3 }]}>{step}</Text>
           </View>
         ))}
       </View>

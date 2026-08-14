@@ -1,7 +1,7 @@
 import React, { type ReactNode } from "react";
 import { Page, Text, View } from "@react-pdf/renderer";
 import type { YearClimate, YearMapContent, YearMonthBlock } from "@/lib/year-map";
-import { ClimateBar, ClimateBg, ClimateInk, Fonts, Lab } from "../lab-theme";
+import { ClimateBar, ClimateBg, ClimateInk, Fonts, Lab, Layout } from "../lab-theme";
 import { copy } from "./copy";
 import { s } from "./styles";
 
@@ -91,8 +91,12 @@ export function PracticePlate({ kicker, body }: { kicker: string; body: string }
   return (
     <View style={s.practice} wrap={false}>
       <View style={s.practiceRail} />
-      <Text style={[s.label, { marginBottom: 4 }]}>{kicker}</Text>
-      <Text style={[s.ask, { fontWeight: 400 }]}>{body}</Text>
+      <View style={s.practiceBody}>
+        <Text style={[s.label, { marginBottom: 4 }]}>{kicker}</Text>
+        <Text style={[s.ask, { fontWeight: 400, width: Layout.content - Layout.rail - 16 }]}>
+          {body}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -115,10 +119,8 @@ export function KeyMonthPlate({ month }: { month: YearMonthBlock }) {
     <View
       style={[
         s.plate,
+        s.plateFixed,
         {
-          width: 167,
-          height: 112,
-          flexGrow: 0,
           borderColor: ClimateBar[month.climate],
           backgroundColor: ClimateBg[month.climate],
         },
@@ -127,7 +129,7 @@ export function KeyMonthPlate({ month }: { month: YearMonthBlock }) {
     >
       <Text style={[s.plateName, { color: ClimateInk[month.climate] }]}>{month.label}</Text>
       <Badge climate={month.climate} label={month.climateLabel} />
-      <Text style={[s.plateWhy, { color: ClimateInk[month.climate], marginTop: 5, width: 149 }]}>
+      <Text style={[s.plateWhy, { color: ClimateInk[month.climate], marginTop: 5, width: Layout.inner3 }]}>
         {month.executive}
       </Text>
     </View>
@@ -140,10 +142,10 @@ export function ClimateStrip({
   legend: { climate: YearClimate; label: string; hint: string }[];
 }) {
   return (
-    <View style={{ flexDirection: "row", gap: 8 }}>
+    <View style={{ flexDirection: "row", gap: Layout.gutter }}>
       {legend.map((c) => (
-        <View key={c.climate} style={{ flexGrow: 1, flexDirection: "row", gap: 5 }}>
-          <View style={{ width: 2.4, backgroundColor: ClimateBar[c.climate] }} />
+        <View key={c.climate} style={{ width: Layout.col3, flexDirection: "row", gap: 5 }}>
+          <View style={{ width: Layout.rail, backgroundColor: ClimateBar[c.climate] }} />
           <View style={{ flexGrow: 1 }}>
             <Text
               style={{
@@ -218,6 +220,7 @@ export function GlanceCell({
   mark: string;
 }) {
   const tags = month.featured.map((f) => f.title.toLowerCase()).join("  ·  ");
+  const inner = Layout.inner3;
   return (
     <View
       style={[
@@ -229,43 +232,45 @@ export function GlanceCell({
       wrap={false}
     >
       <View style={[s.glanceRail, { backgroundColor: ClimateBar[month.climate] }]} />
-      <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
+      <View style={s.glanceBody}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 3 }}>
+          <Text
+            style={{
+              fontFamily: Fonts.mono,
+              fontSize: 7.5,
+              letterSpacing: 0.6,
+              color: marked ? ClimateInk[month.climate] : Lab.ink,
+            }}
+          >
+            {month.shortLabel.toUpperCase()}
+          </Text>
+          <Text
+            style={{
+              fontFamily: Fonts.mono,
+              fontSize: 6.5,
+              color: ClimateInk[month.climate],
+            }}
+          >
+            {marked ? mark : month.climateLabel}
+          </Text>
+        </View>
+        <IntensityBar value={month.intensity} climate={month.climate} width={inner} />
         <Text
           style={{
-            fontFamily: Fonts.mono,
-            fontSize: 7.5,
-            letterSpacing: 0.6,
-            color: marked ? ClimateInk[month.climate] : Lab.ink,
+            fontSize: 8,
+            lineHeight: 1.32,
+            color: marked ? ClimateInk[month.climate] : Lab.slate,
+            marginTop: 5,
+            fontFamily: Fonts.sans,
+            width: inner,
           }}
         >
-          {month.shortLabel.toUpperCase()}
+          {month.executive}
         </Text>
-        <Text
-          style={{
-            fontFamily: Fonts.mono,
-            fontSize: 6.5,
-            color: ClimateInk[month.climate],
-          }}
-        >
-          {marked ? mark : month.climateLabel}
-        </Text>
+        {tags ? (
+          <Text style={[s.micro, { marginTop: 4, color: ClimateInk[month.climate] }]}>{tags}</Text>
+        ) : null}
       </View>
-      <IntensityBar value={month.intensity} climate={month.climate} width={148} />
-      <Text
-        style={{
-          fontSize: 8,
-          lineHeight: 1.32,
-          color: marked ? ClimateInk[month.climate] : Lab.slate,
-          marginTop: 5,
-          fontFamily: Fonts.sans,
-          width: 148,
-        }}
-      >
-        {month.executive}
-      </Text>
-      {tags ? (
-        <Text style={[s.micro, { marginTop: 4, color: ClimateInk[month.climate] }]}>{tags}</Text>
-      ) : null}
     </View>
   );
 }

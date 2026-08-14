@@ -2,10 +2,10 @@ import React from "react";
 import { Circle, G, Path, Svg, Text, View } from "@react-pdf/renderer";
 import type { YearMapWheel } from "@/lib/year-map";
 import { describeSector, makeToAngle, polarXY } from "@/lib/wheel-geometry";
-import { Fonts, Lab } from "../lab-theme";
+import { Fonts, Lab, Layout } from "../lab-theme";
 import { s } from "./styles";
 
-const SIZE = 188;
+const SIZE = Layout.wheel;
 const CX = SIZE / 2;
 const CY = SIZE / 2;
 
@@ -107,7 +107,7 @@ export function LifeWheel({
             </View>
           </View>
           {bodies.length > 0 ? (
-            <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6, width: 188 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6, width: Layout.wheel }}>
               {bodies.map((b) => (
                 <View
                   key={b.role}

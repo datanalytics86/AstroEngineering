@@ -1,5 +1,5 @@
 import { StyleSheet } from "@react-pdf/renderer";
-import { Fonts, Lab, Space, Type } from "../lab-theme";
+import { Fonts, Lab, Layout, Space, Type } from "../lab-theme";
 
 export const s = StyleSheet.create({
   page: {
@@ -87,22 +87,21 @@ export const s = StyleSheet.create({
     paddingHorizontal: 4,
   },
   monthCard: {
+    flexDirection: "row",
     borderWidth: 0.55,
     borderColor: Lab.hair,
-    paddingTop: 7,
-    paddingRight: 8,
-    paddingBottom: 7,
-    paddingLeft: 10,
     marginBottom: Space[3],
     backgroundColor: Lab.paper,
-    position: "relative",
   },
   monthRail: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 2.4,
+    width: Layout.rail,
+  },
+  monthBody: {
+    width: Layout.content - Layout.rail,
+    paddingTop: Space[3],
+    paddingRight: Space[3],
+    paddingBottom: Space[3],
+    paddingLeft: Space[3],
   },
   monthHead: {
     flexDirection: "row",
@@ -134,23 +133,21 @@ export const s = StyleSheet.create({
   barTrack: { height: 3.2, backgroundColor: Lab.hair },
   barFill: { height: 3.2 },
   glanceCell: {
-    width: 167,
+    width: Layout.col3,
+    flexDirection: "row",
     borderWidth: 0.55,
     borderColor: Lab.hair,
-    paddingTop: 6,
-    paddingRight: 7,
-    paddingBottom: 6,
-    paddingLeft: 8,
-    marginBottom: 7,
     backgroundColor: Lab.paper,
-    position: "relative",
   },
   glanceRail: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 2.2,
+    width: Layout.rail,
+  },
+  glanceBody: {
+    width: Layout.col3 - Layout.rail,
+    paddingTop: Space[2],
+    paddingRight: Space[2],
+    paddingBottom: Space[2],
+    paddingLeft: Space[2],
   },
   tableRow: {
     flexDirection: "row",
@@ -173,20 +170,19 @@ export const s = StyleSheet.create({
     letterSpacing: 1.1,
   },
   practice: {
+    flexDirection: "row",
     borderWidth: 0.6,
     borderColor: Lab.copper,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
     backgroundColor: Lab.wash,
-    position: "relative",
   },
   practiceRail: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 2.4,
+    width: Layout.rail,
     backgroundColor: Lab.copper,
+  },
+  practiceBody: {
+    width: Layout.content - Layout.rail,
+    paddingVertical: Space[3],
+    paddingHorizontal: Space[3],
   },
   zoneRow: { flexDirection: "row", marginBottom: 1.5 },
   zoneN: { width: 16, fontSize: 6.5, fontFamily: Fonts.mono, color: Lab.copper },
@@ -233,15 +229,19 @@ export const s = StyleSheet.create({
     fontSize: 7,
   },
   logAction: {
-    width: 400,
+    width: Layout.content - 32 - 62 - 16,
     fontSize: 8.5,
     fontFamily: Fonts.sans,
     color: Lab.ink,
   },
   keyCard: {
-    width: 167,
+    width: Layout.col3,
     borderWidth: 0.55,
     borderColor: Lab.hair,
-    padding: 7,
+    padding: Space[3],
+  },
+  plateFixed: {
+    width: Layout.col3,
+    flexGrow: 0,
   },
 });

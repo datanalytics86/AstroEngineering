@@ -252,6 +252,25 @@ body {
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus);
 }
 
+/* Semantic notes — theme tokens only. Never slate-50 / amber-50 on dark. */
+.lab-note {
+  background: var(--bg-elev);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+.lab-note-ok {
+  border-color: color-mix(in oklch, var(--ok) 45%, var(--line));
+  color: var(--ink);
+}
+.lab-note-warn {
+  border-color: color-mix(in oklch, var(--ember) 45%, var(--line));
+  color: var(--ink);
+}
+.lab-note-danger {
+  border-color: color-mix(in oklch, var(--danger) 50%, var(--line));
+  color: var(--danger);
+}
+
 .lab-skeleton {
   background: linear-gradient(
     90deg,

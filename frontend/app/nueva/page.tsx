@@ -36,6 +36,7 @@ export default function NuevaCartaPage() {
       if (from === "pdf_pro" || from === "pro_sample_pdf") setFromHint(from);
       if (params.get("demo") === "1") {
         setPreset("einstein");
+        setAutoSubmit(true);
         return;
       }
       const share = params.get("share");
@@ -126,7 +127,7 @@ export default function NuevaCartaPage() {
         </div>
 
         {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-600">
+          <div className="mt-4 lab-note lab-note-danger rounded-xl p-4 text-sm">
             {error}
           </div>
         )}
@@ -168,7 +169,7 @@ export default function NuevaCartaPage() {
                         <button
                           onClick={() => router.push(`/transitos/${c.id}`)}
                           title="Ver tránsitos"
-                          className="text-xs font-mono px-2 py-1 rounded-lg border border-blue-200 text-blue-500 hover:bg-blue-50 transition-colors min-h-[44px]"
+                          className="text-xs font-mono px-2 py-1 rounded-lg border border-border text-accent hover:bg-elev transition-colors min-h-[44px]"
                         >
                           {t("nueva.saved.transits")}
                         </button>
@@ -186,7 +187,7 @@ export default function NuevaCartaPage() {
                         <>
                           <button
                             onClick={() => handleDelete(c.id)}
-                            className="text-xs font-mono px-2 py-1 rounded-lg bg-red-50 border border-red-300 text-red-600 hover:bg-red-100 transition-colors"
+                            className="text-xs font-mono px-2 py-1 rounded-lg lab-note lab-note-danger transition-colors"
                           >
                             {t("nueva.saved.confirm_delete")}
                           </button>
@@ -201,7 +202,7 @@ export default function NuevaCartaPage() {
                         <button
                           onClick={() => setDeleteTarget(c.id)}
                           title="Eliminar"
-                          className="text-xs font-mono w-7 h-7 rounded-lg border border-border text-slate-300 hover:border-red-300 hover:text-red-400 transition-colors flex items-center justify-center"
+                          className="text-xs font-mono w-7 h-7 rounded-lg border border-border text-ink-3 hover:border-[var(--danger)] hover:text-[var(--danger)] transition-colors flex items-center justify-center"
                         >
                           ✕
                         </button>
