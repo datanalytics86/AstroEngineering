@@ -6,6 +6,22 @@ function src(file: string): string {
   if (typeof window !== "undefined" && window.location?.origin) {
     return `${window.location.origin}/fonts/${file}`;
   }
+  if (typeof process !== "undefined" && typeof process.cwd === "function") {
+    try {
+      const { existsSync } = require("fs") as typeof import("fs");
+      const { join } = require("path") as typeof import("path");
+      const cwd = process.cwd();
+      const candidates = [
+        join(cwd, "public", "fonts", file),
+        join(cwd, "frontend", "public", "fonts", file),
+      ];
+      for (const path of candidates) {
+        if (existsSync(path)) return path;
+      }
+    } catch {
+      /* edge / restricted */
+    }
+  }
   return `/fonts/${file}`;
 }
 

@@ -68,6 +68,7 @@ export interface YearMonthBlock {
   climate: YearClimate;
   climateLabel: string;
   executive: string;
+  action: string;
   topics: YearTopicLine[];
   featured: YearTopicLine[];
   rest: YearTopicLine[];
@@ -304,14 +305,14 @@ function fallbackWheel(points: number[], lang: Lang): YearMapWheel {
 function howToOf(lang: Lang): string[] {
   return lang === "en"
     ? [
-        "Scan the cover and the three key months. That is the year in 20 seconds.",
-        "Each month: read the ask first, then the two featured areas. The rest is climate.",
-        "Return at the start of the month. Do not reread the whole document every time.",
+        "Scan the cover and the three key months. That is the year in twenty seconds.",
+        "Pin the glance plate. Each month: the ask first, then the two featured areas.",
+        "The last plate is the log. One box a month. That is the map, used.",
       ]
     : [
-        "Mira la portada y los tres meses clave. Eso es el año en 20 segundos.",
-        "Cada mes: lee primero lo que pide, luego las dos áreas destacadas. El resto es clima.",
-        "Vuelve al empezar el mes. No releas el documento entero cada vez.",
+        "Mira la portada y los tres meses clave. Eso es el año en veinte segundos.",
+        "Clava el vistazo. Cada mes: primero lo que pide, luego las dos áreas destacadas.",
+        "La última placa es el registro. Una casilla al mes. Ese es el mapa, usado.",
       ];
 }
 
@@ -432,6 +433,91 @@ const BASELINE: Record<TopicId, Record<YearMonthBlock["climate"], { es: string; 
   },
 };
 
+/** Rotate featured pairs by climate-occurrence so same-climate months don't twin. */
+const FEATURED_ROTATION: Record<YearClimate, TopicId[][]> = {
+  apretado: [
+    ["amor", "trabajo"],
+    ["dinero", "familia"],
+    ["salud", "crecimiento"],
+  ],
+  abierto: [
+    ["dinero", "crecimiento"],
+    ["amor", "trabajo"],
+    ["familia", "salud"],
+  ],
+  suave: [
+    ["familia", "salud"],
+    ["crecimiento", "amor"],
+    ["trabajo", "dinero"],
+  ],
+};
+
+const LINE_C: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
+  amor: {
+    apretado: { es: "Si duele decirlo, ese es el dato. Dilo una vez y para.", en: "If it hurts to say, that is the data. Say it once and stop." },
+    abierto: { es: "Una invitación concreta. Día, hora, lugar.", en: "A concrete invitation. Day, time, place." },
+    suave: { es: "Un gesto chico y puntual. No reinventes el vínculo.", en: "One small, punctual gesture. Do not reinvent the bond." },
+  },
+  dinero: {
+    apretado: { es: "Revisa el número que evitas. Ese es el mes.", en: "Look at the number you avoid. That is the month." },
+    abierto: { es: "Cobra o pide una cosa que ya está ganada.", en: "Collect or ask for one thing already earned." },
+    suave: { es: "Una factura, un precio, un no amable.", en: "One bill, one price, one kind no." },
+  },
+  trabajo: {
+    apretado: { es: "Elige el trabajo que sí. Di no al resto esta semana.", en: "Pick the work that is yes. Say no to the rest this week." },
+    abierto: { es: "Publica o entrega. El mes premia lo que se ve.", en: "Publish or deliver. The month rewards what can be seen." },
+    suave: { es: "Termina un cabo suelto. El cierre cuenta.", en: "Finish one loose end. Closing counts." },
+  },
+  salud: {
+    apretado: { es: "Baja una obligación antes de sumar otra.", en: "Drop one obligation before adding another." },
+    abierto: { es: "Cambia un solo hábito, quince días.", en: "Change one habit for fifteen days." },
+    suave: { es: "Acuéstate a la misma hora diez noches.", en: "Go to bed at the same hour for ten nights." },
+  },
+  familia: {
+    apretado: { es: "No arregles a nadie. Arregla tu parte de una conversación.", en: "Don't fix anyone. Fix your side of one conversation." },
+    abierto: { es: "Presencia sin discurso. Quédate a la comida.", en: "Presence without a speech. Stay for the meal." },
+    suave: { es: "Una llamada. Una mesa. Nada más.", en: "One call. One table. Nothing else." },
+  },
+  crecimiento: {
+    apretado: { es: "Nombra lo que evitas. Escríbelo. No lo resuelvas hoy.", en: "Name what you avoid. Write it down. Don't solve it today." },
+    abierto: { es: "Prueba el camino que ya sabías y no tomabas.", en: "Try the path you already knew and weren't taking." },
+    suave: { es: "Relee lo que aprendiste. No pidas otro pico.", en: "Reread what you learned. Don't ask for another peak." },
+  },
+};
+
+const LINE_D: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
+  amor: {
+    apretado: { es: "Menos teatro. Una verdad dicha con calma.", en: "Less theater. One truth said calmly." },
+    abierto: { es: "Acércate. El mes no lee la mente.", en: "Come closer. The month cannot read your mind." },
+    suave: { es: "Cuida lo vivo. No estrenes crisis.", en: "Tend what is alive. Do not premiere a crisis." },
+  },
+  dinero: {
+    apretado: { es: "No firmes cansado. Duerme y vuelve al número.", en: "Don't sign tired. Sleep and return to the number." },
+    abierto: { es: "Mueve un recurso hacia algo que puedas señalar.", en: "Move a resource toward something you can point at." },
+    suave: { es: "Orden. Una cuenta. Un archivo. Listo.", en: "Order. One account. One file. Done." },
+  },
+  trabajo: {
+    apretado: { es: "Una meta. Si no cabe en una frase, sobra.", en: "One goal. If it doesn't fit in a sentence, it is extra." },
+    abierto: { es: "Que te vean haciendo lo que sabes.", en: "Be seen doing the thing you know." },
+    suave: { es: "Limpia el oficio. El desorden también cansa.", en: "Clean the craft. Clutter tires you too." },
+  },
+  salud: {
+    apretado: { es: "El cuerpo ya avisó. Hazle caso esta semana.", en: "The body already warned you. Listen this week." },
+    abierto: { es: "Camina. Come. No lo conviertas en proyecto.", en: "Walk. Eat. Don't turn it into a project." },
+    suave: { es: "Recupera margen. Eso es la ficha.", en: "Recover margin. That is the whole card." },
+  },
+  familia: {
+    apretado: { es: "Un límite corto. Sin juicio. Sin ensayo.", en: "A short limit. No judgment. No rehearsal." },
+    abierto: { es: "Ofrece tiempo, no un plan de reparación.", en: "Offer time, not a repair plan." },
+    suave: { es: "Raíz: comida, cama, alguien cerca.", en: "Roots: food, bed, someone nearby." },
+  },
+  crecimiento: {
+    apretado: { es: "Quédate. La incomodidad es el temario.", en: "Stay. Discomfort is the syllabus." },
+    abierto: { es: "Un experimento de dos semanas. Luego mides.", en: "A two-week experiment. Then you measure." },
+    suave: { es: "Integra. No abras un curso nuevo.", en: "Integrate. Don't open a new course." },
+  },
+};
+
 const ALT_LINE: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
   amor: {
     apretado: { es: "Una frase dicha vale más que tres gestos grandes.", en: "One said sentence beats three grand gestures." },
@@ -465,6 +551,13 @@ const ALT_LINE: Record<TopicId, Record<YearClimate, { es: string; en: string }>>
   },
 };
 
+const TOPIC_LINES = [BASELINE, ALT_LINE, LINE_C, LINE_D] as const;
+
+function featuredPair(climate: YearClimate, occurrence: number): TopicId[] {
+  const bank = FEATURED_ROTATION[climate];
+  return bank[occurrence % bank.length];
+}
+
 function topicLine(
   id: TopicId,
   climate: YearMonthBlock["climate"],
@@ -473,10 +566,8 @@ function topicLine(
   variant = 0,
 ): string {
   if (extra) return extra;
-  if (variant % 2 === 1) {
-    return lang === "en" ? ALT_LINE[id][climate].en : ALT_LINE[id][climate].es;
-  }
-  return lang === "en" ? BASELINE[id][climate].en : BASELINE[id][climate].es;
+  const bank = TOPIC_LINES[((variant % 4) + 4) % 4];
+  return lang === "en" ? bank[id][climate].en : bank[id][climate].es;
 }
 
 function executiveFor(
@@ -487,17 +578,19 @@ function executiveFor(
   variant = 0,
 ): string {
   const focus = hotTopics.slice(0, 2).join(lang === "en" ? " and " : " y ");
-  const v = variant % 3;
+  const v = ((variant % 4) + 4) % 4;
   if (climate === "apretado") {
     const es = [
       `${label} se aprieta. Deja margen${focus ? ` en ${focus}` : ""}. No llenes el calendario hasta el borde.`,
       `${label} pide menos frentes${focus ? ` — sobre todo ${focus}` : ""}. Una prioridad. El resto espera.`,
       `${label} viene cargado${focus ? ` en ${focus}` : ""}. Protege el sueño y no improvises planes extra.`,
+      `${label} aprieta el paso${focus ? ` en ${focus}` : ""}. Recorta una obligación antes de sumar otra.`,
     ];
     const en = [
       `${label} tightens. Leave margin${focus ? ` in ${focus}` : ""}. Don't fill the calendar to the brim.`,
       `${label} asks for fewer fronts${focus ? ` — especially ${focus}` : ""}. One priority. The rest can wait.`,
       `${label} comes loaded${focus ? ` in ${focus}` : ""}. Protect sleep and do not add extra plans.`,
+      `${label} tightens the pace${focus ? ` in ${focus}` : ""}. Cut one obligation before adding another.`,
     ];
     return lang === "en" ? en[v] : es[v];
   }
@@ -506,11 +599,13 @@ function executiveFor(
       `${label} abre una ventana${focus ? ` en ${focus}` : ""}. Da un paso que se note. No esperes la semana perfecta.`,
       `${label} deja aire${focus ? ` para ${focus}` : ""}. Propón. Este mes escucha.`,
       `${label} premia lo visible${focus ? ` en ${focus}` : ""}. Un gesto concreto basta.`,
+      `${label} se presta${focus ? ` a ${focus}` : ""}. Elige una cosa y hazla pública.`,
     ];
     const en = [
       `${label} opens a window${focus ? ` in ${focus}` : ""}. Take one visible step. Don't wait for a perfect week.`,
       `${label} leaves room${focus ? ` for ${focus}` : ""}. Propose. This month listens.`,
       `${label} rewards what can be seen${focus ? ` in ${focus}` : ""}. One concrete gesture is enough.`,
+      `${label} lends itself${focus ? ` to ${focus}` : ""}. Pick one thing and make it public.`,
     ];
     return lang === "en" ? en[v] : es[v];
   }
@@ -518,11 +613,79 @@ function executiveFor(
     `${label} sirve para integrar${focus ? ` — sobre todo ${focus}` : ""}. La constancia gana a un empujón dramático.`,
     `${label} pide cierre${focus ? ` en ${focus}` : ""}. No abras diez frentes nuevos.`,
     `${label} es nido${focus ? ` para ${focus}` : ""}. Recupera. Luego empujas.`,
+    `${label} baja el volumen${focus ? ` en ${focus}` : ""}. Cierra y ordena. No estrenes drama.`,
   ];
   const en = [
     `${label} is for integrating${focus ? ` — especially ${focus}` : ""}. Consistency beats a dramatic push.`,
     `${label} asks you to close${focus ? ` in ${focus}` : ""}. Do not open ten new fronts.`,
     `${label} is a nest${focus ? ` for ${focus}` : ""}. Recover. Then push.`,
+    `${label} turns the volume down${focus ? ` in ${focus}` : ""}. Close and tidy. Do not premiere drama.`,
+  ];
+  return lang === "en" ? en[v] : es[v];
+}
+
+function actionFor(
+  climate: YearMonthBlock["climate"],
+  hotTopics: string[],
+  lang: Lang,
+  variant = 0,
+): string {
+  const a = hotTopics[0];
+  const b = hotTopics[1];
+  const v = ((variant % 6) + 6) % 6;
+  if (climate === "apretado") {
+    const es = [
+      a ? `Deja margen en ${a}.` : "Deja margen. Duerme primero.",
+      "Una prioridad. El resto espera.",
+      "Recorta una obligación.",
+      b ? `No improvises planes extra en ${b}.` : "No improvises planes extra.",
+      "Duerme antes de decidir.",
+      a ? `Una sola conversación honesta en ${a}.` : "Una sola conversación honesta.",
+    ];
+    const en = [
+      a ? `Leave margin in ${a}.` : "Leave margin. Sleep first.",
+      "One priority. The rest can wait.",
+      "Cut one obligation.",
+      b ? `Do not add extra plans in ${b}.` : "Do not add extra plans.",
+      "Sleep before you decide.",
+      a ? `One honest conversation in ${a}.` : "One honest conversation.",
+    ];
+    return lang === "en" ? en[v] : es[v];
+  }
+  if (climate === "abierto") {
+    const es = [
+      a ? `Da un paso visible en ${a}.` : "Da un paso que se note.",
+      "Propón una cosa concreta.",
+      "Haz público un avance.",
+      b ? `Invita o entrega algo en ${b}.` : "Invita o entrega algo concreto.",
+      "Nombra un precio o un sí.",
+      "Elige una cosa y hazla pública.",
+    ];
+    const en = [
+      a ? `Take a visible step in ${a}.` : "Take one visible step.",
+      "Propose one concrete thing.",
+      "Make one advance public.",
+      b ? `Invite or deliver something in ${b}.` : "Invite or deliver something concrete.",
+      "Name a price or a yes.",
+      "Pick one thing and make it public.",
+    ];
+    return lang === "en" ? en[v] : es[v];
+  }
+  const es = [
+    a ? `Cierra o recupera en ${a}.` : "Cierra una cosa. Recupera.",
+    "No abras diez frentes.",
+    "Ordena. Luego empujas.",
+    b ? `Una rutina chica en ${b}.` : "Una rutina chica. Nada más.",
+    "Acuéstate a una hora decente.",
+    a ? `Integra lo ya aprendido en ${a}.` : "Integra lo ya aprendido.",
+  ];
+  const en = [
+    a ? `Close or recover in ${a}.` : "Close one thing. Recover.",
+    "Do not open ten fronts.",
+    "Tidy. Then push.",
+    b ? `One small routine in ${b}.` : "One small routine. Nothing else.",
+    "Go to bed at a decent hour.",
+    a ? `Integrate what you already learned in ${a}.` : "Integrate what you already learned.",
   ];
   return lang === "en" ? en[v] : es[v];
 }
@@ -578,6 +741,7 @@ function buildMonth(
   chart: ChartResponse,
   events: TransitEvent[],
   lang: Lang,
+  occurrence: number,
 ): YearMonthBlock {
   const key = `${year}-${String(monthIndex0 + 1).padStart(2, "0")}`;
   const label = monthName(monthIndex0, lang);
@@ -590,7 +754,7 @@ function buildMonth(
   const byId = new Map(grouped.map((g) => [g.topicId, g.items]));
   const topics: YearTopicLine[] = TOPIC_ORDER.map((id) => {
     const extra = byId.get(id)?.[0]?.replace(/^[^:]+:\s*/, "");
-    const line = extra || topicLine(id, climate, undefined, lang, monthIndex0);
+    const line = extra || topicLine(id, climate, undefined, lang, occurrence);
     const feel = lang === "en" ? FEEL[id][climate].en : FEEL[id][climate].es;
     warn(`month.${key}.${id}`, line);
     return {
@@ -601,16 +765,25 @@ function buildMonth(
       feel,
     };
   });
-  const ranked = [...topics].sort((a, b) => {
-    const sa = byId.get(a.id)?.length ?? 0;
-    const sb = byId.get(b.id)?.length ?? 0;
-    return sb - sa;
-  });
-  const featured = ranked.slice(0, 2).map((t) => ({ ...t, featured: true }));
-  const rest = ranked.slice(2).map((t) => ({ ...t, featured: false }));
+  const scores = topics.map((t) => byId.get(t.id)?.length ?? 0);
+  const max = Math.max(0, ...scores);
+  const hotIds: TopicId[] =
+    max === 0
+      ? featuredPair(climate, occurrence)
+      : [...topics]
+          .sort((a, b) => (byId.get(b.id)?.length ?? 0) - (byId.get(a.id)?.length ?? 0))
+          .slice(0, 2)
+          .map((t) => t.id);
+  const featured = hotIds
+    .map((id) => topics.find((t) => t.id === id))
+    .filter((t): t is YearTopicLine => Boolean(t))
+    .map((t) => ({ ...t, featured: true }));
+  const rest = topics.filter((t) => !hotIds.includes(t.id)).map((t) => ({ ...t, featured: false }));
   const hot = featured.map((t) => t.title.toLowerCase());
-  const executive = executiveFor(label, climate, hot, lang, monthIndex0);
+  const executive = executiveFor(label, climate, hot, lang, occurrence);
+  const action = actionFor(climate, hot, lang, occurrence);
   warn(`month.${key}.exec`, executive);
+  warn(`month.${key}.action`, action);
   return {
     key,
     monthIndex: monthIndex0,
@@ -620,6 +793,7 @@ function buildMonth(
     climate,
     climateLabel: climateLabelOf(climate, lang),
     executive,
+    action,
     topics,
     featured,
     rest,
@@ -639,17 +813,17 @@ export function buildYearMap(opts: {
   const natal = generateHumanProSummary(opts.chart, lang);
   const series = buildPersonalIntensitySeries(opts.transits, year, lang);
   const byKey = new Map(series.map((p) => [p.month, p.value]));
+  const seen: Record<YearClimate, number> = { apretado: 0, abierto: 0, suave: 0 };
   const months = Array.from({ length: 12 }, (_, i) => {
     const key = `${year}-${String(i + 1).padStart(2, "0")}`;
     const value = byKey.get(key) ?? 3.5;
-    return buildMonth(
-      year,
-      i,
-      value,
-      opts.chart,
-      eventsForMonth(opts.transits, key),
-      lang,
-    );
+    const probeEvents = eventsForMonth(opts.transits, key);
+    const tense = probeEvents.filter((e) => TENSE.has(e.aspect_name)).length;
+    const tenseRatio = probeEvents.length ? tense / probeEvents.length : 0;
+    const climate = climateOf(value, tenseRatio);
+    const occurrence = seen[climate];
+    seen[climate] += 1;
+    return buildMonth(year, i, value, opts.chart, probeEvents, lang, occurrence);
   });
 
   const pulse = readIntensityYear(
@@ -736,22 +910,20 @@ export function buildYearMap(opts: {
 export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
   const year = new Date().getFullYear();
   const intensities = [3.2, 4.1, 8.6, 5.4, 4.0, 3.6, 2.8, 4.7, 5.9, 7.4, 4.5, 3.1];
+  const seen: Record<YearClimate, number> = { apretado: 0, abierto: 0, suave: 0 };
   const months: YearMonthBlock[] = intensities.map((value, i) => {
     const climate = climateOf(value);
+    const occurrence = seen[climate];
+    seen[climate] += 1;
     const label = monthName(i, lang);
+    const hotIds = featuredPair(climate, occurrence);
     const topics: YearTopicLine[] = TOPIC_ORDER.map((id) => ({
       id,
       title: lang === "en" ? TOPIC_TITLE[id].en : TOPIC_TITLE[id].es,
-      line: topicLine(id, climate, undefined, lang, i),
+      line: topicLine(id, climate, undefined, lang, occurrence),
       featured: false,
       feel: lang === "en" ? FEEL[id][climate].en : FEEL[id][climate].es,
     }));
-    const hotIds: TopicId[] =
-      climate === "apretado"
-        ? ["amor", "trabajo"]
-        : climate === "abierto"
-          ? ["dinero", "crecimiento"]
-          : ["familia", "salud"];
     const featured = topics.filter((t) => hotIds.includes(t.id)).map((t) => ({ ...t, featured: true }));
     const rest = topics.filter((t) => !hotIds.includes(t.id));
     const hot = featured.map((t) => t.title.toLowerCase());
@@ -763,7 +935,8 @@ export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
       intensity: value,
       climate,
       climateLabel: climateLabelOf(climate, lang),
-      executive: executiveFor(label, climate, hot, lang, i),
+      executive: executiveFor(label, climate, hot, lang, occurrence),
+      action: actionFor(climate, hot, lang, occurrence),
       topics,
       featured,
       rest,

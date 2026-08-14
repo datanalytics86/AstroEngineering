@@ -22,6 +22,8 @@ next-env.d.ts
 # Misc
 .DS_Store
 *.log
+frontend/year-map-preview/
+frontend/year-map-preview-*.pdf
 frontend/.env.local
 frontend/.env.production
 

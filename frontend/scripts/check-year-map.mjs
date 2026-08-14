@@ -78,9 +78,30 @@ for (const lang of ["es", "en"]) {
       failed += 1;
     }
     const asks = content.months.map((m) => m.executive);
-    if (label === "sample" && new Set(asks).size < 6) {
-      console.error(`FAIL ${lang} ${label}: executives too repetitive`);
+    if (label === "sample" && new Set(asks).size < 10) {
+      console.error(`FAIL ${lang} ${label}: executives too repetitive (${new Set(asks).size})`);
       failed += 1;
+    }
+    if (content.months.some((m) => !m.action)) {
+      console.error(`FAIL ${lang} ${label}: action missing`);
+      failed += 1;
+    }
+    if (label === "sample") {
+      const featured = content.months.flatMap((m) => m.featured.map((f) => f.line));
+      if (new Set(featured).size < 10) {
+        console.error(`FAIL ${lang} ${label}: featured lines too repetitive (${new Set(featured).size})`);
+        failed += 1;
+      }
+      const pairs = content.months.map((m) => m.featured.map((f) => f.id).join("+"));
+      if (new Set(pairs).size < 5) {
+        console.error(`FAIL ${lang} ${label}: featured pairs too repetitive (${new Set(pairs).size})`);
+        failed += 1;
+      }
+      const actions = content.months.map((m) => m.action);
+      if (new Set(actions).size < 10) {
+        console.error(`FAIL ${lang} ${label}: actions too repetitive (${new Set(actions).size})`);
+        failed += 1;
+      }
     }
     const blobs = [
       content.natal.headline,
