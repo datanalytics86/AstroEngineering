@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "check:i18n": "node scripts/check-i18n.mjs",
-    "check:preview": "npx --yes tsx scripts/check-tier-minus1.mjs"
+    "check:preview": "npx --yes tsx scripts/check-tier-minus1.mjs",
+    "check:interp": "npx --yes tsx scripts/check-advanced-interp.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.6.0",

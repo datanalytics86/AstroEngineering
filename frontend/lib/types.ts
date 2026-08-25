@@ -282,6 +282,35 @@ export interface NatalInterpretation {
   growth: string;
   keywords: string[];
   keyphrase: string;
+  house_synthesis?: HouseSynthesis;
+  angle_analysis?: AngleDeepAnalysis;
+}
+
+export type HouseTone = "constructive" | "challenging" | "transformative" | "latent";
+
+/** Síntesis de una casa como unidad (planetas + regente + cúspide + ángulos). */
+export interface HouseSynthesis {
+  house: number;
+  name: string;
+  synthesis: string;
+  ruler_condition: string;
+  angular_connection: string;
+  overall_tone: HouseTone;
+}
+
+/** Lectura profunda de ASC / MC / IC / DSC. */
+export interface AngleDeepAnalysis {
+  name: "ASC" | "DSC" | "MC" | "IC";
+  title: string;
+  subtitle: string;
+  principal: string;
+  ruler_condition: string;
+  solar_relation?: string;
+  strengths: string[];
+  challenges: string[];
+  growth: string;
+  keywords: string[];
+  keyphrase: string;
 }
 
 // ── Transit Executive Summary Types ───────────────────────────────────────────

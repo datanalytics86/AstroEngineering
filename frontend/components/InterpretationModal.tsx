@@ -1,19 +1,18 @@
 ﻿"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import type { ClickTarget, NatalInterpretation, Aspect } from "@/lib/types";
+import type { ClickTarget, NatalInterpretation, Aspect, ChartResponse } from "@/lib/types";
 import {
-  getPlanetInSignInterpretation,
+  interpretNatalTarget,
   getPlanetInHouseInterpretation,
-  getAspectInterpretation,
-  getHouseMeaning,
-  getAngleMeaning,
 } from "@/lib/natal-interpretations";
 import { useT } from "@/lib/i18n";
+import type { TranslationKeys } from "@/lib/locales/es";
 
 
 interface Props {
   target: ClickTarget | null;
+  chart?: ChartResponse | null;
   allAspects?: Aspect[];
   onClose: () => void;
 }
@@ -37,25 +36,12 @@ const NATURE_COLORS: Record<string, string> = {
   menor: "#A78BFA",
 };
 
-function getInterpretation(target: ClickTarget, lang: "es" | "en"): NatalInterpretation | null {
-  switch (target.type) {
-    case "planet":
-      return getPlanetInSignInterpretation(target.planet.name, target.planet.sign, lang);
-    case "aspect":
-      return getAspectInterpretation(
-        target.aspect.planet1,
-        target.aspect.aspect_name,
-        target.aspect.planet2,
-        target.aspect.orb,
-        lang,
-      );
-    case "house":
-      return getHouseMeaning(target.house.number, lang);
-    case "angle":
-      return getAngleMeaning(target.name, target.sign, lang);
-    default:
-      return null;
-  }
+function getInterpretation(
+  target: ClickTarget,
+  lang: "es" | "en",
+  chart?: ChartResponse | null,
+): NatalInterpretation | null {
+  return interpretNatalTarget(target, lang, chart ?? undefined);
 }
 
 function getTitle(
@@ -144,7 +130,7 @@ function AspectPills({ aspects, planetName }: { aspects: Aspect[]; planetName: s
   );
 }
 
-export default function InterpretationModal({ target, allAspects = [], onClose }: Props) {
+export default function InterpretationModal({ target, chart = null, allAspects = [], onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const { t, lang } = useT();
@@ -174,7 +160,7 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
 
   if (!target) return null;
 
-  const interp = getInterpretation(target, lang);
+  const interp = getInterpretation(target, lang, chart);
   const { icon, main, sub } = getTitle(target, t);
 
   const copyText = interp
@@ -317,8 +303,57 @@ export default function InterpretationModal({ target, allAspects = [], onClose }
                 <p className="text-sm text-slate-700 leading-relaxed">{interp.growth}</p>
               </section>
 
-              {/* House interpretation if planet */}
-              {target.type === "planet" && (
+              {interp.house_synthesis && (
+                <section className="space-y-3">
+                  {target.type !== "house" && (
+                    <>
+                      <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono">
+                        {t("modal.house_unit")} {interp.house_synthesis.house}
+                      </h3>
+                      <p className="text-sm text-slate-700 leading-relaxed">{interp.house_synthesis.synthesis}</p>
+                    </>
+                  )}
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <span className="font-mono text-xs uppercase tracking-widest text-ink-3 block mb-1">
+                      {t("modal.ruler_condition")}
+                    </span>
+                    {interp.house_synthesis.ruler_condition}
+                  </p>
+                  <p className="text-sm text-slate-600 leading-relaxed">
+                    <span className="font-mono text-xs uppercase tracking-widest text-ink-3 block mb-1">
+                      {t("modal.angular_connection")}
+                    </span>
+                    {interp.house_synthesis.angular_connection}
+                  </p>
+                  <p className="text-xs font-mono text-ink-3">
+                    {t(`modal.tone.${interp.house_synthesis.overall_tone}` as TranslationKeys)}
+                  </p>
+                </section>
+              )}
+
+              {interp.angle_analysis?.solar_relation && (
+                <section>
+                  <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
+                    {t("modal.solar_relation")}
+                  </h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    {interp.angle_analysis.solar_relation}
+                  </p>
+                </section>
+              )}
+
+              {interp.angle_analysis && (
+                <section>
+                  <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
+                    {t("modal.ruler_condition")}
+                  </h3>
+                  <p className="text-sm text-slate-700 leading-relaxed">
+                    {interp.angle_analysis.ruler_condition}
+                  </p>
+                </section>
+              )}
+
+              {target.type === "planet" && !interp.house_synthesis && (
                 <section>
                   <h3 className="text-xs uppercase tracking-widest text-ink-3 font-mono mb-2">
                     {t("modal.in_house")} {target.planet.house}
