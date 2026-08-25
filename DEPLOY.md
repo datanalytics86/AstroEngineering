@@ -35,7 +35,7 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 
 | Variable | Valor | Notas |
 |----------|-------|-------|
-| `NEXT_PUBLIC_API_URL` | `https://astroengine-backend.onrender.com` | **Sin trailing slash. No localhost en prod.** Root dir: `frontend`. Debe ser el host que sirve `/api/*` (no el stub corto). |
+| `NEXT_PUBLIC_API_URL` | `https://astroengine-backend.onrender.com` | **Sin trailing slash. No localhost en prod.** Root dir: `frontend`. Debe ser el host que sirve `/api/*` (no el stub corto). Si falta en el dashboard, `frontend/vercel.json` + `next.config.mjs` usan este valor. El build **falla** si apunta a localhost o a `astroengine.onrender.com`. |
 
 ### Vercel — opcionales
 

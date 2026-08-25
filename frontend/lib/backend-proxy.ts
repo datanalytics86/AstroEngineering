@@ -19,11 +19,11 @@ const WAKING_BODY = {
 } as const;
 
 export function backendBase(): string {
-  return (
+  const raw =
     process.env.BACKEND_URL ??
     process.env.NEXT_PUBLIC_API_URL ??
-    "http://localhost:8000"
-  );
+    "http://localhost:8000";
+  return raw.replace(/\/$/, "");
 }
 
 function parseUpstreamJson(text: string, fallback: unknown): unknown {

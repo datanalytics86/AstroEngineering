@@ -51,5 +51,5 @@ jobs:
 
       - name: Build (static type-check + Next.js build)
         env:
-          NEXT_PUBLIC_API_URL: https://example.com
+          NEXT_PUBLIC_API_URL: https://astroengine-backend.onrender.com
         run: npm run build
