@@ -726,11 +726,11 @@ function generate(tp: string, aspect: string, np: string, lang: "es" | "en" = "e
       natal_planet: np,
       aspect,
       title: `${tp} ${aspect.toLowerCase()} ${np} natal`,
-      summary: `${tp} activates your ${na.role} through ${asp.keyword}. ${asp.dynamic}`,
-      detailed: `The ${ta.energy} energy of ${tp} impacts directly on ${na.role}. ${asp.dynamic} This period invites you to work consciously with themes of ${combinedAreas.slice(0, 2).join(" and ")}, with special emphasis on ${na.areas[0]}.`,
+      summary: `${tp} forms a ${aspect.toLowerCase()} to natal ${np}: ${asp.keyword}. ${asp.dynamic} Not a verdict: a ${ta.energy} climate over ${na.role}.`,
+      detailed: `${tp} (${ta.energy}) aspects ${na.role} by ${aspect.toLowerCase()}. ${asp.dynamic} ${asp.applying_note} Themes of ${combinedAreas.slice(0, 2).join(" and ")} become practicable; the natural emphasis falls on ${na.areas[0]}. The transit does not force an outcome: it concentrates a question and asks for an act.`,
       life_areas: combinedAreas,
       nature: asp.nature,
-      advice: `Work consciously with themes of ${na.areas[0]} and ${ta.areas[0]} during this period.`,
+      advice: `Use the period for a concrete act in ${na.areas[0]}, at ${tp}'s tempo. Neither flee nor inflate the climate.`,
       duration_note: DURATION_NOTES_EN[tp] ?? "Duration varies depending on the transiting planet.",
     };
 
@@ -753,11 +753,11 @@ function generate(tp: string, aspect: string, np: string, lang: "es" | "en" = "e
     natal_planet: np,
     aspect,
     title: `${tp} ${aspect.toLowerCase()} ${np} natal`,
-    summary: `${tp} activa tu ${na.role} a través de ${asp.keyword}. ${asp.dynamic}`,
-    detailed: `La energía ${ta.energy} de ${tp} impacta directamente sobre ${na.role}. ${asp.dynamic} Este período te invita a trabajar conscientemente con los temas de ${combinedAreas.slice(0, 2).join(" y ")}, con especial énfasis en ${na.areas[0]}.`,
+    summary: `${tp} forma ${aspect.toLowerCase()} con ${np} natal: ${asp.keyword}. ${asp.dynamic} No es un veredicto: es un clima ${ta.energy} sobre ${na.role}.`,
+    detailed: `${tp} (${ta.energy}) aspecta ${na.role} por ${aspect.toLowerCase()}. ${asp.dynamic} ${asp.applying_note} Los temas de ${combinedAreas.slice(0, 2).join(" y ")} se vuelven practicables; el énfasis natural cae en ${na.areas[0]}. El tránsito no obliga un desenlace: concentra una pregunta y pide un acto.`,
     life_areas: combinedAreas,
     nature: asp.nature,
-    advice: `Trabaja conscientemente con los temas de ${na.areas[0]} y ${ta.areas[0]} durante este período.`,
+    advice: `Usa el período para un acto concreto en ${na.areas[0]}, con el tempo de ${tp}. Ni huir ni inflar el clima.`,
     duration_note: DURATION_NOTES[tp] ?? "Duración variable según el planeta transitante.",
   };
 

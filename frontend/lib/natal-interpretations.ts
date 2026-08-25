@@ -1,4 +1,19 @@
-import type { NatalInterpretation, PlanetPosition, HouseCusp, Aspect, AnglePoint } from "./types";
+import type {
+  NatalInterpretation,
+  ChartResponse,
+  ClickTarget,
+} from "./types";
+import { getPlanetDignity } from "./zodiac-utils";
+import {
+  generateHouseSynthesis,
+  generateAngleDeepAnalysis,
+  generatePlanetSynthesis,
+  generateAspectSynthesis,
+  houseSynthesisToNatal,
+  angleAnalysisToNatal,
+} from "./advanced-interpretation";
+
+export { generateHouseSynthesis, generateAngleDeepAnalysis } from "./advanced-interpretation";
 
 type Lang = "es" | "en";
 
@@ -506,21 +521,23 @@ function generatePlanetInSign(planet: string, sign: string, lang: Lang = "es"): 
       KEYPHRASES_EN[keyphraseKey] ||
       `${planet} in ${sign}: your ${p.function} expresses itself in a ${s.style.toLowerCase()} way`;
 
+    const dignity = getPlanetDignity(planet, sign);
+    const dig = dignity ? ` Essential dignity: ${dignity}.` : "";
     return {
       title: `${planet} in ${sign}`,
       subtitle: `${s.element} ${s.modality}`,
-      principal: `${planet} represents ${p.function}. In ${sign}, this energy takes on a ${s.style.toLowerCase()} style. You express your ${p.function} in a way characteristic of ${sign}: ${s.keywords.join(", ")}.`,
+      principal: `${planet} names ${p.function}. In ${sign} that function takes a ${s.style} language (${s.keywords.join(", ")}).${dig} The sign is a climate, not a sentence: it can be spoken with craft or as caricature. The gift is ${p.gift}; the shadow ${p.shadow} appears when the function is identified with the whole self.`,
       strengths: [
-        `Capacity for ${s.keywords[0]} thanks to your ${p.gift}`,
-        `${s.style.charAt(0).toUpperCase() + s.style.slice(1).toLowerCase()} expression of your ${p.function}`,
-        `Integration of ${s.element} with your ${p.function}`,
+        `${p.gift} available in a ${s.style} register`,
+        `${s.element} modality (${s.modality}) supports ${p.keywords[0]}`,
+        `Room to practise ${s.keywords[0]} without confusing it with destiny`,
       ],
       challenges: [
-        `Tendency toward ${p.shadow.split(",")[0]} expressed in a ${s.style.toLowerCase()} way`,
-        `Can become ${s.modality === "Fixed" ? "obsessive" : "scattered"} around themes of ${p.keywords[0]}`,
-        `Need to learn balance regarding ${s.keywords[1]}`,
+        `When unattended, ${p.shadow.split(",")[0]} can wear the mask of ${sign}`,
+        `The ${s.modality.toLowerCase()} mode may freeze or scatter ${p.keywords[0]}`,
+        `${s.keywords[1]} asked as a skill, not as a demand from the sky`,
       ],
-      growth: `Your growth lies in recognizing that your ${p.function} carries both strengths and shadows. Consciously integrate ${s.element} with your deeper purpose. Seek to express your ${p.gift} responsibly.`,
+      growth: `Practise ${p.function} in the idiom of ${sign} without handing the helm to the shadow. ${p.gift} becomes mastery only when chosen.`,
       keywords,
       keyphrase,
     };
@@ -536,21 +553,23 @@ function generatePlanetInSign(planet: string, sign: string, lang: Lang = "es"): 
     (KEYPHRASES[keyphraseKey] as string | undefined) ||
     `${planet} en ${sign}: Tu ${p.function} se expresa de forma ${s.style.toLowerCase()}`;
 
+  const dignity = getPlanetDignity(planet, sign);
+  const dig = dignity ? ` Dignidad esencial: ${dignity}.` : "";
   return {
     title: `${planet} en ${sign}`,
     subtitle: `${s.element} ${s.modality}`,
-    principal: `${planet} representa ${p.function}. En ${sign}, esta energía toma un estilo ${s.style.toLowerCase()}. Expresas tu ${p.function} de manera característica de ${sign}: ${s.keywords.join(", ")}.`,
+    principal: `${planet} nombra ${p.function}. En ${sign} esa función toma un idioma ${s.style} (${s.keywords.join(", ")}).${dig} El signo es un clima, no una sentencia: puede hablarse con oficio o como caricatura. El don es ${p.gift}; la sombra (${p.shadow}) aparece cuando se identifica la función con todo el yo.`,
     strengths: [
-      `Capacidad para ${s.keywords[0]} gracias a ${p.gift}`,
-      `Expresión ${s.style.toLowerCase()} de tu ${p.function}`,
-      `Integración del ${s.element} con tu ${p.function}`,
+      `${p.gift} disponible en registro ${s.style}`,
+      `El ${s.element} ${s.modality.toLowerCase()} sostiene ${p.keywords[0]}`,
+      `Margen para practicar ${s.keywords[0]} sin confundirlo con destino`,
     ],
     challenges: [
-      `Tendencia al ${p.shadow.split(",")[0]} en forma ${s.style.toLowerCase()}`,
-      `Puede resultar ${s.modality === "Fijo" ? "obsesivo" : "disperso"} en temas de ${p.keywords[0]}`,
-      `Necesidad de aprender balance en ${s.keywords[1]}`,
+      `Sin atención, ${p.shadow.split(",")[0]} puede vestir la máscara de ${sign}`,
+      `El modo ${s.modality.toLowerCase()} puede congelar o dispersar ${p.keywords[0]}`,
+      `${s.keywords[1]} se pide como habilidad, no como exigencia del cielo`,
     ],
-    growth: `Tu crecimiento está en reconocer que tu ${p.function} tiene tanto fortalezas como sombras. Integra conscientemente el ${s.element} con tu propósito más profundo. Busca expresar tu ${p.gift} de forma responsable.`,
+    growth: `Practica ${p.function} en el idioma de ${sign} sin entregar el timón a la sombra. ${p.gift} se vuelve maestría solo cuando se elige.`,
     keywords,
     keyphrase,
   };
@@ -565,18 +584,18 @@ function generatePlanetInHouse(planet: string, house: number, lang: Lang = "es")
     return {
       title: `${planet} in House ${house}`,
       subtitle: h.name,
-      principal: `${planet} (your ${p.function}) operates in the ${h.name}, the life area of ${h.domain}. Your ${p.function} unfolds mainly in the context of ${h.keywords[0]}.`,
+      principal: `${planet} (${p.function}) works in the ${h.name} — the field of ${h.domain}. A planet in a house does not mean “you are X in area Y”: it names where that function is trained. The gift ${p.gift} can serve ${h.keywords[0]}; the shadow ${p.shadow.split(",")[0]} appears if the whole life is reduced to this enclosure.`,
       strengths: [
-        `Talent for ${h.keywords[0]} thanks to your ${p.function}`,
-        `Natural capacity around themes of ${h.keywords[1]}`,
-        `Your ${p.gift} is especially useful in house ${house}`,
+        `${p.function} finds a concrete stage in ${h.keywords[0]}`,
+        `${p.gift} is usable around ${h.keywords[1]}`,
+        `House ${house} gives the function a biography, not a verdict`,
       ],
       challenges: [
-        `Possible excessive focus on themes of ${h.domain}`,
-        `Can manifest as ${p.shadow.split(",")[0]} in this area`,
-        `Need to expand beyond house ${house}`,
+        `Over-identifying with ${h.domain} starves the rest of the chart`,
+        `${p.shadow.split(",")[0]} may lodge in this life area if unattended`,
+        `Reading the house without its ruler is a half-truth`,
       ],
-      growth: `Your soul lesson in this life includes learning to express your ${p.function} in a balanced way in the area of ${h.domain}. Use your ${p.gift} to contribute consciously to these themes.`,
+      growth: `Practise ${p.function} as a craft in ${h.domain}. ${p.gift} becomes contribution when chosen; the house is a workshop.`,
       keywords: [...p.keywords.slice(0, 2), ...h.keywords.slice(0, 2)],
       keyphrase: `Your ${p.function} transforms the world of ${h.domain}`,
     };
@@ -589,18 +608,18 @@ function generatePlanetInHouse(planet: string, house: number, lang: Lang = "es")
   return {
     title: `${planet} en Casa ${house}`,
     subtitle: h.name,
-    principal: `${planet} (tu ${p.function}) opera en la ${h.name}, el área de vida de ${h.domain}. Tu ${p.function} se despliega principalmente en contextos de ${h.keywords[0]}.`,
+    principal: `${planet} (${p.function}) trabaja en la ${h.name} — el campo de ${h.domain}. Un planeta en una casa no significa «eres X en el área Y»: nombra dónde se entrena esa función. El don ${p.gift} puede servir a ${h.keywords[0]}; la sombra ${p.shadow.split(",")[0]} aparece si se reduce toda la vida a este recinto.`,
     strengths: [
-      `Talento para ${h.keywords[0]} gracias a tu ${p.function}`,
-      `Capacidad natural en temas de ${h.keywords[1]}`,
-      `Tu ${p.gift} es especialmente útil en casa ${house}`,
+      `${p.function} encuentra escenario concreto en ${h.keywords[0]}`,
+      `${p.gift} es usable en torno a ${h.keywords[1]}`,
+      `La casa ${house} da biografía a la función, no un veredicto`,
     ],
     challenges: [
-      `Posible concentración excesiva en temas de ${h.domain}`,
-      `Puede manifestarse como ${p.shadow.split(",")[0]} en esta área`,
-      `Necesidad de expansión más allá de casa ${house}`,
+      `Identificarse en exceso con ${h.domain} empobrece el resto de la carta`,
+      `${p.shadow.split(",")[0]} puede alojarse aquí si no hay atención`,
+      `Leer la casa sin el regente es una media verdad`,
     ],
-    growth: `Tu lección de alma en esta vida incluye aprender a expresar tu ${p.function} de forma equilibrada en el área de ${h.domain}. Usa tu ${p.gift} para contribuir conscientemente en estos temas.`,
+    growth: `Practica ${p.function} como oficio en ${h.domain}. ${p.gift} se vuelve contribución cuando se elige; la casa es un taller.`,
     keywords: [...p.keywords.slice(0, 2), ...h.keywords.slice(0, 2)],
     keyphrase: `Tu ${p.function} transforma el mundo de ${h.domain}`,
   };
@@ -679,7 +698,7 @@ function generateAspect(
     return {
       title: `${planet1} ${aspectName} ${planet2}`,
       subtitle: aspectName,
-      principal: `Your ${p1.function} and your ${p2.function} ${aspect.phrase} in your psyche. This is a relationship of ${aspect.dynamic}. This aspect means these two inner functions must learn to coexist.`,
+      principal: `${p1.function} and ${p2.function} ${aspect.phrase}: a climate of ${aspect.dynamic}${orb !== undefined ? ` (orb ${orb.toFixed(2)}°)` : ""}. An aspect is not a sentence; it is a working channel. Exact aspects (<1°) seal character more sharply; wide orbs remain a background theme that cycles can wake.`,
       strengths: [
         `Potential to integrate ${p1.function} and ${p2.function}`,
         `Your ${aspect.nature === "constructive" ? p1.gift : "unique character"} is enhanced`,
@@ -705,7 +724,7 @@ function generateAspect(
   return {
     title: `${planet1} ${aspectName} ${planet2}`,
     subtitle: aspectName,
-    principal: `Tu ${p1.function} y tu ${p2.function} ${aspect.phrase} en tu psique. Esta es una relación de ${aspect.dynamic}. ${aspectName} significa que estas dos funciones internas deben aprender a coexistir.`,
+    principal: `${p1.function} y ${p2.function} ${aspect.phrase}: un clima de ${aspect.dynamic}${orb !== undefined ? ` (orbe ${orb.toFixed(2)}°)` : ""}. Un aspecto no es una sentencia; es un canal de trabajo. Los exactos (<1°) sellan el carácter con más nitidez; los amplios quedan como tema de fondo que los ciclos pueden despertar.`,
     strengths: [
       `Potencial para integrar ${p1.function} y ${p2.function}`,
       `Tu ${aspect.nature === "constructivo" ? p1.gift : "carácter único"} se potencia`,
@@ -886,4 +905,42 @@ export function getAngleMeaning(angleName: string, sign: string, lang: Lang = "e
     keywords: s.keywords,
     keyphrase: `Tu ${angleName} es tu firma cósmica en ${sign}`,
   };
+}
+
+/** Lectura con carta completa cuando existe; si no, arquetipo de respaldo. */
+export function interpretNatalTarget(
+  target: ClickTarget,
+  lang: Lang = "es",
+  chart?: ChartResponse,
+): NatalInterpretation | null {
+  if (chart) {
+    switch (target.type) {
+      case "planet":
+        return generatePlanetSynthesis(chart, target.planet, lang);
+      case "aspect":
+        return generateAspectSynthesis(chart, target.aspect, lang);
+      case "house":
+        return houseSynthesisToNatal(generateHouseSynthesis(chart, target.house.number, lang), lang);
+      case "angle":
+        return angleAnalysisToNatal(generateAngleDeepAnalysis(chart, target.name, lang));
+    }
+  }
+  switch (target.type) {
+    case "planet":
+      return getPlanetInSignInterpretation(target.planet.name, target.planet.sign, lang);
+    case "aspect":
+      return getAspectInterpretation(
+        target.aspect.planet1,
+        target.aspect.aspect_name,
+        target.aspect.planet2,
+        target.aspect.orb,
+        lang,
+      );
+    case "house":
+      return getHouseMeaning(target.house.number, lang);
+    case "angle":
+      return getAngleMeaning(target.name, target.sign, lang);
+    default:
+      return null;
+  }
 }

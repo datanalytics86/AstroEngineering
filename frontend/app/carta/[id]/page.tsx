@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import type { ChartResponse, BirthData } from "@/lib/types";
+import type { ChartResponse, BirthData, ClickTarget } from "@/lib/types";
 import {
   loadChart,
   saveYearTransits,
@@ -14,6 +14,7 @@ import {
 } from "@/lib/storage";
 import { postWithWakingRetry } from "@/lib/api-fetch";
 import ChartWheel from "@/components/ChartWheel";
+import InterpretationModal from "@/components/InterpretationModal";
 import PlanetPositions from "@/components/PlanetPositions";
 import AspectTable from "@/components/AspectTable";
 import TopicSummarySection from "@/components/TopicSummarySection";
@@ -41,6 +42,7 @@ export default function CartaPage() {
   const [chart, setChart] = useState<ChartResponse | null>(null);
   const [birthData, setBirthData] = useState<BirthData | null>(null);
   const [highlighted, setHighlighted] = useState<string | undefined>(undefined);
+  const [clickTarget, setClickTarget] = useState<ClickTarget | null>(null);
   const [loadingTransits, setLoadingTransits] = useState(false);
   const [transitError, setTransitError] = useState<string | null>(null);
   const [loadingSR, setLoadingSR] = useState(false);
@@ -404,9 +406,20 @@ export default function CartaPage() {
             onPlanetClick={(name) =>
               setHighlighted((prev) => (prev === name ? undefined : name))
             }
+            onElementClick={(target) => {
+              setClickTarget(target);
+              if (target.type === "planet") setHighlighted(target.planet.name);
+            }}
           />
         </div>
       </section>
+
+      <InterpretationModal
+        target={clickTarget}
+        chart={chart}
+        allAspects={chart.aspects}
+        onClose={() => setClickTarget(null)}
+      />
 
       {/* 2. Who you are — prevents intimidation */}
       {human && (

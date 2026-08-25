@@ -49,6 +49,9 @@ jobs:
       - name: Check i18n key parity (es/en)
         run: npm run check:i18n
 
+      - name: Check advanced natal synthesis
+        run: npm run check:interp
+
       - name: Build (static type-check + Next.js build)
         env:
           NEXT_PUBLIC_API_URL: https://astroengine-backend.onrender.com

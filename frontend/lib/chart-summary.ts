@@ -3,7 +3,9 @@
  * Basado en Steven Forrest, Sue Tompkins, Howard Sasportas, Stephen Arroyo.
  */
 
-import type { ChartResponse, ChartSummary, PlanetPosition, Aspect } from "./types";
+import type { ChartResponse, ChartSummary } from "./types";
+import { generateHouseSynthesis, generateAngleDeepAnalysis } from "./advanced-interpretation";
+import { getPlanetDignity } from "./zodiac-utils";
 
 // ── Arquetipos de signos ──────────────────────────────────────────────────────
 
@@ -163,27 +165,31 @@ export function generateChartSummary(chart: ChartResponse): ChartSummary {
   // ── Identidad central ────────────────────────────────────────────────────────
   const sunStyle = SIGN_STYLE[sun.sign] ?? "única";
   const sunGift = PLANET_GIFT["Sol"] ?? "vitalidad";
+  const sunDig = getPlanetDignity("Sol", sun.sign);
+  const sunHouse = generateHouseSynthesis(chart, sun.house, "es");
   const coreIdentity =
-    `Tu Sol en ${sun.sign} (Casa ${sun.house}) define tu identidad y propósito vital ` +
-    `con una energía ${sunStyle}. ${sunGift} son tus herramientas naturales. ` +
-    `El área de ${HOUSE_DOMAIN[sun.house] ?? "tu vida"} es donde tu luz brilla con mayor fuerza.`;
+    `El Sol en ${sun.sign} (casa ${sun.house}${sunDig ? `, ${sunDig}` : ""}) nombra la voluntad consciente ` +
+    `en un idioma ${sunStyle}. ${sunGift} es el don; no un veredicto. ` +
+    `Se entrena en ${HOUSE_DOMAIN[sun.house] ?? "la biografía concreta"} — ${sunHouse.name}.`;
 
   // ── Naturaleza emocional ─────────────────────────────────────────────────────
   const moonStyle = SIGN_STYLE[moon.sign] ?? "sensible";
+  const moonHouse = generateHouseSynthesis(chart, moon.house, "es");
   const emotionalNature =
-    `Tu Luna en ${moon.sign} (Casa ${moon.house}) revela que emocionalmente eres ${moonStyle}. ` +
-    `Necesitas ${HOUSE_DOMAIN[moon.house] ?? "conexión"} para sentirte seguro/a. ` +
-    `Tu intuición y respuestas instintivas tienen el sello de ${moon.sign}.`;
+    `La Luna en ${moon.sign} (casa ${moon.house}) describe el clima de la respuesta emocional: ${moonStyle}. ` +
+    `El cobijo se busca en ${HOUSE_DOMAIN[moon.house] ?? "lo íntimo"} (${moonHouse.name}). ` +
+    `No «eres» el signo: es el idioma con el que el cuerpo pide seguridad.`;
 
-  // ── Propósito de vida (MC + Sol) ─────────────────────────────────────────────
-  const mcStyle = SIGN_STYLE[midheaven.sign] ?? "auténtica";
+  // ── Propósito de vida (MC + Sol + IC) ────────────────────────────────────────
+  const mcDeep = generateAngleDeepAnalysis(chart, "MC", "es");
+  const icDeep = generateAngleDeepAnalysis(chart, "IC", "es");
   const lifePurpose =
-    `Tu Medio Cielo en ${midheaven.sign} señala que tu vocación pública se expresa de forma ${mcStyle}. ` +
-    `El mundo te reconoce por tu capacidad de contribuir desde el área de ` +
-    `${HOUSE_DOMAIN[10] ?? "tu impacto público"}. ` +
+    `MC en ${midheaven.sign}: vocación y reputación en idioma ${SIGN_STYLE[midheaven.sign] ?? "propio"}. ` +
+    `${mcDeep.ruler_condition} ` +
+    `El IC en ${icDeep.title.replace("IC en ", "")} sostiene la base privada; sin ese suelo el MC se vuelve pose. ` +
     (stelliums.length > 0
-      ? `Tu concentración de energía en ${stelliums[0].sign} (${stelliums[0].planets.join(", ")}) amplifica este propósito.`
-      : `Tu ${dominantElement} dominante (${ELEMENT_DESC[dominantElement]}) da color a esta vocación.`);
+      ? `La concentración en ${stelliums[0].sign} (${stelliums[0].planets.join(", ")}) da densidad a este eje.`
+      : `El ${dominantElement} dominante (${ELEMENT_DESC[dominantElement]}) colorea la vocación, no la dicta.`);
 
   // ── Fortalezas clave ──────────────────────────────────────────────────────────
   const keyStrengths: string[] = [
@@ -223,11 +229,13 @@ export function generateChartSummary(chart: ChartResponse): ChartSummary {
   }
 
   // ── Consejo central ───────────────────────────────────────────────────────────
+  const topHouseSyn = generateHouseSynthesis(chart, houseEmphasis.house, "es");
   const advice =
-    `Con tu énfasis en ${dominantElement} (${ELEMENT_DESC[dominantElement]}) y modalidad ${dominantModality} ` +
-    `(${MODALITY_DESC[dominantModality]}), tu mayor crecimiento viene de abrazar conscientemente ` +
-    `tanto las fortalezas de tu ${sun.sign} como los retos de tus aspectos más tensos. ` +
-    `La integración —no la supresión— de las tensiones en tu carta es el camino hacia tu versión más completa.`;
+    `Énfasis en ${dominantElement} (${ELEMENT_DESC[dominantElement]}) y modalidad ${dominantModality} ` +
+    `(${MODALITY_DESC[dominantModality]}). La casa ${topHouseSyn.house} (${topHouseSyn.name}) concentra planetas: ` +
+    `${topHouseSyn.overall_tone}. ${topHouseSyn.ruler_condition} ` +
+    `El crecimiento no es suprimir las tensiones de la carta, sino usarlas como oficio. ` +
+    `Libre albedrío: el clima está dado; el acto, no.`;
 
   // ── Titular ───────────────────────────────────────────────────────────────────
   const headline =
