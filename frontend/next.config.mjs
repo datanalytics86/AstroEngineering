@@ -1,7 +1,25 @@
 /** @type {import('next').NextConfig} */
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-if (process.env.NODE_ENV === "production" && !API_URL) {
-  throw new Error("NEXT_PUBLIC_API_URL es obligatoria en producción");
+const PROD_API = "https://astroengine-backend.onrender.com";
+const STUB_API = "https://astroengine.onrender.com";
+
+function resolveApiUrl() {
+  const raw = (process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL || "").replace(/\/$/, "");
+  if (raw) return raw;
+  if (process.env.VERCEL || process.env.NODE_ENV === "production") return PROD_API;
+  return "http://localhost:8000";
+}
+
+const API_URL = resolveApiUrl();
+
+if (process.env.NODE_ENV === "production") {
+  if (
+    /localhost|127\.0\.0\.1/i.test(API_URL) ||
+    API_URL === STUB_API
+  ) {
+    throw new Error(
+      `NEXT_PUBLIC_API_URL inválida en producción (${API_URL}). Usar ${PROD_API} (sin trailing slash; nunca el stub astroengine.onrender.com).`,
+    );
+  }
 }
 
 // CSP pragmática: self + Google Fonts + Nominatim (geocoding cliente) + backend Render.
@@ -30,7 +48,7 @@ const nextConfig = {
     return config;
   },
   env: {
-    NEXT_PUBLIC_API_URL: API_URL ?? "http://localhost:8000",
+    NEXT_PUBLIC_API_URL: API_URL,
   },
   // Headers de seguridad HTTP (GAP_ANALYSIS_DEPLOY.md A-6 + Tier-1 CSP)
   async headers() {

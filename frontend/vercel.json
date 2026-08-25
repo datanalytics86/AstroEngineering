@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "regions": ["gru1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 60
+    }
+  },
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://astroengine-backend.onrender.com",
+    "BACKEND_URL": "https://astroengine-backend.onrender.com",
+    "NEXT_PUBLIC_SITE_URL": "https://astro-engineering.vercel.app"
+  }
+}
