@@ -16,6 +16,14 @@ test("legal pages render with placeholders, not invented identity", async ({ pag
   }
 });
 
+test("/pro renders waitlist, not a fake paid confirmation", async ({ page }) => {
+  const res = await page.goto("/pro");
+  expect(res?.ok()).toBeTruthy();
+  const text = await page.locator("body").innerText();
+  expect(text.toLowerCase()).not.toContain("pago confirmado");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+});
+
 test("source code link is in the footer", async ({ page }) => {
   await page.goto("/");
   const link = page.getByRole("link", { name: /c[oó]digo fuente|source code/i });

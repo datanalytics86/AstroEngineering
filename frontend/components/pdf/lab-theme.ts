@@ -17,16 +17,19 @@ export const ClimateInk: Record<YearClimate, string> = {
   apretado: "#9A3412",
   abierto: "#065F46",
   suave: "#1E3A5F",
+  parejo: "#3D4A5C",
 };
 export const ClimateBg: Record<YearClimate, string> = {
   apretado: "#FFF7ED",
   abierto: "#ECFDF5",
   suave: "#EEF4F8",
+  parejo: "#F4EFE4",
 };
 export const ClimateBar: Record<YearClimate, string> = {
   apretado: "#C2410C",
   abierto: "#0F766E",
   suave: "#1E3A5F",
+  parejo: "#8A7A64",
 };
 
 export const TopicInk: Record<string, string> = {

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { SolarReturnSummary } from "@/lib/solar-return-summary";
 
@@ -32,7 +32,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
 
   return (
     <div
-      className="rounded-2xl border border-slate-200 shadow-card bg-white overflow-hidden flex flex-col"
+      className="rounded-2xl border border-slate-200 shadow-card bg-card overflow-hidden flex flex-col"
       style={{ maxHeight: "calc(100vh - 5rem)" }}
     >
       {/* ── Header ── */}
@@ -42,7 +42,7 @@ export default function SolarReturnSummaryPanel({ summary, name, year, ascSign }
       >
         <div className="flex items-center gap-1.5 mb-1">
           <span style={{ color: accentColor }} className="text-base">☉</span>
-          <h2 className="font-semibold text-sm text-slate-900 uppercase tracking-widest font-mono">
+          <h2 className="font-semibold text-sm text-ink uppercase tracking-widest font-mono">
             Resumen Solar {year}
           </h2>
         </div>

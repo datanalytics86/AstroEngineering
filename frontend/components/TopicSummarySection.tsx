@@ -5,7 +5,7 @@
  * (TIER1 aspects, intensity chart, technical summary access).
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type {
   Aspect,
   ChartResponse,
@@ -17,17 +17,19 @@ import type {
 import ActionButton from "@/components/ActionButton";
 import PersonalIntensityChart from "@/components/PersonalIntensityChart";
 import DownloadPreviewPdfButton from "@/components/DownloadPreviewPdfButton";
-import { useT, type Lang } from "@/lib/i18n";
-import { savePayWaitlistEmail, trackLearning } from "@/lib/learning";
-import { downloadProSamplePdf, downloadProYearPdf } from "@/lib/download-preview-pdf";
-import { getSampleYearMap } from "@/lib/year-map";
+import { useT } from "@/lib/i18n";
+import { trackLearning } from "@/lib/learning";
+import { downloadProYearPdf } from "@/lib/download-preview-pdf";
 import type { YearMapContent } from "@/lib/year-map";
 import Disclaimer from "@/components/Disclaimer";
+import ProOffer, { type TeaserMonth } from "@/components/ProOffer";
+import type { BirthData } from "@/lib/types";
+import type { YearMapContentV2 } from "@/lib/pro/build-year-map";
 
 export interface TopicSummarySectionProps {
   preview: TierMinus1Content;
   isPro: boolean;
-  onUnlock: () => void;
+  onUnlock?: () => void;
   tier1Aspects: Aspect[];
   intensityData: IntensityPoint[];
   onOpenTechnicalSummary?: () => void;
@@ -39,6 +41,11 @@ export interface TopicSummarySectionProps {
   onSolar?: () => void;
   solarLoading?: boolean;
   yearMap?: YearMapContent | null;
+  yearMapV2?: YearMapContentV2 | null;
+  birth?: BirthData | null;
+  teaserMonths?: TeaserMonth[];
+  keyDateCount?: number;
+  currentHeadline?: string;
 }
 
 const STRENGTH_STYLE: Record<
@@ -70,89 +77,6 @@ const TOPIC_ACCENT: Record<string, string> = {
   familia: "#8B5CF6",
   crecimiento: "#6366F1",
 };
-
-function ProPreviewModal({
-  lang,
-  sampleBusy,
-  onClose,
-  onDownload,
-  onUnlock,
-}: {
-  lang: Lang;
-  sampleBusy: boolean;
-  onClose: () => void;
-  onDownload: () => void;
-  onUnlock: () => void;
-}) {
-  const { t } = useT();
-  const sample = getSampleYearMap(lang);
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 py-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="pro-preview-title"
-    >
-      <button
-        type="button"
-        className="absolute inset-0 bg-slate-900/40"
-        aria-label={t("chart.pro.preview_close")}
-        onClick={onClose}
-      />
-      <div className="relative z-10 w-full max-w-lg max-h-[88vh] overflow-y-auto bg-card rounded-2xl border border-slate-200 shadow-card-md p-5 sm:p-6 space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 id="pro-preview-title" className="font-semibold text-lg text-ink">
-              {t("chart.pro.preview_title")}
-            </h3>
-            <p className="text-xs text-ink-3 mt-1">{t("chart.pro.preview_note")}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-ink-3 hover:text-ink-2 min-h-[44px] min-w-[44px]"
-            aria-label={t("chart.pro.preview_close")}
-          >
-            ✕
-          </button>
-        </div>
-        <p className="text-sm font-semibold text-indigo-700 leading-snug">{sample.natal.headline}</p>
-        <p className="text-sm text-ink-2 leading-relaxed">{sample.solar.headline}</p>
-        <p className="text-sm text-ink-2 leading-relaxed">{sample.forecast.body}</p>
-        <ul className="space-y-2">
-          {sample.months.slice(2, 4).map((month) => (
-            <li key={month.key} className="bg-elev border border-slate-100 rounded-xl px-3 py-2.5">
-              <p className="text-xs font-semibold text-ink">{month.label}</p>
-              <p className="text-sm text-ink-2 mt-1 leading-snug">{month.executive}</p>
-              <p className="text-xs text-ink-2 mt-1.5">
-                {month.topics.map((tp) => tp.title).join(" · ")}
-              </p>
-            </li>
-          ))}
-        </ul>
-        <div className="flex flex-col sm:flex-row gap-2 pt-1">
-          <ActionButton
-            variant="secondary"
-            accent="indigo"
-            className="w-full sm:flex-1 min-h-[48px]"
-            disabled={sampleBusy}
-            onClick={onDownload}
-          >
-            {sampleBusy ? t("chart.pro.preview_downloading") : t("chart.pro.preview_download")}
-          </ActionButton>
-          <ActionButton
-            variant="primary"
-            accent="indigo"
-            className="w-full sm:flex-1 min-h-[48px]"
-            onClick={onUnlock}
-          >
-            {t("chart.pro.preview_unlock")}
-          </ActionButton>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const BADGE_TO_STRENGTH: Record<string, StrengthLevel> = {
   potencial_fuerte: "alta",
@@ -243,6 +167,12 @@ function TopicCard({
               </ul>
             </div>
           )}
+          {topic.id === "salud" && (
+            <p className="text-xs text-ink-3">{t("topic.disclaimer.health")}</p>
+          )}
+          {topic.id === "dinero" && (
+            <p className="text-xs text-ink-3">{t("topic.disclaimer.money")}</p>
+          )}
         </div>
       )}
     </article>
@@ -252,72 +182,21 @@ function TopicCard({
 export default function TopicSummarySection({
   preview,
   isPro,
-  onUnlock,
   intensityData,
   yearLoading = false,
   chartId,
   yearMap = null,
+  yearMapV2 = null,
+  birth = null,
+  teaserMonths = [],
+  keyDateCount = 0,
+  currentHeadline,
 }: TopicSummarySectionProps) {
-  const { t, lang } = useT();
-  const [payOpen, setPayOpen] = useState(false);
-  const [payEmail, setPayEmail] = useState("");
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [sampleBusy, setSampleBusy] = useState(false);
+  const { t } = useT();
   const [topicsOpened, setTopicsOpened] = useState(0);
   const [pdfTaken, setPdfTaken] = useState(false);
   const [openMonth, setOpenMonth] = useState<string | null>(null);
   const [yearPdfBusy, setYearPdfBusy] = useState(false);
-  const [checkoutEnabled, setCheckoutEnabled] = useState<boolean | null>(null);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
-  const locale: Lang = lang === "en" ? "en" : "es";
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/checkout/status")
-      .then((r) => r.json())
-      .then((d: { enabled?: boolean }) => {
-        if (!cancelled) setCheckoutEnabled(Boolean(d.enabled));
-      })
-      .catch(() => {
-        if (!cancelled) setCheckoutEnabled(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  async function startStripeCheckout() {
-    if (!chartId || checkoutBusy) return;
-    setCheckoutBusy(true);
-    setCheckoutError(null);
-    trackLearning("checkout_started");
-    try {
-      const res = await fetch("/api/checkout/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chartId }),
-      });
-      const data = (await res.json().catch(() => ({}))) as { url?: string; detail?: string };
-      if (!res.ok || !data.url) {
-        throw new Error(data.detail || "checkout_failed");
-      }
-      window.location.href = data.url;
-    } catch {
-      trackLearning("checkout_error");
-      setCheckoutError(t("pay.checkout.error"));
-      setCheckoutBusy(false);
-    }
-  }
-
-  function requestUnlock() {
-    trackLearning("pro_unlock_clicked");
-    if (checkoutEnabled) {
-      void startStripeCheckout();
-      return;
-    }
-    setPayOpen(true);
-  }
 
   return (
     <section className="space-y-8" aria-labelledby="topic-summaries-heading">
@@ -431,167 +310,74 @@ export default function TopicSummarySection({
           </div>
 
           {!isPro && (
-            <>
-              {preview.sections[0]?.headline && (
-                <div className="bg-card border border-slate-100 rounded-xl px-4 py-3">
-                  <p className="text-[11px] uppercase tracking-widest text-ink-3 mb-1.5">
-                    {t("chart.pro.teaser.locked_label")}
-                  </p>
-                  <p className="text-sm text-ink-2 leading-snug blur-[5px] select-none">
-                    {preview.sections[0].headline}
-                  </p>
-                </div>
-              )}
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-ink-2 w-36 shrink-0">{t("chart.pro.teaser.peak")}</span>
-                  <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
-                    <div className="h-full w-[85%] bg-indigo-500 rounded-full" />
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-ink-2 w-36 shrink-0">{t("chart.pro.teaser.ease")}</span>
-                  <div className="flex-1 h-2 rounded-full bg-slate-200 overflow-hidden">
-                    <div className="h-full w-[30%] bg-indigo-300 rounded-full" />
-                  </div>
-                </div>
-              </div>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {[
-                  t("chart.pro.feature.summary"),
-                  t("chart.pro.feature.intensity"),
-                  t("chart.pro.feature.tier1"),
-                  t("chart.pro.feature.transits"),
-                ].map((label) => (
-                  <li
-                    key={label}
-                    className="text-xs sm:text-sm text-ink-2 bg-card border border-slate-100 rounded-lg px-3 py-2.5 flex items-start gap-2 min-h-[44px]"
-                  >
-                    <span className="text-indigo-500 mt-0.5 shrink-0" aria-hidden>
-                      ·
-                    </span>
-                    <span>{label}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
-                <ActionButton
-                  variant="secondary"
-                  accent="indigo"
-                  onClick={() => {
-                    trackLearning("pro_preview_opened");
-                    setPreviewOpen(true);
-                  }}
-                  className="w-full sm:w-auto min-h-[48px] text-base"
-                >
-                  {t("chart.pro.preview_cta")}
-                </ActionButton>
-                <ActionButton
-                  variant="primary"
-                  accent="indigo"
-                  onClick={requestUnlock}
-                  className="w-full sm:w-auto min-h-[48px] text-base"
-                  disabled={checkoutBusy}
-                >
-                  {checkoutBusy
-                    ? t("pay.checkout.redirecting")
-                    : checkoutEnabled
-                      ? t("chart.pro.unlock_cta")
-                      : t("chart.pro.unlock_cta_trial")}
-                </ActionButton>
-                <p className="text-[11px] sm:text-xs text-ink-3">
-                  {checkoutEnabled ? t("chart.pro.unlock_note_live") : t("chart.pro.unlock_note")}
-                </p>
-              </div>
-              {checkoutError && (
-                <p className="text-sm text-red-600" role="alert">
-                  {checkoutError}
-                </p>
-              )}
-            </>
-          )}
-
-          {previewOpen && !isPro && (
-            <ProPreviewModal
-              lang={locale}
-              sampleBusy={sampleBusy}
-              onClose={() => setPreviewOpen(false)}
-              onDownload={async () => {
-                setSampleBusy(true);
-                try {
-                  await downloadProSamplePdf(locale);
-                } finally {
-                  setSampleBusy(false);
-                }
-              }}
-              onUnlock={() => {
-                setPreviewOpen(false);
-                requestUnlock();
-              }}
+            <ProOffer
+              birth={birth ?? null}
+              chartId={chartId}
+              months={teaserMonths}
+              keyDateCount={keyDateCount}
+              currentHeadline={currentHeadline}
             />
           )}
 
-          {payOpen && !isPro && (
-            <div
-              className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 py-6"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="pay-intent-title"
-            >
-              <button
-                type="button"
-                className="absolute inset-0 bg-slate-900/40"
-                aria-label={t("pay.intent.close")}
-                onClick={() => setPayOpen(false)}
-              />
-              <div className="relative z-10 w-full max-w-md bg-card rounded-2xl border border-slate-200 shadow-card-md p-5 sm:p-6 space-y-4">
-                <h3 id="pay-intent-title" className="font-semibold text-lg text-ink">
-                  {t("pay.intent.title")}
-                </h3>
-                <p className="text-sm text-ink-2 leading-relaxed">{t("pay.intent.body")}</p>
-                <p className="text-sm font-medium text-ink">{t("pay.intent.question")}</p>
-                <label className="block text-xs text-ink-2">
-                  {t("pay.intent.email_label")}
-                  <input
-                    type="email"
-                    value={payEmail}
-                    onChange={(e) => setPayEmail(e.target.value)}
-                    placeholder={t("pay.intent.email_placeholder")}
-                    className="mt-1.5 w-full border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-ink min-h-[44px]"
-                  />
-                </label>
-                <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                  <ActionButton
-                    variant="primary"
-                    accent="indigo"
-                    className="w-full sm:flex-1 min-h-[48px]"
-                    onClick={() => {
-                      savePayWaitlistEmail(payEmail);
-                      trackLearning("pay_intent_yes");
-                      setPayOpen(false);
-                      onUnlock();
-                    }}
-                  >
-                    {t("pay.intent.yes")}
-                  </ActionButton>
-                  <ActionButton
-                    variant="secondary"
-                    accent="indigo"
-                    className="w-full sm:flex-1 min-h-[48px]"
-                    onClick={() => {
-                      savePayWaitlistEmail(payEmail);
-                      trackLearning("pay_intent_no");
-                      setPayOpen(false);
-                    }}
-                  >
-                    {t("pay.intent.no")}
-                  </ActionButton>
-                </div>
+
+
+          {isPro && yearMapV2 && (
+            <div className="space-y-6 pt-2 border-t border-slate-200/80">
+              {yearLoading && (
+                <p className="text-sm text-ink-2">{t("chart.pro.year.loading")}</p>
+              )}
+              <p className="text-xs text-ink-3">
+                {yearMapV2.window.start} → {yearMapV2.window.end}
+              </p>
+              <div className="space-y-2">
+                {yearMapV2.months.map((month) => {
+                  const open = openMonth === month.key;
+                  return (
+                    <article
+                      key={month.key}
+                      className="bg-card border border-slate-100 rounded-xl overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        className="w-full text-left px-4 py-3 min-h-[52px]"
+                        onClick={() => setOpenMonth(open ? null : month.key)}
+                        aria-expanded={open}
+                      >
+                        <p className="font-semibold text-ink">
+                          {month.label} · {t(
+                            month.climate === "apretado"
+                              ? "pro.climate.apretado"
+                              : month.climate === "suave"
+                                ? "pro.climate.suave"
+                                : month.climate === "parejo"
+                                  ? "pro.climate.parejo"
+                                  : "pro.climate.abierto",
+                          )}
+                        </p>
+                        <p className="text-sm text-ink-2 mt-1 leading-snug">{month.headline}</p>
+                      </button>
+                      {open && (
+                        <div className="px-4 pb-4 space-y-2 border-t border-slate-100 pt-3">
+                          <p className="text-sm text-ink-2">{month.action}</p>
+                          <p className="text-sm text-ink-3">{month.avoid}</p>
+                          {Object.entries(month.areas).map(([id, line]) => (
+                            <p key={id} className="text-sm text-ink-2">
+                              <span className="text-[11px] uppercase tracking-widest text-accent mr-2">
+                                {id}
+                              </span>
+                              {line}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {isPro && yearMap && (
+          {isPro && yearMap && !yearMapV2 && (
             <div className="space-y-8 pt-2 border-t border-slate-200/80">
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <ActionButton

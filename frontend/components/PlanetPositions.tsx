@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { PlanetPosition } from "@/lib/types";
 import { signColor, getPlanetDignity, DIGNITY_SYMBOL, DIGNITY_COLOR } from "@/lib/zodiac-utils";
@@ -11,7 +11,7 @@ interface Props {
 
 export default function PlanetPositions({ planets, highlightedPlanet, onPlanetClick }: Props) {
   return (
-    <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-card">
       <div className="px-4 py-3 border-b border-border">
         <h3 className="text-sm uppercase tracking-widest text-ink-3 font-mono">
           Posiciones Planetarias

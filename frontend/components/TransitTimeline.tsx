@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo } from "react";
 import type { TransitEvent } from "@/lib/types";
@@ -37,7 +37,7 @@ export default function TransitTimeline({ transits, startDate, endDate }: Props)
   }
 
   return (
-    <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-card">
       <div className="px-4 py-3 border-b border-border">
         <h3 className="text-sm uppercase tracking-widest text-ink-3 font-mono">
           Timeline de Tránsitos

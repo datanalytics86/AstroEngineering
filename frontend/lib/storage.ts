@@ -222,7 +222,6 @@ export function deleteChart(id: string): void {
 // expiresAt null = permanente. Por defecto 30 días desde el unlock.
 
 const PREFIX_PRO = "astro_pro_";
-const PRO_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
 
 export interface ProUnlockRecord {
   unlocked: boolean;
@@ -232,50 +231,16 @@ export interface ProUnlockRecord {
   source?: "soft" | "stripe";
 }
 
-function proKey(chartId: string): string {
-  return PREFIX_PRO + chartId;
-}
-
-export function isProUnlocked(chartId: string): boolean {
-  try {
-    const raw = localStorage.getItem(proKey(chartId));
-    if (!raw) return false;
-    const rec = JSON.parse(raw) as ProUnlockRecord;
-    if (!rec?.unlocked) return false;
-    if (rec.expiresAt === null) return true;
-    if (!rec.expiresAt) return true;
-    return new Date(rec.expiresAt).getTime() > Date.now();
-  } catch {
-    return false;
-  }
+export function isProUnlocked(_chartId: string): boolean {
+  // H-12: el cliente no otorga Pro. Fuente de verdad: /api/pro/entitlements.
+  return false;
 }
 
 export function unlockPro(
-  chartId: string,
-  permanentOrOpts: boolean | { permanent?: boolean; sessionId?: string; source?: "soft" | "stripe" } = false,
+  _chartId: string,
+  _permanentOrOpts: boolean | { permanent?: boolean; sessionId?: string; source?: "soft" | "stripe" } = false,
 ): void {
-  const opts =
-    typeof permanentOrOpts === "boolean"
-      ? { permanent: permanentOrOpts }
-      : permanentOrOpts;
-  const at = new Date().toISOString();
-  const rec: ProUnlockRecord = {
-    unlocked: true,
-    at,
-    expiresAt: opts.permanent ? null : new Date(Date.now() + PRO_TTL_MS).toISOString(),
-    sessionId: opts.sessionId,
-    source: opts.source ?? (opts.sessionId ? "stripe" : "soft"),
-  };
-  try {
-    localStorage.setItem(proKey(chartId), JSON.stringify(rec));
-  } catch {
-    pruneStorage();
-    try {
-      localStorage.setItem(proKey(chartId), JSON.stringify(rec));
-    } catch {
-      /* sin espacio */
-    }
-  }
+  // H-12: no-op. Pro solo existe con entitlement de servidor.
 }
 
 // ── Housekeeping ──────────────────────────────────────────────────────────────

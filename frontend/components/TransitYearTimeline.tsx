@@ -270,7 +270,7 @@ export default function TransitYearTimeline({
     (isZoomPlanet || isZoomRetro) ? zoomRows.length > 0 : allRows.rows.length > 0 || allRows.retroPlaced.length > 0;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4">
+    <div className="bg-card border border-slate-200 rounded-2xl p-4">
       {!hasContent ? (
         <p className="text-sm text-slate-400 text-center py-10">{t("transits.timeline.empty")}</p>
       ) : (

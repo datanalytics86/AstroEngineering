@@ -10,6 +10,8 @@ import ThemeToggle from "./ThemeToggle";
 const NAV_LINKS = [
   { href: "/", key: "nav.home" as const },
   { href: "/nueva", key: "nav.new_chart" as const },
+  { href: "/pro", key: "nav.pro" as const },
+  { href: "/mis-mapas", key: "nav.maps" as const },
   { href: "/glosario", key: "nav.learn" as const },
 ];
 

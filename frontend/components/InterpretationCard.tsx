@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { TransitEvent, PlanetPosition } from "@/lib/types";
 import { getInterpretation } from "@/lib/interpretation-engine";
@@ -49,7 +49,7 @@ export default function InterpretationCard({ transit, natalPlanets }: Props) {
   }
 
   return (
-    <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-card">
       {/* Header */}
       <div
         className="px-5 py-4 flex items-start justify-between gap-3 border-b border-border"

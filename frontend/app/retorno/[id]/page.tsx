@@ -57,7 +57,7 @@ export default function RetornoPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-2xl">☉</span>
-            <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">
+            <h1 className="font-semibold text-2xl text-ink tracking-tight">
               {t("solar.title")} {year}
             </h1>
           </div>
@@ -89,7 +89,7 @@ export default function RetornoPage() {
         <div className="space-y-8">
           <div className="space-y-4">
             <h2 className="font-semibold text-lg text-slate-700">{t("solar.wheel.title")}</h2>
-            <div className="bg-white border border-border rounded-2xl p-4 shadow-card">
+            <div className="bg-card border border-border rounded-2xl p-4 shadow-card">
               <ChartWheel
                 planets={srChart.planets}
                 houses={srChart.houses}
@@ -103,12 +103,12 @@ export default function RetornoPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-white border border-border rounded-xl p-4 shadow-card">
+            <div className="bg-card border border-border rounded-xl p-4 shadow-card">
               <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">{t("solar.asc")}</div>
               <div className="text-amber-600 font-mono text-lg font-semibold">{srChart.ascendant.sign}</div>
               <div className="text-slate-500 font-mono text-sm">{srChart.ascendant.degree_display}</div>
             </div>
-            <div className="bg-white border border-border rounded-xl p-4 shadow-card">
+            <div className="bg-card border border-border rounded-xl p-4 shadow-card">
               <div className="text-xs text-slate-400 uppercase tracking-widest font-mono mb-1">{t("solar.mc")}</div>
               <div className="text-amber-500 font-mono text-lg font-semibold">{srChart.midheaven.sign}</div>
               <div className="text-slate-500 font-mono text-sm">{srChart.midheaven.degree_display}</div>

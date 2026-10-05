@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import type { Aspect } from "@/lib/types";
@@ -25,7 +25,7 @@ export default function AspectTable({ aspects, highlightedPlanet }: Props) {
   const hasMore = sorted.length > VISIBLE_COUNT;
 
   return (
-    <div className="bg-white border border-border rounded-xl overflow-hidden shadow-card">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-card">
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <h3 className="text-sm uppercase tracking-widest text-ink-3 font-mono">Aspectos</h3>
         <span className="text-xs text-ink-3 font-mono">{sorted.length} aspectos</span>

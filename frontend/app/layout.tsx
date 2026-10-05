@@ -5,6 +5,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 import NavHeader from "@/components/NavHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { siteUrl } from "@/lib/site";
 
 const display = Fraunces({
   subsets: ["latin"],
@@ -28,8 +29,18 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AstroEngine",
+  metadataBase: new URL(siteUrl()),
+  title: { default: "AstroEngine", template: "%s · AstroEngine" },
   description: "Cómo te va el amor, el dinero y el trabajo — en claro. Seis lecturas gratis en 30 segundos.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "AstroEngine",
+    description: "Cómo te va el amor, el dinero y el trabajo — en claro.",
+    url: siteUrl(),
+    siteName: "AstroEngine",
+    locale: "es_CL",
+    type: "website",
+  },
   icons: { icon: "/favicon.svg" },
 };
 

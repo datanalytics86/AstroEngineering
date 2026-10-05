@@ -19,6 +19,7 @@ import {
 import { findJargon, voiceOf } from "./tier-minus1";
 import { groupTransitsByTopic } from "./topic-summary";
 import { buildPersonalIntensitySeries } from "./personal-intensity";
+import { classifyClimate, type Climate } from "./pro/climate";
 
 type Lang = "es" | "en";
 
@@ -49,7 +50,12 @@ const MONTH_EN = [
   "July", "August", "September", "October", "November", "December",
 ];
 
-export type YearClimate = "apretado" | "abierto" | "suave";
+export type YearClimate = Climate;
+type CopyClimate = Exclude<YearClimate, "parejo">;
+
+function copyClimate(c: YearClimate): CopyClimate {
+  return c === "parejo" ? "abierto" : c;
+}
 
 export interface YearTopicLine {
   id: TopicId;
@@ -142,9 +148,10 @@ const CLIMATE_LABEL: Record<YearClimate, { es: string; en: string }> = {
   apretado: { es: "Apretado", en: "Tight" },
   abierto: { es: "Abierto", en: "Open" },
   suave: { es: "Suave", en: "Soft" },
+  parejo: { es: "Parejo", en: "Even" },
 };
 
-const FEEL: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
+const FEEL: Record<TopicId, Record<CopyClimate, { es: string; en: string }>> = {
   amor: {
     apretado: { es: "verdad", en: "truth" },
     abierto: { es: "acercarse", en: "closer" },
@@ -243,12 +250,6 @@ function climateLabelOf(climate: YearClimate, lang: Lang): string {
   return lang === "en" ? CLIMATE_LABEL[climate].en : CLIMATE_LABEL[climate].es;
 }
 
-function climateOf(value: number, tenseRatio = 0): YearClimate {
-  if (value >= 6.5 || (value >= 5 && tenseRatio >= 0.55)) return "apretado";
-  if (value < 4) return "suave";
-  return "abierto";
-}
-
 function buildWheel(chart: ChartResponse, lang: Lang): YearMapWheel {
   const raw = (chart.houses ?? []).slice(0, 12);
   const zones = (raw.length === 12
@@ -333,6 +334,11 @@ function legendOf(lang: Lang): YearMapContent["climateLegend"] {
       label: climateLabelOf("suave", lang),
       hint: lang === "en" ? "Integrate. Close. Recover." : "Integra. Cierra. Recupera.",
     },
+    {
+      climate: "parejo",
+      label: climateLabelOf("parejo", lang),
+      hint: lang === "en" ? "Even year. Keep the same pace." : "Año parejo. Mantén el mismo ritmo.",
+    },
   ];
 }
 
@@ -346,7 +352,7 @@ function pickKeyMonths(months: YearMonthBlock[]): YearMonthBlock[] {
   return picked.slice(0, 3);
 }
 
-const BASELINE: Record<TopicId, Record<YearMonthBlock["climate"], { es: string; en: string }>> = {
+const BASELINE: Record<TopicId, Record<CopyClimate, { es: string; en: string }>> = {
   amor: {
     apretado: {
       es: "Cómo te acercas se pone más honesto y menos cómodo. No fuerces. Di lo que es verdad y deja aire.",
@@ -434,7 +440,7 @@ const BASELINE: Record<TopicId, Record<YearMonthBlock["climate"], { es: string; 
 };
 
 /** Rotate featured pairs by climate-occurrence so same-climate months don't twin. */
-const FEATURED_ROTATION: Record<YearClimate, TopicId[][]> = {
+const FEATURED_ROTATION: Record<CopyClimate, TopicId[][]> = {
   apretado: [
     ["amor", "trabajo"],
     ["dinero", "familia"],
@@ -452,7 +458,7 @@ const FEATURED_ROTATION: Record<YearClimate, TopicId[][]> = {
   ],
 };
 
-const LINE_C: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
+const LINE_C: Record<TopicId, Record<CopyClimate, { es: string; en: string }>> = {
   amor: {
     apretado: { es: "Si duele decirlo, ese es el dato. Dilo una vez y para.", en: "If it hurts to say, that is the data. Say it once and stop." },
     abierto: { es: "Una invitación concreta. Día, hora, lugar.", en: "A concrete invitation. Day, time, place." },
@@ -485,7 +491,7 @@ const LINE_C: Record<TopicId, Record<YearClimate, { es: string; en: string }>> =
   },
 };
 
-const LINE_D: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
+const LINE_D: Record<TopicId, Record<CopyClimate, { es: string; en: string }>> = {
   amor: {
     apretado: { es: "Menos teatro. Una verdad dicha con calma.", en: "Less theater. One truth said calmly." },
     abierto: { es: "Acércate. El mes no lee la mente.", en: "Come closer. The month cannot read your mind." },
@@ -518,7 +524,7 @@ const LINE_D: Record<TopicId, Record<YearClimate, { es: string; en: string }>> =
   },
 };
 
-const ALT_LINE: Record<TopicId, Record<YearClimate, { es: string; en: string }>> = {
+const ALT_LINE: Record<TopicId, Record<CopyClimate, { es: string; en: string }>> = {
   amor: {
     apretado: { es: "Una frase dicha vale más que tres gestos grandes.", en: "One said sentence beats three grand gestures." },
     abierto: { es: "Invita. El año responde a lo concreto.", en: "Invite. The year answers the concrete." },
@@ -554,7 +560,7 @@ const ALT_LINE: Record<TopicId, Record<YearClimate, { es: string; en: string }>>
 const TOPIC_LINES = [BASELINE, ALT_LINE, LINE_C, LINE_D] as const;
 
 function featuredPair(climate: YearClimate, occurrence: number): TopicId[] {
-  const bank = FEATURED_ROTATION[climate];
+  const bank = FEATURED_ROTATION[copyClimate(climate)];
   return bank[occurrence % bank.length];
 }
 
@@ -567,7 +573,8 @@ function topicLine(
 ): string {
   if (extra) return extra;
   const bank = TOPIC_LINES[((variant % 4) + 4) % 4];
-  return lang === "en" ? bank[id][climate].en : bank[id][climate].es;
+  const c = copyClimate(climate);
+  return lang === "en" ? bank[id][c].en : bank[id][c].es;
 }
 
 function executiveFor(
@@ -579,6 +586,21 @@ function executiveFor(
 ): string {
   const focus = hotTopics.slice(0, 2).join(lang === "en" ? " and " : " y ");
   const v = ((variant % 4) + 4) % 4;
+  if (climate === "parejo") {
+    const es = [
+      `${label} sigue parejo${focus ? ` en ${focus}` : ""}. Mantén el mismo ritmo. No inventes un pico.`,
+      `${label} no se dispara${focus ? ` en ${focus}` : ""}. Constancia. El año no pide un golpe de teatro.`,
+      `${label} pide el mismo paso${focus ? ` en ${focus}` : ""}. Una rutina corta vale más que un empujón.`,
+      `${label} se mantiene${focus ? ` en ${focus}` : ""}. No recortes ni aceleres: sostiene.`,
+    ];
+    const en = [
+      `${label} stays even${focus ? ` in ${focus}` : ""}. Keep the same pace. Do not invent a spike.`,
+      `${label} does not spike${focus ? ` in ${focus}` : ""}. Consistency. The year does not ask for theater.`,
+      `${label} asks for the same step${focus ? ` in ${focus}` : ""}. A short routine beats a push.`,
+      `${label} holds${focus ? ` in ${focus}` : ""}. Do not cut or speed up: sustain.`,
+    ];
+    return lang === "en" ? en[v] : es[v];
+  }
   if (climate === "apretado") {
     const es = [
       `${label} se aprieta. Deja margen${focus ? ` en ${focus}` : ""}. No llenes el calendario hasta el borde.`,
@@ -633,6 +655,25 @@ function actionFor(
   const a = hotTopics[0];
   const b = hotTopics[1];
   const v = ((variant % 6) + 6) % 6;
+  if (climate === "parejo") {
+    const es = [
+      a ? `Sigue el mismo ritmo en ${a}.` : "Sigue el mismo ritmo.",
+      "No inventes un pico.",
+      b ? `Una rutina corta en ${b}.` : "Una rutina corta. Nada más.",
+      "Sostiene. No recortes ni aceleres.",
+      "El año parejo se usa con constancia.",
+      a ? `Repite lo que ya funciona en ${a}.` : "Repite lo que ya funciona.",
+    ];
+    const en = [
+      a ? `Keep the same pace in ${a}.` : "Keep the same pace.",
+      "Do not invent a spike.",
+      b ? `One short routine in ${b}.` : "One short routine. Nothing else.",
+      "Sustain. Do not cut or speed up.",
+      "An even year is used with consistency.",
+      a ? `Repeat what already works in ${a}.` : "Repeat what already works.",
+    ];
+    return lang === "en" ? en[v] : es[v];
+  }
   if (climate === "apretado") {
     const es = [
       a ? `Deja margen en ${a}.` : "Deja margen. Duerme primero.",
@@ -742,12 +783,10 @@ function buildMonth(
   events: TransitEvent[],
   lang: Lang,
   occurrence: number,
+  climate: YearClimate,
 ): YearMonthBlock {
   const key = `${year}-${String(monthIndex0 + 1).padStart(2, "0")}`;
   const label = monthName(monthIndex0, lang);
-  const tense = events.filter((e) => TENSE.has(e.aspect_name)).length;
-  const tenseRatio = events.length ? tense / events.length : 0;
-  const climate = climateOf(intensity, tenseRatio);
   const grouped = groupTransitsByTopic(chart.planets, events, lang, (ev) =>
     humanTransitLine(ev, lang),
   );
@@ -755,7 +794,7 @@ function buildMonth(
   const topics: YearTopicLine[] = TOPIC_ORDER.map((id) => {
     const extra = byId.get(id)?.[0]?.replace(/^[^:]+:\s*/, "");
     const line = extra || topicLine(id, climate, undefined, lang, occurrence);
-    const feel = lang === "en" ? FEEL[id][climate].en : FEEL[id][climate].es;
+    const feel = lang === "en" ? FEEL[id][copyClimate(climate)].en : FEEL[id][copyClimate(climate)].es;
     warn(`month.${key}.${id}`, line);
     return {
       id,
@@ -813,17 +852,23 @@ export function buildYearMap(opts: {
   const natal = generateHumanProSummary(opts.chart, lang);
   const series = buildPersonalIntensitySeries(opts.transits, year, lang);
   const byKey = new Map(series.map((p) => [p.month, p.value]));
-  const seen: Record<YearClimate, number> = { apretado: 0, abierto: 0, suave: 0 };
-  const months = Array.from({ length: 12 }, (_, i) => {
-    const key = `${year}-${String(i + 1).padStart(2, "0")}`;
-    const value = byKey.get(key) ?? 3.5;
+  const keys = Array.from({ length: 12 }, (_, i) => `${year}-${String(i + 1).padStart(2, "0")}`);
+  const values = keys.map((key) => byKey.get(key) ?? 3.5);
+  const tenseRatios = keys.map((key) => {
     const probeEvents = eventsForMonth(opts.transits, key);
     const tense = probeEvents.filter((e) => TENSE.has(e.aspect_name)).length;
-    const tenseRatio = probeEvents.length ? tense / probeEvents.length : 0;
-    const climate = climateOf(value, tenseRatio);
+    return probeEvents.length ? tense / probeEvents.length : 0;
+  });
+  const classified = classifyClimate(values, tenseRatios);
+  const climates = classified.climate;
+  const relative = classified.relative;
+  const seen: Record<YearClimate, number> = { apretado: 0, abierto: 0, suave: 0, parejo: 0 };
+  const months = keys.map((key, i) => {
+    const climate = climates[i];
     const occurrence = seen[climate];
     seen[climate] += 1;
-    return buildMonth(year, i, value, opts.chart, probeEvents, lang, occurrence);
+    const probeEvents = eventsForMonth(opts.transits, key);
+    return buildMonth(year, i, relative[i], opts.chart, probeEvents, lang, occurrence, climate);
   });
 
   const pulse = readIntensityYear(
@@ -910,9 +955,10 @@ export function buildYearMap(opts: {
 export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
   const year = new Date().getFullYear();
   const intensities = [3.2, 4.1, 8.6, 5.4, 4.0, 3.6, 2.8, 4.7, 5.9, 7.4, 4.5, 3.1];
-  const seen: Record<YearClimate, number> = { apretado: 0, abierto: 0, suave: 0 };
+  const classified = classifyClimate(intensities);
+  const seen: Record<YearClimate, number> = { apretado: 0, abierto: 0, suave: 0, parejo: 0 };
   const months: YearMonthBlock[] = intensities.map((value, i) => {
-    const climate = climateOf(value);
+    const climate = classified.climate[i];
     const occurrence = seen[climate];
     seen[climate] += 1;
     const label = monthName(i, lang);
@@ -922,7 +968,7 @@ export function getSampleYearMap(lang: Lang = "es"): YearMapContent {
       title: lang === "en" ? TOPIC_TITLE[id].en : TOPIC_TITLE[id].es,
       line: topicLine(id, climate, undefined, lang, occurrence),
       featured: false,
-      feel: lang === "en" ? FEEL[id][climate].en : FEEL[id][climate].es,
+      feel: lang === "en" ? FEEL[id][copyClimate(climate)].en : FEEL[id][copyClimate(climate)].es,
     }));
     const featured = topics.filter((t) => hotIds.includes(t.id)).map((t) => ({ ...t, featured: true }));
     const rest = topics.filter((t) => !hotIds.includes(t.id));

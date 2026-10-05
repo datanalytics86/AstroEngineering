@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * Archived product surface. Full mundane UI is not part of the active MVP.
@@ -19,7 +19,7 @@ export default function GeopoliticaArchivedPage() {
         <p className="text-xs font-mono uppercase tracking-widest text-ink-3">
           {t("archive.badge")}
         </p>
-        <h1 className="text-2xl font-semibold text-slate-900 tracking-tight">
+        <h1 className="text-2xl font-semibold text-ink tracking-tight">
           {t("archive.geo.title")}
         </h1>
         <p className="text-sm text-slate-500 leading-relaxed">

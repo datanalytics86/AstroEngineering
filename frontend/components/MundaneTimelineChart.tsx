@@ -158,7 +158,7 @@ export default function MundaneTimelineChart({ configs, year, selectedId, onSele
   }
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl p-4">
+    <div className="bg-card border border-slate-200 rounded-2xl p-4">
       <p className="text-xs font-mono text-slate-400 uppercase tracking-wide mb-2">{t("geo.timeline.title")}</p>
       <div className="overflow-x-auto">
         <svg viewBox={`0 0 ${WIDTH} ${height}`} className="w-full" style={{ fontFamily: "monospace", minWidth: MIN_WIDTH }}>

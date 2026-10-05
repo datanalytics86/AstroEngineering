@@ -1,7 +1,8 @@
 import Stripe from "stripe";
 import { requestOriginFrom } from "@/lib/site";
+import { CATALOG } from "@/lib/billing/catalog";
 
-export const PRO_AMOUNT_CENTS = 299;
+export const PRO_AMOUNT_CENTS = CATALOG.year_map.prices.USD ?? 999;
 export const PRO_CURRENCY = "usd";
 export const PRO_PRODUCT_NAME = "AstroEngine Pro";
 

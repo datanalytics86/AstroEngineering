@@ -7,7 +7,7 @@
  * topics_opened        — consumo free: abrió al menos un tema
  * pdf_downloaded       — valor free / proxy de share
  * pro_unlock_clicked   — intención: tocó el CTA de unlock
- * pay_intent_yes/no    — willingness to pay explícita ($2.99)
+ * pay_intent_yes/no    — willingness to pay (precio del catálogo, no hardcode)
  * pro_unlocked         — conversión (soft o pago verificado)
  * year_calculated      — uso Pro: calculó el pulso del año
  * returned_same_chart  — retención débil: reabrió una carta guardada

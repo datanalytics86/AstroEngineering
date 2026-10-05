@@ -15,16 +15,18 @@ const DICTIONARIES: Record<Lang, Record<string, string>> = {
 
 const STORAGE_KEY = "lang";
 
+type TVars = Record<string, string | number>;
+
 interface I18nContextValue {
   lang: Lang;
   setLang: (l: Lang) => void;
-  t: (key: TranslationKeys) => string;
+  t: (key: TranslationKeys, vars?: TVars) => string;
 }
 
 const I18nContext = createContext<I18nContextValue>({
   lang: "es",
   setLang: () => {},
-  t: (key) => key,
+  t: (key) => String(key),
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
@@ -51,8 +53,12 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const t = useCallback(
-    (key: TranslationKeys): string => {
-      return DICTIONARIES[lang][key] ?? DICTIONARIES["es"][key] ?? key;
+    (key: TranslationKeys, vars?: TVars): string => {
+      const raw = DICTIONARIES[lang][key] ?? DICTIONARIES["es"][key] ?? String(key);
+      if (!vars) return raw;
+      return raw.replace(/\{(\w+)\}/g, (_, k: string) =>
+        vars[k] === undefined ? `{${k}}` : String(vars[k]),
+      );
     },
     [lang]
   );

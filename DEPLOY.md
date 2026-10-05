@@ -52,6 +52,27 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 | `STRIPE_PRICE_ID` | `price_…` | Opcional. Si falta, se crea un price de $2.99 USD en la sesión |
 | `SITE_URL` | (opcional) | Alias server-side de `NEXT_PUBLIC_SITE_URL` |
 
+### Vercel — Oleada 2 (pagos / sesión / analítica)
+
+Hasta D1 **no** se cobra. Producción debe quedar en waitlist.
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `PRO_MODE` | `waitlist` | `live` solo con proveedor que cobra y D1 escrito. `dev` se ignora en producción. |
+| `BILLING_PROVIDER` | `mock` | `lemonsqueezy` **no** sin `LEMONSQUEEZY_ENABLED=true` y sí escrito de D1. |
+| `DATA_ENC_KEY` | 32 bytes hex (64 chars) o base64 | AES-256-GCM de nacimiento. Obligatorio en prod. |
+| `CHART_PEPPER` | 32 bytes | HMAC fingerprint. Obligatorio en prod. |
+| `SESSION_SECRET` | 32 bytes | Cookies `ae_session` / magic tokens. |
+| `DATABASE_URL` | Neon | **No cableado aún.** Store = memoria; órdenes no sobreviven al cold start. |
+| `RESEND_API_KEY` | `re_…` | Magic link y opt-in. Sin key, el flujo existe pero no manda correo. |
+| `RESEND_FROM` | `AstroEngine <…>` | |
+| `NEXT_PUBLIC_POSTHOG_KEY` | opcional | Sin key, analytics no-op. |
+| `NEXT_PUBLIC_POSTHOG_HOST` | `https://us.i.posthog.com` | |
+| `LEMONSQUEEZY_ENABLED` | no definir | 🛑 D1. No poner `true`. |
+| `LEMONSQUEEZY_API_KEY` | no definir | 🛑 D1 |
+
+Stripe (`STRIPE_SECRET_KEY`) sigue como adaptador portado. No usar en Chile para cobro v1. El monto ya no es $2.99: sale del catálogo (US$9.99).
+
 > **Hueco humano:** este repo no puede leer los dashboards de Vercel/Render. Verificar en UI que los valores de prod coinciden con la tabla. No inventar secrets.
 
 ## Auditoría live 2026-08-12

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ClickTarget, NatalInterpretation, Aspect, ChartResponse } from "@/lib/types";
@@ -190,7 +190,7 @@ export default function InterpretationModal({ target, chart = null, allAspects =
       {/* Panel */}
       <div
         ref={panelRef}
-        className="relative z-10 w-full sm:w-[480px] h-[85vh] sm:h-screen flex flex-col bg-white border-t sm:border-t-0 sm:border-l border-slate-200 shadow-2xl transition-all duration-300 ease-out overflow-hidden"
+        className="relative z-10 w-full sm:w-[480px] h-[85vh] sm:h-screen flex flex-col bg-card border-t sm:border-t-0 sm:border-l border-slate-200 shadow-2xl transition-all duration-300 ease-out overflow-hidden"
         style={{
           transform: visible
             ? "translate(0, 0)"
@@ -214,7 +214,7 @@ export default function InterpretationModal({ target, chart = null, allAspects =
                 {icon}
               </div>
               <div>
-                <h2 className="font-semibold text-lg text-slate-900 leading-tight">{main}</h2>
+                <h2 className="font-semibold text-lg text-ink leading-tight">{main}</h2>
                 <p className="text-xs font-mono text-ink-3 mt-0.5">{sub}</p>
               </div>
             </div>

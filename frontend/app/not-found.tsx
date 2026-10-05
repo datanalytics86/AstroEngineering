@@ -9,7 +9,7 @@ export default function NotFound() {
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="text-center max-w-md">
         <div className="text-6xl mb-6 text-blue-200">✦</div>
-        <h1 className="font-semibold text-2xl sm:text-3xl text-slate-900 mb-3 leading-snug">
+        <h1 className="font-semibold text-2xl sm:text-3xl text-ink mb-3 leading-snug">
           {t("notfound.title")}
         </h1>
         <p className="text-slate-500 mb-6 text-sm leading-relaxed">

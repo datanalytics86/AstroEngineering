@@ -150,17 +150,17 @@ Leyenda: **C** confirmado en código (y, si dice “medido”, también en esta 
 
 ---
 
-## 3. Estado S1–S10 (fin Oleada 1, 2026-10-05)
+## 3. Estado S1–S10 (fin Oleada 2, 2026-10-05)
 
 | # | Criterio | Hoy |
 |---|----------|-----|
 | S1 | 0 vulns high/critical | **VERDE** local — `pip-audit` “No known vulnerabilities found”; `npm audit --omit=dev --audit-level=high` 0 high/critical (quedan 2 *moderate*: qs, baseline-browser-mapping) |
-| S2 | Cero Pro sin pago | **ROJO** — H-12/H-14; Oleada 2 |
+| S2 | Cero Pro sin pago | **CÓDIGO VERDE vs mock** — entitlement de servidor; `isProUnlocked` false; waitlist en prod. Persistencia real exige Neon (D6) |
 | S3 | `/health` p95 < 200 ms bajo carga | **PARCIAL** — `/health` sin límite + cómputo en threadpool; p95 no medido (D8 free / cold start) |
 | S4 | `/api/transits` p95 < 4 s Starter | **NO MEDIDO** (plan free) |
-| S5 | Compra → Pro < 10 s, restaurable | **ROJO** — Oleada 2 |
-| S6 | Mapa distingue meses | **PARCIAL** — API expone `raw_intensity` + `key_events`; ranking de clima es A6 (Oleada 2) |
-| S7 | Embudo medido | **ROJO** — Oleada 2 |
+| S5 | Compra → Pro < 10 s, restaurable | **CÓDIGO vs mock** — `/pro/gracias` + magic link. Cobro live 🛑 D1 |
+| S6 | Mapa distingue meses | **VERDE en tests** — `classifyClimate` relativo; 50 series ≥90% |
+| S7 | Embudo medido | **CÓDIGO** — PostHog cookieless; key es runbook humano (D5) |
 | S8 | Legales publicados | **PARCIAL** — `/privacidad` `/terminos` `/reembolsos` `/contacto` con placeholders D11. 🛑 no definitivos |
 | S9 | CI completo | **CÓDIGO LISTO** — jobs pytest, corpus, pip-audit, lint, typecheck, vitest, i18n, interp, npm-audit high, build, Playwright smoke, gitleaks. Primer verde en GitHub Actions al pushear |
 | S10 | Precisión ±0,05°; Quirón; corpus 54 | **PARCIAL** — Dockerfile + `fetch_ephe.py` con SHA-256 Anexo C; golden skip sin `.se1`; Windows sin pyswisseph. CI Ubuntu 3.11 es la fuente de verdad |
@@ -188,11 +188,9 @@ PRs chicos hacia `release/v1-comercial`, ramas `v1/a<N>-<tema>`. Gates §8 en ca
 
 A8 revisa todo PR de seguridad. A6 no toca `es.ts` en Oleada 1 salvo claves que A2 pida para legales (vía `docs/v1/i18n-requests.md`).
 
-### Oleada 2 — Pro que se vende (después de Gate 0 + Oleada 1)
+### Oleada 2 — Pro que se vende — **HECHA** 2026-10-05
 
-Prioridad del dueño: `PRO_MODE` sin desbloqueo gratis, compras en servidor, clima relativo (H-21), 12 meses móviles (H-22), concordancia (H-25), paywall con datos reales (H-23). Invariantes de dinero §8 obligatorios; A8 red team.
-
-A4 (mock + stripe apagado; lemonsqueezy **solo** con D1 escrito) → A5 paywall/año móvil/gating transitos/contraste → A6 clima/copy → A7 PostHog.
+Mock + waitlist. D1/D3/D6/D8-pay/D11 siguen 🛑. No Lemon Squeezy activo. Store memoria.
 
 ### Oleada 3
 

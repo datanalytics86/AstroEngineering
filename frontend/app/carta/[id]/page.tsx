@@ -7,8 +7,6 @@ import {
   loadChart,
   saveYearTransits,
   saveSolarReturn,
-  isProUnlocked,
-  unlockPro,
   loadYearTransits,
   loadSolarReturn,
 } from "@/lib/storage";
@@ -32,6 +30,10 @@ import { useT } from "@/lib/i18n";
 import { trackLearning } from "@/lib/learning";
 import { shareChartUrl } from "@/lib/share";
 import Disclaimer from "@/components/Disclaimer";
+import { classifyClimate } from "@/lib/pro/climate";
+import { rollingWindow } from "@/lib/pro/window";
+import type { TeaserMonth } from "@/components/ProOffer";
+import type { YearMapContentV2 } from "@/lib/pro/build-year-map";
 
 export default function CartaPage() {
   const router = useRouter();
@@ -54,6 +56,7 @@ export default function CartaPage() {
   const [shareCopied, setShareCopied] = useState(false);
   const [yearPdfBusy, setYearPdfBusy] = useState(false);
   const [yearTick, setYearTick] = useState(0);
+  const [yearMapV2, setYearMapV2] = useState<YearMapContentV2 | null>(null);
   const [checkoutBanner, setCheckoutBanner] = useState<"success" | "cancel" | "error" | null>(
     null,
   );
@@ -70,14 +73,13 @@ export default function CartaPage() {
     }
     setChart(data.chart);
     setBirthData(data.birthData);
-    setProUnlocked(isProUnlocked(id));
+    setProUnlocked(false);
   }, [id, router]);
 
   useEffect(() => {
     if (!id || typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
-    const sessionId = params.get("session_id");
     if (!checkout) return;
 
     if (checkout === "cancel") {
@@ -87,20 +89,17 @@ export default function CartaPage() {
       return;
     }
 
-    if (checkout === "success" && sessionId) {
+    if (checkout === "success") {
       let cancelled = false;
       (async () => {
         try {
-          const res = await fetch(
-            `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}&chart_id=${encodeURIComponent(id)}`,
-          );
-          const data = (await res.json()) as { paid?: boolean; chartId?: string | null };
+          await fetch("/api/pro/order-status");
+          const res = await fetch("/api/pro/entitlements");
+          const data = (await res.json()) as { entitlements?: { chart_id?: string }[] };
           if (cancelled) return;
-          if (res.ok && data.paid && data.chartId === id) {
-            unlockPro(id, { permanent: true, sessionId, source: "stripe" });
+          if (res.ok && (data.entitlements || []).length > 0) {
             setProUnlocked(true);
             trackLearning("checkout_success");
-            trackLearning("pro_unlocked");
             setCheckoutBanner("success");
           } else {
             setCheckoutBanner("error");
@@ -152,7 +151,7 @@ export default function CartaPage() {
     [chart, locale],
   );
   const yearMap = useMemo(() => {
-    if (!chart || !id) return null;
+    if (!chart || !id || !proUnlocked) return null;
     const year = new Date().getFullYear();
     return buildYearMap({
       chart,
@@ -164,24 +163,58 @@ export default function CartaPage() {
     });
   }, [chart, id, locale, yearTick, solarTick, proUnlocked, birthData]);
 
-  function handleUnlockPro() {
-    if (!id) return;
-    unlockPro(id, false);
-    setProUnlocked(true);
-    trackLearning("pro_unlocked");
-    try {
-      window.dispatchEvent(
-        new CustomEvent("astro-pro-unlocked", { detail: { chartId: id } })
-      );
-    } catch {
-      /* ignore */
+  const teaser = useMemo(() => {
+    if (!id) {
+      return { months: [] as TeaserMonth[], keyDateCount: 0, currentHeadline: undefined as string | undefined };
     }
-    requestAnimationFrame(() => {
-      document
-        .getElementById("pro-unlock-panel")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const year = new Date().getFullYear();
+    const transits = loadYearTransits(id, year);
+    const win = rollingWindow();
+    const rows = win.months
+      .map((key) => transits?.timeline?.find((m) => m.month === key))
+      .filter((row): row is NonNullable<typeof row> => Boolean(row));
+    if (rows.length < 3) {
+      return { months: [] as TeaserMonth[], keyDateCount: transits?.key_events?.length ?? 0, currentHeadline: undefined as string | undefined };
+    }
+    const raw = rows.map((r) => r.intensity_score ?? 0);
+    const tense = rows.map((r) => {
+      const ev = r.transits_active ?? [];
+      if (!ev.length) return 0;
+      return ev.filter((e) => e.nature === "tenso").length / ev.length;
     });
-  }
+    const classified = classifyClimate(raw, tense);
+    const months: TeaserMonth[] = rows.map((r, i) => ({
+      key: r.month,
+      label: r.month,
+      climate: classified.climate[i],
+    }));
+    const current = win.start;
+    const idx = months.findIndex((m) => m.key === current);
+    const currentHeadline =
+      idx >= 0
+        ? `${months[idx].label} · ${classified.climate[idx]}`
+        : undefined;
+    return {
+      months,
+      keyDateCount: transits?.key_events?.length ?? transits?.exact_aspects_calendar?.length ?? 0,
+      currentHeadline,
+    };
+  }, [id, yearTick]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/pro/entitlements")
+      .then((r) => r.json())
+      .then((d: { entitlements?: { chart_id?: string }[] }) => {
+        if (cancelled) return;
+        const list = d.entitlements || [];
+        setProUnlocked(list.length > 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function scrollToTopics() {
     document
@@ -194,13 +227,18 @@ export default function CartaPage() {
     setLoadingTransits(true);
     setTransitError(null);
     const year = new Date().getFullYear();
+    const start = new Date();
+    const startDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 12);
+    const endDate = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-01`;
     try {
       const res = await postWithWakingRetry(
         "/api/transits",
         {
           natal_planets: chart.planets,
-          start_date: `${year}-01-01`,
-          end_date: `${year}-12-31`,
+          start_date: startDate,
+          end_date: endDate,
           latitude: birthData.latitude,
           longitude: birthData.longitude,
         },
@@ -260,12 +298,31 @@ export default function CartaPage() {
   }
 
   useEffect(() => {
-    if (!proUnlocked || !id) return;
+    if (!id || !chart || !birthData) return;
     const year = new Date().getFullYear();
     if (!loadYearTransits(id, year)) void handleCalcYear();
-    if (!loadSolarReturn(id)) void handleEnsureSolar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proUnlocked, id]);
+  }, [id, chart, birthData]);
+
+  useEffect(() => {
+    if (!proUnlocked || !id) return;
+    if (!loadSolarReturn(id)) void handleEnsureSolar();
+    let cancelled = false;
+    fetch("/api/pro/year-map", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lang: locale }),
+    })
+      .then((r) => r.json())
+      .then((d: YearMapContentV2) => {
+        if (!cancelled && d?.months?.length) setYearMapV2(d);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proUnlocked, id, locale]);
 
   if (!chart || !preview) {
     return (
@@ -375,7 +432,7 @@ export default function CartaPage() {
       )}
 
       {loadingTransits && (
-        <div className="mb-5 bg-white border border-border rounded-xl p-5 text-center shadow-card">
+        <div className="mb-5 bg-card border border-border rounded-xl p-5 text-center shadow-card">
           <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-slate-700 text-sm mb-1">{t("chart.nav.transits_loading")}</p>
           <p className="text-ink-3 text-xs">{t("chart.loading_hint")}</p>
@@ -448,7 +505,6 @@ export default function CartaPage() {
         <TopicSummarySection
           preview={preview}
           isPro={proUnlocked}
-          onUnlock={handleUnlockPro}
           tier1Aspects={tier1Aspects}
           intensityData={intensityData}
           onCalcYear={handleCalcYear}
@@ -457,6 +513,11 @@ export default function CartaPage() {
           chart={chart}
           chartId={id}
           yearMap={yearMap}
+          yearMapV2={yearMapV2}
+          birth={birthData}
+          teaserMonths={teaser.months}
+          keyDateCount={teaser.keyDateCount}
+          currentHeadline={teaser.currentHeadline}
         />
       </div>
 
@@ -474,7 +535,7 @@ export default function CartaPage() {
             </p>
             <h2
               id="tech-chart-heading"
-              className="font-semibold text-lg sm:text-xl text-slate-900 tracking-tight group-hover:text-blue-700 transition-colors"
+              className="font-semibold text-lg sm:text-xl text-ink tracking-tight group-hover:text-blue-700 transition-colors"
             >
               {t("chart.tech.title")}
             </h2>

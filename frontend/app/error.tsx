@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect } from "react";
 import { captureException } from "@/lib/observability";
@@ -23,7 +23,7 @@ export default function Error({
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <div className="text-center max-w-md">
-        <h1 className="font-semibold text-2xl text-slate-900 mb-3">{t("error.title")}</h1>
+        <h1 className="font-semibold text-2xl text-ink mb-3">{t("error.title")}</h1>
         <p className="text-slate-500 text-sm mb-2">{error.message}</p>
         {error.digest && (
           <p className="text-ink-3 text-xs mb-6">ID: {error.digest}</p>

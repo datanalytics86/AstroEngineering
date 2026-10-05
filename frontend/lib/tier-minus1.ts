@@ -65,7 +65,7 @@ interface SignVoice {
 const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   Aries: {
     es: {
-      style: "directa y sin rodeos",
+      style: "de corte directo, sin rodeos",
       need: "honestidad y movimiento",
       fuel: "empezar antes de que el miedo hable",
       shadow: "apurar o imponer el ritmo",
@@ -79,7 +79,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Tauro: {
     es: {
-      style: "pausada, sensorial y constante",
+      style: "de ritmo pausado, sensorial y constante",
       need: "estabilidad y placer real",
       fuel: "construir algo que se pueda tocar",
       shadow: "quedarte demasiado tiempo en lo conocido",
@@ -93,7 +93,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Géminis: {
     es: {
-      style: "curiosa, ágil y conversada",
+      style: "de curiosidad ágil y conversada",
       need: "variedad y diálogo",
       fuel: "aprender y conectar ideas",
       shadow: "dispersarte antes de profundizar",
@@ -107,7 +107,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Cáncer: {
     es: {
-      style: "protectora e intuitiva",
+      style: "de cuidado intuitivo",
       need: "seguridad emocional",
       fuel: "cuidar lo que quieres que dure",
       shadow: "guardar de más o aferrarte",
@@ -121,7 +121,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Leo: {
     es: {
-      style: "cálida, visible y generosa",
+      style: "de calor visible y generoso",
       need: "reconocimiento sincero",
       fuel: "crear y que te vean de verdad",
       shadow: "medir tu valor por el aplauso",
@@ -135,7 +135,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Virgo: {
     es: {
-      style: "precisa, útil y atenta al detalle",
+      style: "de precisión práctica y ojo al detalle",
       need: "orden y sentido práctico",
       fuel: "mejorar lo que ya existe",
       shadow: "exigirte una perfección que no existe",
@@ -149,7 +149,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Libra: {
     es: {
-      style: "diplomática y con ojo para el equilibrio",
+      style: "de diplomacia y ojo para el equilibrio",
       need: "belleza y justicia en el trato",
       fuel: "crear armonía entre personas",
       shadow: "evitar la decisión difícil",
@@ -163,7 +163,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Escorpio: {
     es: {
-      style: "intensa, leal y de pocas máscaras",
+      style: "de intensidad leal y pocas máscaras",
       need: "confianza real, no cosmética",
       fuel: "ir al fondo de las cosas",
       shadow: "controlar para no lastimarte",
@@ -177,7 +177,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Sagitario: {
     es: {
-      style: "amplia, honesta y con ganas de horizonte",
+      style: "de horizonte amplio y honesto",
       need: "libertad y sentido",
       fuel: "entender el para qué",
       shadow: "prometer más de lo que sostienes",
@@ -191,7 +191,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Capricornio: {
     es: {
-      style: "seria, paciente y de largo aliento",
+      style: "de seriedad paciente y largo aliento",
       need: "respeto y resultados",
       fuel: "dejar una obra que se sostenga",
       shadow: "confundir valer con producir",
@@ -205,7 +205,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Acuario: {
     es: {
-      style: "independiente, lúcida y un poco a destiempo",
+      style: "de independencia lúcida, un poco a destiempo",
       need: "espacio para ser distinto",
       fuel: "mejorar el sistema, no solo tu caso",
       shadow: "desconectar cuando más te necesitan",
@@ -219,7 +219,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
   },
   Piscis: {
     es: {
-      style: "empática, imaginativa y permeable",
+      style: "de empatía imaginativa y permeable",
       need: "belleza y un lugar donde soltar",
       fuel: "sentir y crear desde lo invisible",
       shadow: "diluirte en el otro o en la fantasía",
@@ -235,7 +235,7 @@ const VOICE: Record<string, { es: SignVoice; en: SignVoice }> = {
 
 const FALLBACK_VOICE: { es: SignVoice; en: SignVoice } = {
   es: {
-    style: "propia y difícil de copiar",
+    style: "propia, difícil de copiar",
     need: "ser tomado en serio",
     fuel: "hacer las cosas a tu manera",
     shadow: "dudar de tu propio ritmo",

@@ -156,7 +156,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
   if (retro) {
     const meaning = getRetroMeaning(retro.planet, lang);
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
+      <div className="bg-card border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
         <p className="text-xs font-mono text-ink-3 uppercase tracking-wide">
           {t("transits.timeline.detail.title")}
         </p>
@@ -192,7 +192,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
     const days = daysBetween(event.enters_orb, event.leaves_orb);
 
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
+      <div className="bg-card border border-slate-200 rounded-2xl shadow-sm p-5 space-y-3">
         <p className="text-xs font-mono text-ink-3 uppercase tracking-wide">
           {t("transits.timeline.detail.title")}
         </p>
@@ -253,7 +253,7 @@ function TransitDetailPanel({ event, retro, lang }: TransitDetailPanelProps) {
   }
 
   return (
-    <div className="bg-white border border-dashed border-slate-200 rounded-2xl p-5">
+    <div className="bg-card border border-dashed border-slate-200 rounded-2xl p-5">
       <p className="text-sm text-ink-3">{t("transits.timeline.detail.select_hint")}</p>
     </div>
   );
@@ -274,7 +274,7 @@ function MonthBriefPanel({ month, exactCalendar }: MonthBriefPanelProps) {
     .slice(0, 4);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
+    <div className="bg-card border border-slate-200 rounded-2xl shadow-sm p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="font-semibold text-slate-800 text-sm capitalize">{brief.monthLabel}</span>
@@ -349,7 +349,7 @@ function YearBriefPanel({ data, year }: YearBriefPanelProps) {
   const brief = generateYearBrief(data, year, lang);
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 space-y-5">
+    <div className="bg-card border border-slate-200 rounded-2xl shadow-sm p-5 space-y-5">
       {/* Theme + paragraph */}
       <div>
         <span className="inline-block text-xs font-mono text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded-full mb-2 capitalize">
@@ -429,9 +429,10 @@ export default function TransitosPage() {
 
   const [chart, setChart]       = useState<ChartResponse | null>(null);
   const [birthData, setBirthData] = useState<BirthData | null>(null);
+  const [isPro, setIsPro] = useState(false);
 
   const currentYear = new Date().getFullYear();
-  const years = [0, 1, 2, 3, 4].map((i) => currentYear + i);
+  const years = isPro ? [currentYear, currentYear + 1] : [currentYear];
 
   const [selectedYear, setSelectedYear]     = useState<number>(currentYear);
   const [cache, setCache]                   = useState<Record<number, TransitResponse>>({});
@@ -460,6 +461,19 @@ export default function TransitosPage() {
     setBirthData(c.birthData);
   }, [id, router]);
 
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/pro/entitlements")
+      .then((r) => r.json())
+      .then((d: { entitlements?: unknown[] }) => {
+        if (!cancelled) setIsPro((d.entitlements || []).length > 0);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const fetchYear = useCallback(
     async (year: number) => {
       if (!chart || !birthData) return;
@@ -470,12 +484,20 @@ export default function TransitosPage() {
         return next;
       });
       try {
+        let start_date = `${year}-01-01`;
+        let end_date = `${year}-12-31`;
+        if (!isPro) {
+          const now = new Date();
+          start_date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+          const last = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          end_date = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, "0")}-${String(last.getDate()).padStart(2, "0")}`;
+        }
         const res = await postWithWakingRetry(
           "/api/transits",
           {
             natal_planets: chart.planets,
-            start_date:    `${year}-01-01`,
-            end_date:      `${year}-12-31`,
+            start_date,
+            end_date,
             latitude:      birthData.latitude,
             longitude:     birthData.longitude,
           },
@@ -501,14 +523,14 @@ export default function TransitosPage() {
         setLoadingYear(null);
       }
     },
-    [chart, birthData, id]
+    [chart, birthData, id, isPro, t]
   );
 
   const ensureYear = useCallback(
     (year: number) => {
       if (cache[year]) return;
       const stored = loadYearTransits(id, year);
-      if (stored) {
+      if (stored && (isPro || (stored.timeline?.length ?? 0) <= 2)) {
         setCache((prev) => ({ ...prev, [year]: stored }));
         return;
       }
@@ -516,7 +538,7 @@ export default function TransitosPage() {
         void fetchYear(year);
       }
     },
-    [cache, id, chart, birthData, fetchYear]
+    [cache, id, chart, birthData, fetchYear, isPro]
   );
 
   // Ensure the selected year is loaded (also covers the current year on mount,
@@ -547,6 +569,10 @@ export default function TransitosPage() {
 
   const data = cache[selectedYear] ?? null;
   const orderedTimeline = data ? [...data.timeline].sort((a, b) => a.month.localeCompare(b.month)) : [];
+  const nowMonth = `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const visibleTimeline = isPro
+    ? orderedTimeline
+    : orderedTimeline.filter((m) => m.month === nowMonth);
   const isLoading = loadingYear === selectedYear && !data;
   const yearError = errorByYear[selectedYear];
 
@@ -585,11 +611,19 @@ export default function TransitosPage() {
       {/* ── Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
         <div>
-          <h1 className="font-semibold text-2xl text-slate-900 tracking-tight">
+          <h1 className="font-semibold text-2xl text-ink tracking-tight">
             {t("transits.title")}
           </h1>
-          <p className="text-slate-500 font-mono text-sm mt-1">{chart.name}</p>
+          <p className="text-ink-2 font-mono text-sm mt-1">{chart.name}</p>
           <p className="text-ink-3 text-sm mt-2 max-w-xl">{t("transits.orientation")}</p>
+          {!isPro && (
+            <p className="text-sm text-ink-2 mt-3">
+              {t("transits.gated")}{" "}
+              <a href="/pro" className="text-accent underline">
+                {t("nav.pro")}
+              </a>
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <ActionButton variant="secondary" accent="blue" onClick={() => router.push(`/carta/${id}`)}>
@@ -607,7 +641,7 @@ export default function TransitosPage() {
             className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${
               selectedYear === year
                 ? "bg-blue-600 text-white shadow-sm"
-                : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
+                : "bg-card border border-border text-ink-2 hover:border-blue-300"
             }`}
           >
             {year === currentYear ? `${year} · ${t("transits.current_year")}` : year}
@@ -637,7 +671,7 @@ export default function TransitosPage() {
               className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${
                 viewMode === "timeline"
                   ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
+                  : "bg-card border border-border text-ink-2 hover:border-blue-300"
               }`}
             >
               {t("transits.view.toggle_timeline")}
@@ -647,7 +681,7 @@ export default function TransitosPage() {
               className={`px-4 py-2 rounded-lg text-sm font-mono transition-colors ${
                 viewMode === "month"
                   ? "bg-blue-600 text-white shadow-sm"
-                  : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
+                  : "bg-card border border-border text-ink-2 hover:border-blue-300"
               }`}
             >
               {t("transits.view.toggle_month")}
@@ -666,7 +700,7 @@ export default function TransitosPage() {
                   className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${
                     planetFilter === null
                       ? "bg-blue-600 text-white"
-                      : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
+                      : "bg-card border border-border text-ink-2 hover:border-blue-300"
                   }`}
                 >
                   {t("transits.timeline.all")}
@@ -678,7 +712,7 @@ export default function TransitosPage() {
                     className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors border ${
                       planetFilter === p
                         ? "text-white border-transparent"
-                        : "bg-white border-slate-200 text-slate-500 hover:border-blue-300"
+                        : "bg-card border-slate-200 text-slate-500 hover:border-blue-300"
                     }`}
                     style={planetFilter === p ? { backgroundColor: PLANET_COLOR[p] ?? "#334155" } : undefined}
                   >
@@ -691,7 +725,7 @@ export default function TransitosPage() {
                     className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${
                       planetFilter === RETRO_FILTER
                         ? "bg-red-600 text-white"
-                        : "bg-white border border-slate-200 text-red-500 hover:border-red-300"
+                        : "bg-card border border-slate-200 text-red-500 hover:border-red-300"
                     }`}
                   >
                     {t("transits.timeline.retro_chip")}
@@ -719,7 +753,7 @@ export default function TransitosPage() {
             <div className="space-y-6">
               {/* Month chips */}
               <div className="flex flex-wrap gap-2">
-                {orderedTimeline.map((m) => {
+                {visibleTimeline.map((m) => {
                   let label = m.month;
                   try {
                     label = capitalizeFirst(
@@ -733,7 +767,7 @@ export default function TransitosPage() {
                       className={`px-3 py-1.5 rounded-lg text-sm font-mono transition-colors ${
                         selectedMonthKey === m.month
                           ? "bg-blue-600 text-white"
-                          : "bg-white border border-slate-200 text-slate-500 hover:border-blue-300"
+                          : "bg-card border border-border text-ink-2 hover:border-blue-300"
                       }`}
                     >
                       {label}

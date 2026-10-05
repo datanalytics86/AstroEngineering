@@ -14,6 +14,7 @@ const PER_MINUTE: Record<string, number> = {
 
 const PER_HOUR: Record<string, number> = {
   "/api/auth/magic-link": 10,
+  "/api/optin": 10,
 };
 
 type Bucket = Map<string, number[]>;
@@ -55,7 +56,7 @@ function buildCsp(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "font-src 'self' data:",
     "img-src 'self' data: blob:",
-    "connect-src 'self' https://checkout.stripe.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io",
+    "connect-src 'self' https://checkout.stripe.com https://api.stripe.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.posthog.com https://us.i.posthog.com https://eu.i.posthog.com",
     "frame-src 'self' https://checkout.stripe.com https://js.stripe.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",

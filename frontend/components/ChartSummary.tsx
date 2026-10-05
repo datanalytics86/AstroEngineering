@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { ChartSummary, HumanProSummary } from "@/lib/types";
@@ -60,7 +60,7 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
 
       <div
         ref={panelRef}
-        className="relative z-10 w-full sm:w-[560px] h-[92vh] sm:h-screen flex flex-col bg-white border-t sm:border-t-0 sm:border-l border-slate-200 shadow-2xl transition-all duration-300 ease-out overflow-hidden"
+        className="relative z-10 w-full sm:w-[560px] h-[92vh] sm:h-screen flex flex-col bg-card border-t sm:border-t-0 sm:border-l border-slate-200 shadow-2xl transition-all duration-300 ease-out overflow-hidden"
         style={{
           transform: visible
             ? "translate(0, 0)"
@@ -74,7 +74,7 @@ export default function ChartSummaryModal({ summary, human, name, onClose }: Pro
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-lg text-slate-900 leading-tight">
+              <h2 className="font-semibold text-lg text-ink leading-tight">
                 {t("summary.modal.title")}
               </h2>
               <p className="text-sm text-slate-500 mt-0.5">{name}</p>

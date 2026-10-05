@@ -21,15 +21,47 @@ const EN_PATH = path.join(__dirname, "..", "lib", "locales", "en.ts");
 const KEY_RE = /^\s*["']([^"']+)["']\s*:/;
 
 function extractKeys(filePath) {
+  return new Set(extractValues(filePath).keys());
+}
+
+function extractValues(filePath) {
   const content = readFileSync(filePath, "utf-8");
-  const keys = new Set();
-  for (const rawLine of content.split("\n")) {
+  const values = new Map();
+  const lines = content.split("\n");
+  let i = 0;
+  while (i < lines.length) {
+    const rawLine = lines[i];
     const line = rawLine.trim();
-    if (line.startsWith("//")) continue;
+    if (line.startsWith("//")) {
+      i += 1;
+      continue;
+    }
     const match = KEY_RE.exec(rawLine);
-    if (match) keys.add(match[1]);
+    if (!match) {
+      i += 1;
+      continue;
+    }
+    const key = match[1];
+    const after = rawLine.slice(match[0].length);
+    let buf = after;
+    i += 1;
+    if (!after.trim()) {
+      buf = "";
+      while (i < lines.length) {
+        const nxt = lines[i];
+        if (KEY_RE.exec(nxt) && !nxt.trim().startsWith("//")) break;
+        buf += nxt + "\n";
+        i += 1;
+      }
+    }
+    values.set(key, buf);
   }
-  return keys;
+  return values;
+}
+
+function tokensOf(value) {
+  const found = [...value.matchAll(/\{\{?[A-Za-z0-9_]+\}?\}/g)].map((m) => m[0]);
+  return found.sort().join(",");
 }
 
 function main() {
@@ -47,7 +79,16 @@ function main() {
   const missingInEn = [...esKeys].filter((k) => !enKeys.has(k)).sort();
   const missingInEs = [...enKeys].filter((k) => !esKeys.has(k)).sort();
 
-  if (missingInEn.length === 0 && missingInEs.length === 0) {
+  const esVals = extractValues(ES_PATH);
+  const enVals = extractValues(EN_PATH);
+  const placeholderMismatches = [];
+  for (const key of esKeys) {
+    const a = tokensOf(esVals.get(key) || "");
+    const b = tokensOf(enVals.get(key) || "");
+    if (a !== b) placeholderMismatches.push(`${key}: es=${a} en=${b}`);
+  }
+
+  if (missingInEn.length === 0 && missingInEs.length === 0 && placeholderMismatches.length === 0) {
     console.log(`OK: paridad i18n verificada (${esKeys.size} claves en ambos idiomas).`);
     process.exit(0);
   }
@@ -61,6 +102,11 @@ function main() {
   if (missingInEs.length > 0) {
     console.error(`Faltan en es.ts (${missingInEs.length}):`);
     for (const k of missingInEs) console.error(`  - ${k}`);
+    console.error("");
+  }
+  if (placeholderMismatches.length > 0) {
+    console.error(`Placeholders distintos es/en (${placeholderMismatches.length}):`);
+    for (const row of placeholderMismatches) console.error(`  - ${row}`);
     console.error("");
   }
   process.exit(1);

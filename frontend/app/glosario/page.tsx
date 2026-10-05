@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { DIGNITY_SYMBOL, DIGNITY_COLOR } from "@/lib/zodiac-utils";
@@ -206,14 +206,14 @@ export default function GlosarioPage() {
           <span className="text-slate-300 font-mono">/</span>
           <span className="text-sm font-mono text-slate-600">{t("nav.learn")}</span>
         </div>
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">{t("glossary.title")}</h1>
+        <h1 className="text-3xl font-bold text-ink mb-2">{t("glossary.title")}</h1>
         <p className="text-slate-500 leading-relaxed">
           {t("glossary.subtitle")}
         </p>
       </div>
 
       {/* Index */}
-      <nav className="bg-white border border-border rounded-2xl p-5 shadow-card mb-10">
+      <nav className="bg-card border border-border rounded-2xl p-5 shadow-card mb-10">
         <p className="text-xs font-mono text-ink-3 uppercase tracking-wide mb-3">{t("glossary.index")}</p>
         <div className="flex flex-wrap gap-2">
           {SECTIONS.map((s) => (
@@ -230,13 +230,13 @@ export default function GlosarioPage() {
 
       {/* ── ASPECTOS ── */}
       <section id="aspectos" className="mb-14 scroll-mt-20">
-        <h2 className="text-xl font-bold text-slate-900 mb-1">{t("glossary.aspects.title")}</h2>
+        <h2 className="text-xl font-bold text-ink mb-1">{t("glossary.aspects.title")}</h2>
         <p className="text-sm text-slate-500 mb-6 font-mono">
           {t("glossary.aspects.subtitle")}
         </p>
         <div className="space-y-4">
           {ASPECTS_DATA.map((asp) => (
-            <div key={asp.id} className="bg-white border border-border rounded-2xl p-5 shadow-card">
+            <div key={asp.id} className="bg-card border border-border rounded-2xl p-5 shadow-card">
               <div className="flex items-start gap-4">
                 <div
                   className="text-2xl w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 border border-border font-mono shrink-0"
@@ -269,11 +269,11 @@ export default function GlosarioPage() {
 
       {/* ── RETROGRADACIÓN ── */}
       <section id="retrogradacion" className="mb-14 scroll-mt-20">
-        <h2 className="text-xl font-bold text-slate-900 mb-1">{t("glossary.retro.title")}</h2>
+        <h2 className="text-xl font-bold text-ink mb-1">{t("glossary.retro.title")}</h2>
         <p className="text-sm text-slate-500 mb-6 font-mono">
           {t("glossary.retro.subtitle")}
         </p>
-        <div className="bg-white border border-border rounded-2xl p-6 shadow-card space-y-4">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-card space-y-4">
           <div className="flex items-center gap-3">
             <span className="text-3xl font-mono text-red-500">℞</span>
             <div>
@@ -311,13 +311,13 @@ export default function GlosarioPage() {
 
       {/* ── DIGNIDADES ── */}
       <section id="dignidades" className="mb-14 scroll-mt-20">
-        <h2 className="text-xl font-bold text-slate-900 mb-1">{t("glossary.dignities.title")}</h2>
+        <h2 className="text-xl font-bold text-ink mb-1">{t("glossary.dignities.title")}</h2>
         <p className="text-sm text-slate-500 mb-6 font-mono">
           {t("glossary.dignities.subtitle")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {DIGNITIES_DATA.map((d) => (
-            <div key={d.key} className="bg-white border border-border rounded-2xl p-5 shadow-card">
+            <div key={d.key} className="bg-card border border-border rounded-2xl p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <span
                   className="text-xl w-10 h-10 flex items-center justify-center rounded-xl border font-mono"
@@ -336,13 +336,13 @@ export default function GlosarioPage() {
 
       {/* ── PLANETAS ── */}
       <section id="planetas" className="mb-14 scroll-mt-20">
-        <h2 className="text-xl font-bold text-slate-900 mb-1">{t("glossary.planets.title")}</h2>
+        <h2 className="text-xl font-bold text-ink mb-1">{t("glossary.planets.title")}</h2>
         <p className="text-sm text-slate-500 mb-6 font-mono">
           {t("glossary.planets.subtitle")}
         </p>
         <div className="space-y-3">
           {PLANETS_DATA.map((p) => (
-            <div key={p.name} className="bg-white border border-border rounded-2xl p-5 shadow-card">
+            <div key={p.name} className="bg-card border border-border rounded-2xl p-5 shadow-card">
               <div className="flex items-start gap-4">
                 <span
                   className="text-2xl w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 border border-border font-mono shrink-0"
@@ -366,13 +366,13 @@ export default function GlosarioPage() {
 
       {/* ── ÁNGULOS ── */}
       <section id="angulos" className="mb-14 scroll-mt-20">
-        <h2 className="text-xl font-bold text-slate-900 mb-1">{t("glossary.angles.title")}</h2>
+        <h2 className="text-xl font-bold text-ink mb-1">{t("glossary.angles.title")}</h2>
         <p className="text-sm text-slate-500 mb-6 font-mono">
           {t("glossary.angles.subtitle")}
         </p>
         <div className="space-y-4">
           {ANGLES_DATA.map((a) => (
-            <div key={a.name} className="bg-white border border-border rounded-2xl p-5 shadow-card">
+            <div key={a.name} className="bg-card border border-border rounded-2xl p-5 shadow-card">
               <div className="flex items-center gap-3 mb-3">
                 <span
                   className="text-sm font-mono font-bold w-12 h-12 flex items-center justify-center rounded-xl border"
@@ -390,11 +390,11 @@ export default function GlosarioPage() {
 
       {/* ── ORBES ── */}
       <section id="orbes" className="mb-14 scroll-mt-20">
-        <h2 className="text-xl font-bold text-slate-900 mb-1">{t("glossary.orbs.title")}</h2>
+        <h2 className="text-xl font-bold text-ink mb-1">{t("glossary.orbs.title")}</h2>
         <p className="text-sm text-slate-500 mb-6 font-mono">
           {t("glossary.orbs.subtitle")}
         </p>
-        <div className="bg-white border border-border rounded-2xl p-6 shadow-card space-y-4">
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-card space-y-4">
           <p className="text-sm text-slate-600 leading-relaxed">
             Un <span className="font-semibold text-slate-800">orbe</span> es el margen de tolerancia
             alrededor del ángulo exacto de un aspecto. Si Júpiter está a 123° de tu Sol natal
