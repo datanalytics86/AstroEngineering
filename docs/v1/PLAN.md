@@ -5,7 +5,7 @@ Orquestador: A0
 Rama: `release/v1-comercial` (desde `origin/claude/nifty-planck-13n6j3` @ `c75f905`; `git merge origin/main` → Already up to date)  
 SPEC-002: Accepted por el dueño. Stack de §1 autorizado.
 
-**Esta oleada es solo lectura + estos docs. Cero cambios de producto.** 🛑 Gate 0 abajo. No se empieza Oleada 1 hasta que el dueño apruebe.
+**Oleada 0 cerrada.** Dueño: «ejecuta la oleada 1» (2026-10-05). Gate 0 aprobado para ejecutar A1/A2/A3. D1/D3/D11 siguen pendientes para cobro y copy legal definitivo.
 
 ---
 
@@ -150,20 +150,20 @@ Leyenda: **C** confirmado en código (y, si dice “medido”, también en esta 
 
 ---
 
-## 3. Estado S1–S10 (hoy)
+## 3. Estado S1–S10 (fin Oleada 1, 2026-10-05)
 
 | # | Criterio | Hoy |
 |---|----------|-----|
-| S1 | 0 vulns high/critical | **ROJO** — npm 1c+2h; pip 15 avisos |
-| S2 | Cero Pro sin pago | **ROJO** — H-12/H-14 |
-| S3 | `/health` p95 < 200 ms bajo carga | **ROJO** — H-04; prod 22,5 s cold |
-| S4 | `/api/transits` p95 < 4 s Starter | **NO MEDIDO** en Starter (plan free) |
-| S5 | Compra → Pro < 10 s, restaurable | **ROJO** — no hay entitlements |
-| S6 | Mapa distingue meses | **ROJO** — H-21 |
-| S7 | Embudo medido | **ROJO** — H-15 |
-| S8 | Legales publicados | **ROJO** — H-16 |
-| S9 | CI completo | **ROJO** — H-30. i18n 479 y build sí pasan |
-| S10 | Precisión ±0,05°; Quirón; corpus 54 | **PARCIAL** — corpus no reejecutado aquí; Quirón ausente (H-20) |
+| S1 | 0 vulns high/critical | **VERDE** local — `pip-audit` “No known vulnerabilities found”; `npm audit --omit=dev --audit-level=high` 0 high/critical (quedan 2 *moderate*: qs, baseline-browser-mapping) |
+| S2 | Cero Pro sin pago | **ROJO** — H-12/H-14; Oleada 2 |
+| S3 | `/health` p95 < 200 ms bajo carga | **PARCIAL** — `/health` sin límite + cómputo en threadpool; p95 no medido (D8 free / cold start) |
+| S4 | `/api/transits` p95 < 4 s Starter | **NO MEDIDO** (plan free) |
+| S5 | Compra → Pro < 10 s, restaurable | **ROJO** — Oleada 2 |
+| S6 | Mapa distingue meses | **PARCIAL** — API expone `raw_intensity` + `key_events`; ranking de clima es A6 (Oleada 2) |
+| S7 | Embudo medido | **ROJO** — Oleada 2 |
+| S8 | Legales publicados | **PARCIAL** — `/privacidad` `/terminos` `/reembolsos` `/contacto` con placeholders D11. 🛑 no definitivos |
+| S9 | CI completo | **CÓDIGO LISTO** — jobs pytest, corpus, pip-audit, lint, typecheck, vitest, i18n, interp, npm-audit high, build, Playwright smoke, gitleaks. Primer verde en GitHub Actions al pushear |
+| S10 | Precisión ±0,05°; Quirón; corpus 54 | **PARCIAL** — Dockerfile + `fetch_ephe.py` con SHA-256 Anexo C; golden skip sin `.se1`; Windows sin pyswisseph. CI Ubuntu 3.11 es la fuente de verdad |
 
 ---
 
@@ -217,3 +217,37 @@ Aprueba este plan (Mensaje 2) y responde lo que falte. Mientras tanto **me deten
 7. **Pregunta de producto (no bloquea Oleada 1):** ¿el CTA de waitlist recoge email en servidor ya en Oleada 2, o solo “avísame” local hasta tener Resend?
 
 Cuando apruebes: *“Apruebo el plan de la Oleada 0 [cambios]. Ejecuta la Oleada 1 completa (A1, A2 y A3)…”*
+
+**Gate 0 (2026-10-05):** el dueño dijo «ejecuta la oleada 1». A1/A2/A3 ejecutados en `v1/oleada-1`. D1/D3/D8-pago/D11 siguen 🛑.
+
+---
+
+## 6. Oleada 1 — resultados (salida real)
+
+Máquina: Windows, Python 3.12.10, Node v22, npm 10.9.8. Sin Docker, sin MSVC, sin `gh`.
+
+```
+pip-audit -r backend/requirements.txt
+No known vulnerabilities found
+
+pytest backend/tests/test_timezone.py backend/tests/test_places.py -q
+..............  14 passed in 0.77s
+
+npm run lint          → 0 errors, 5 warnings (react-hooks/exhaustive-deps + unused eslint-disable)
+npm run typecheck     → tsc --noEmit OK
+npm test              → vitest 4/4 (lib/site.test.ts)
+npm run check:i18n    → OK: paridad i18n verificada (515 claves en ambos idiomas)
+npm run check:interp  → PASS advanced interpretation { house9_words: 101, asc_words: 128, … }
+npm audit --omit=dev --audit-level=high → 0 high/critical
+npm audit --omit=dev  → 2 moderate (qs, baseline-browser-mapping); exit 1 esperado
+```
+
+`next build --webpack` (Next.js 16.3.8): 19/19 páginas, rutas `/api/places`, `/privacidad`, `/terminos`, `/reembolsos`, `/contacto`. Esta versión no imprime First Load JS en la tabla. Warnings: middleware→proxy (se conserva middleware por CSP nonce); `Can't resolve 'fs'` en register-lab-fonts (preexistente, no fatal).
+
+Playwright smoke local: **6 passed** (desktop 1440×900 + móvil Chromium 390×844; home, legales con `{{LEGAL_NAME}}`, footer “Código fuente”). `output: standalone` solo si `DOCKER_BUILD=1`.
+
+pytest completo / `verify_corpus` / golden: no corridos en esta máquina (pyswisseph sin rueda CPython 3.12 Windows). CI Ubuntu 3.11 los corre.
+
+H-xx **cerrados en código** esta oleada: H-01, H-02, H-03, H-04 (mecanismo), H-05, H-06, H-07, H-08, H-09, H-10, H-17, H-18, H-19, H-29, H-30. **Parciales:** H-11 (sigue `plan: free` hasta D8 pagado), H-16 (placeholders D11), H-20 (`.se1` en imagen; no verificado local), H-31 (declarado en privacidad). **Oleada 2:** H-12…H-15, H-21…H-28, H-32, H-33.
+
+🛑 **Deploy:** setear el mismo `BACKEND_PROXY_KEY` en Vercel y Render **antes** de promover. Si falta, `/api/*` en production = 403. `/health` sigue abierto.

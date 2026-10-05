@@ -1,15 +1,22 @@
-# Backend AstroEngine Pro → Render (Docker, free tier).
+# Backend AstroEngine Pro → Render (Docker).
+# D8: plan starter US$7/mes se activa cuando el dueño pague la cuenta.
+# Hasta entonces se deja `plan: free` y el keepalive de GitHub Actions.
+# Region: medir latencia Chile → oregon vs frankfurt antes de fijarla (Oleada 4).
+#
 # Checklist humano post-sync (no inventar secrets):
-#   FRONTEND_URL = https://astro-engineering.vercel.app   (obligatoria en prod)
-#   SENTRY_DSN   = <proyecto Sentry backend>              (opcional, fail-soft)
-#   SENTRY_ENVIRONMENT = production                       (opcional)
-#   ALLOWED_ORIGINS = solo si hay un origen extra exacto  (opcional)
+#   FRONTEND_URL        = https://astro-engineering.vercel.app   (obligatoria en prod)
+#   BACKEND_PROXY_KEY   = <secreto compartido con Vercel>       (obligatoria en prod, A2-1)
+#   SENTRY_DSN          = <proyecto Sentry backend>             (opcional, fail-soft)
+#   SENTRY_ENVIRONMENT  = production                            (opcional)
+#   ALLOWED_ORIGINS     = solo si hay un origen extra exacto    (opcional)
+#   WEB_CONCURRENCY     = 2                                     (cuando plan=starter)
 services:
   - type: web
     name: astroengine-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    # Cambiar a `starter` cuando D8 esté pagado. No borrar keepalive.yml antes.
     plan: free
     healthCheckPath: /health
     envVars:
@@ -19,6 +26,10 @@ services:
         value: /usr/share/swisseph/ephe
       - key: FRONTEND_URL
         sync: false
+      - key: BACKEND_PROXY_KEY
+        sync: false
+      - key: WEB_CONCURRENCY
+        value: "1"
       # Opcional — la app arranca sin ellas (fail-soft):
       # - key: SENTRY_DSN
       #   sync: false

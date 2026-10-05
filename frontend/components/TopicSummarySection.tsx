@@ -22,6 +22,7 @@ import { savePayWaitlistEmail, trackLearning } from "@/lib/learning";
 import { downloadProSamplePdf, downloadProYearPdf } from "@/lib/download-preview-pdf";
 import { getSampleYearMap } from "@/lib/year-map";
 import type { YearMapContent } from "@/lib/year-map";
+import Disclaimer from "@/components/Disclaimer";
 
 export interface TopicSummarySectionProps {
   preview: TierMinus1Content;
@@ -416,6 +417,7 @@ export default function TopicSummarySection({
                   ? t("chart.pro.unlocked_subtitle_paid")
                   : t("chart.pro.teaser.body")}
               </p>
+              <Disclaimer className="mt-2" />
             </div>
             {isPro ? (
               <span className="text-xs font-mono px-2.5 py-1 rounded-full bg-indigo-600 text-white">

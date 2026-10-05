@@ -9,7 +9,7 @@ Las celdas **PENDIENTE 🛑** bloquean cobro real (D1), lanzamiento (D2) o copy 
 | ID | Decisión | Valor efectivo | Origen | Estado |
 |----|----------|----------------|--------|--------|
 | D1 | Cómo cobrar | Proveedor principal **Lemon Squeezy**, **solo después** de confirmación escrita de que aceptan “reportes astrológicos personalizados generados por software (web + PDF)”. **Paddle descartado**. Mercado Pago como respaldo local (CLP). Mientras no haya sí escrito: adaptador `mock` + `PRO_MODE=waitlist`. Stripe se porta como adaptador apagado. | Dueño, 2026-10-05 | **PENDIENTE 🛑** (mensaje listo para enviar; ver abajo) |
-| D2 | Licencia Swiss Ephemeris | **AGPL-3.0**: `LICENSE` en el repo (al menos `backend/` + raíz) + enlace visible “Código fuente”. | Dueño | **ACEPTADO** — implementar en Oleada 1 (A2-6) |
+| D2 | Licencia Swiss Ephemeris | **AGPL-3.0**: `LICENSE` en el repo (al menos `backend/` + raíz) + enlace visible “Código fuente”. | Dueño | **HECHO** Oleada 1 — `LICENSE` AGPL-3.0 + `NOTICE` + footer “Código fuente” |
 | D3 | Dominio propio | **todavía no**. Fallback canónico: `https://astro-engineering.vercel.app`. | Dueño (no rellenó el corchete) | **PENDIENTE 🛑** para lanzamiento; no bloquea Oleada 1 |
 | D4 | Precios de lanzamiento | Mapa del Año **US$9,99 / CLP 8.990** · Regalo igual · Order bump **US$5,99** · Plus **US$4,99/mes o US$29,99/año (apagado)** | Recomendación §0 | **ACEPTADO** (catálogo único; no hardcodear) |
 | D5 | Analítica | **PostHog** sin cookies | Recomendación §0 | **ACEPTADO** — Oleada 2 (A7). Cuenta: runbook humano |

@@ -121,9 +121,7 @@
 
 /* Type + motion + radius (shared) */
 :root {
-  --font-display: "Fraunces", "Times New Roman", serif;
-  --font-sans: "IBM Plex Sans", "Segoe UI", sans-serif;
-  --font-mono: "IBM Plex Mono", "JetBrains Mono", ui-monospace, monospace;
+  /* Familias: next/font inyecta --font-display / --font-sans / --font-mono en <html>. */
 
   --fs-kicker: clamp(0.68rem, 0.62rem + 0.2vw, 0.75rem);
   --fs-body: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);

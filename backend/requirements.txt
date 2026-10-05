@@ -1,10 +1,10 @@
-fastapi==0.109.0
-uvicorn==0.27.0
+# Pins Oleada 1 (H-02). Starlette se fija explícito para no heredar avisos.
+fastapi==0.142.2
+starlette==1.7.0
+uvicorn==0.54.0
 pyswisseph==2.10.3.2
-pydantic==2.5.3
+pydantic==2.13.5
 slowapi==0.1.9
-# Observabilidad fail-soft: se inicializa solo si SENTRY_DSN está definido.
-sentry-sdk==2.19.2
-# httpx <0.28: la TestClient de starlette 0.35 (vía fastapi 0.109) usa el
-# argumento `app=` que httpx 0.28 eliminó. Solo se usa en tests.
-httpx==0.27.2
+sentry-sdk==2.71.0
+httpx==0.28.1
+tzdata==2026.1

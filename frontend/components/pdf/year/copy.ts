@@ -6,7 +6,9 @@ export function copy(en: boolean) {
       en ? `ASTROENGINE  ·  YEAR MAP  ·  ${year}` : `ASTROENGINE  ·  MAPA DEL AÑO  ·  ${year}`,
     mastSample: (year: number) =>
       en ? `ASTROENGINE  ·  ${year}  ·  SAMPLE` : `ASTROENGINE  ·  ${year}  ·  EJEMPLO`,
-    footerMark: en ? "INSTRUMENT — NOT A HOROSCOPE" : "INSTRUMENTO — NO UN HORÓSCOPO",
+    footerMark: en
+      ? "ORIENTATION & ENTERTAINMENT — NOT MEDICAL, FINANCIAL OR LEGAL ADVICE"
+      : "ORIENTACIÓN Y ENTRETENIMIENTO — NO CONSEJO MÉDICO, FINANCIERO NI LEGAL",
     kickerCover: en ? "PERSONAL YEAR INSTRUMENT" : "INSTRUMENTO DEL AÑO PERSONAL",
     thesis: en
       ? "Not a horoscope. A laboratory map: climate, the months that weigh, and what each life area asks — written so you can use it."

@@ -7,6 +7,10 @@ name: Keepalive backend
 # o está temporalmente caído (`|| true`): esto es solo un keepalive
 # best-effort, no un chequeo de salud con alertas.
 #
+# D8: NO borrar este workflow hasta que Render Starter (plan: starter) esté
+# pagado y vivo. El free tier también tiene un tope de ~60 días de inactividad
+# de la cuenta. /health ya no tiene rate limit (AD-10).
+#
 # Backend real de API (2026-08, verificado): https://astroengine-backend.onrender.com
 # NOTA: https://astroengine.onrender.com responde /health stub pero devuelve 404
 # en /api/* — NO usarlo como keepalive ni como NEXT_PUBLIC_API_URL.

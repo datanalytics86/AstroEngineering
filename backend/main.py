@@ -3,14 +3,18 @@ AstroEngine Pro — Backend API
 FastAPI + pyswisseph
 """
 
+import asyncio
 import os
 import time
 import logging
-from typing import Any
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
+from typing import Any, Callable
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.gzip import GZipMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
@@ -18,18 +22,29 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from astro.models import (
     BirthData, TransitRequest, ChartResponse, TransitResponse, SolarReturnRequest,
-    MundaneRequest, MundaneResponse, CountryInfo, CalendarResponse,
+    MundaneRequest, MundaneResponse, CountryInfo, CalendarResponse, PlaceHit,
 )
-from astro.chart import calculate_natal_chart, calculate_solar_return
+from astro.chart import calculate_natal_chart, calculate_solar_return, detect_ephe_mode
 from astro.transits import calculate_transit_timeline
 from astro.mundane import build_mundane_forecast
 from astro.national import NATIONAL_CHARTS, compute_national_planets
 from astro.calendar import compute_daily_calendar
+from astro.places import get_index
+from astro.cache import transit_lru, transit_cache_key
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
 _env = os.getenv("ENV", "development")
+_PROXY_KEY = (os.getenv("BACKEND_PROXY_KEY") or os.getenv("BACKEND_INTERNAL_SECRET") or "").strip()
+_MAX_BODY = 64 * 1024
+_COMPUTE_TIMEOUT = float(os.getenv("COMPUTE_TIMEOUT_SEC", "30"))
+_COMPUTE_SLOTS = int(os.getenv("COMPUTE_SLOTS", "2"))
+_WEB_CONCURRENCY = int(os.getenv("WEB_CONCURRENCY", "1"))
+
+# Un pool por proceso. N workers uvicorn = N pools (documentado AD-07).
+_compute_pool = ThreadPoolExecutor(max_workers=max(2, _COMPUTE_SLOTS), thread_name_prefix="compute")
+_compute_sem = asyncio.Semaphore(_COMPUTE_SLOTS)
 
 
 # ── Observabilidad fail-soft (Sentry opcional) ────────────────────────────────
@@ -93,7 +108,31 @@ def _capture_exc(exc: BaseException) -> None:
         pass
 
 
-limiter = Limiter(key_func=get_remote_address)
+def signed_client_ip(request: Request) -> str:
+    """IP del hop de Vercel firmada por el proxy; fallback a REMOTE_ADDR."""
+    forwarded = (request.headers.get("x-astro-client-ip") or "").strip()
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return get_remote_address(request)
+
+
+limiter = Limiter(key_func=signed_client_ip)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    mode = detect_ephe_mode()
+    logger.info(
+        "startup ephe.mode=%s workers=%s compute_slots=%s env=%s",
+        mode, _WEB_CONCURRENCY, _COMPUTE_SLOTS, _env,
+    )
+    try:
+        get_index().load()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("places load failed (fail-soft): %s", exc)
+    yield
+    _compute_pool.shutdown(wait=False)
+
 
 app = FastAPI(
     title="AstroEngine Pro API",
@@ -102,14 +141,33 @@ app = FastAPI(
     docs_url="/docs" if _env != "production" else None,
     redoc_url="/redoc" if _env != "production" else None,
     openapi_url="/openapi.json" if _env != "production" else None,
+    lifespan=lifespan,
 )
 
 app.state.limiter = limiter
-# Handler oficial de slowapi: devuelve Response (no dict) → 429 correcto.
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-# Add slowapi middleware
 app.add_middleware(SlowAPIMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
+
+@app.middleware("http")
+async def security_gates(request: Request, call_next):
+    """Body ≤ 64 KB + proxy firmado en production (excepto GET /health)."""
+    path = request.url.path
+    if not (request.method == "GET" and path == "/health"):
+        cl = request.headers.get("content-length")
+        if cl:
+            try:
+                if int(cl) > _MAX_BODY:
+                    return JSONResponse(status_code=413, content={"detail": "Payload too large"})
+            except ValueError:
+                return JSONResponse(status_code=400, content={"detail": "Invalid Content-Length"})
+        if _env == "production":
+            provided = (request.headers.get("x-astro-proxy-key") or "").strip()
+            if not _PROXY_KEY or provided != _PROXY_KEY:
+                return JSONResponse(status_code=403, content={"detail": "Forbidden"})
+    return await call_next(request)
+
 
 # CORS: en production solo FRONTEND_URL (+ ALLOWED_ORIGINS exactos). Sin regex abierta.
 
@@ -159,9 +217,22 @@ app.add_middleware(
 )
 
 
+async def run_compute(fn: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """Ejecuta cómputo CPU en threadpool con semáforo y timeout 30 s (H-04)."""
+    async with _compute_sem:
+        loop = asyncio.get_running_loop()
+        try:
+            return await asyncio.wait_for(
+                loop.run_in_executor(_compute_pool, lambda: fn(*args, **kwargs)),
+                timeout=_COMPUTE_TIMEOUT,
+            )
+        except asyncio.TimeoutError as exc:
+            raise HTTPException(status_code=504, detail="Cálculo agotó el tiempo") from exc
+
+
 @app.get("/health")
-@limiter.limit("10/minute")
-def health(request: Request):
+def health():
+    """Sin rate limit (AD-10). Render health check cada ~5 s en Starter."""
     return {"status": "ok", "service": "astroengine-backend"}
 
 
@@ -170,6 +241,20 @@ async def generic_exception_handler(request: Request, exc: Exception):
     logger.error("Unhandled error: %s", exc, exc_info=True)
     _capture_exc(exc)
     return JSONResponse(status_code=500, content={"detail": "Error interno del servidor"})
+
+
+@app.get("/api/places", response_model=list[PlaceHit])
+@limiter.limit("30/minute")
+def get_places(request: Request, q: str = "", lang: str = "es", limit: int = 8):
+    """Búsqueda de ciudades (GeoNames). Cache-Control 1 día."""
+    if len((q or "").strip()) < 2:
+        raise HTTPException(status_code=422, detail="q mínimo 2 caracteres")
+    lang = "en" if lang == "en" else "es"
+    hits = get_index().search(q, lang=lang, limit=limit)
+    return JSONResponse(
+        content=hits,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @app.post("/api/chart", response_model=ChartResponse)
@@ -183,13 +268,14 @@ async def get_chart(request: Request, body: BirthData):
     - Todos los aspectos mayores y menores entre planetas
     """
     t0 = time.perf_counter()
-    # Metadatos sin PII completa: solo año de nacimiento (no fecha/hora/coords).
     birth_year = (body.birth_date or "")[:4]
     try:
-        result = calculate_natal_chart(body.model_dump())
+        result = await run_compute(calculate_natal_chart, body.model_dump())
         duration_ms = int((time.perf_counter() - t0) * 1000)
         _track("chart.compute.success", duration_ms=duration_ms, birth_year=birth_year)
         return result
+    except HTTPException:
+        raise
     except Exception as exc:
         duration_ms = int((time.perf_counter() - t0) * 1000)
         logger.error("Chart calculation error: %s", exc)
@@ -207,14 +293,22 @@ async def get_transits(request: Request, body: TransitRequest):
     Incluye fechas exactas de aspecto, duración en orbe, y timeline mensual.
     """
     t0 = time.perf_counter()
+    natal = [p.model_dump() for p in body.natal_planets]
+    cache_key = transit_cache_key(natal, body.start_date, body.end_date, body.latitude, body.longitude)
+    cached = transit_lru.get(cache_key)
+    if cached is not None:
+        _track("transits.compute.cache_hit", planet_count=len(body.natal_planets))
+        return cached
     try:
-        result = calculate_transit_timeline(
-            natal_planets=[p.model_dump() for p in body.natal_planets],
-            start_date_str=body.start_date,
-            end_date_str=body.end_date,
-            lat=body.latitude,
-            lon=body.longitude,
+        result = await run_compute(
+            calculate_transit_timeline,
+            natal,
+            body.start_date,
+            body.end_date,
+            body.latitude,
+            body.longitude,
         )
+        transit_lru.set(cache_key, result)
         duration_ms = int((time.perf_counter() - t0) * 1000)
         _track(
             "transits.compute.duration_ms",
@@ -222,6 +316,8 @@ async def get_transits(request: Request, body: TransitRequest):
             planet_count=len(body.natal_planets),
         )
         return result
+    except HTTPException:
+        raise
     except Exception as exc:
         duration_ms = int((time.perf_counter() - t0) * 1000)
         logger.error("Transit calculation error: %s", exc)
@@ -239,17 +335,20 @@ async def get_solar_return(request: Request, body: SolarReturnRequest):
     """
     t0 = time.perf_counter()
     try:
-        result = calculate_solar_return(
-            natal_sun_lon=body.natal_sun_longitude,
-            year=body.year,
-            lat=body.latitude,
-            lon=body.longitude,
-            tz_offset=body.timezone_offset,
-            name=body.name,
+        result = await run_compute(
+            calculate_solar_return,
+            body.natal_sun_longitude,
+            body.year,
+            body.latitude,
+            body.longitude,
+            body.timezone_offset,
+            body.name,
         )
         duration_ms = int((time.perf_counter() - t0) * 1000)
         _track("solar_return.compute.success", duration_ms=duration_ms, year=body.year)
         return result
+    except HTTPException:
+        raise
     except Exception as exc:
         duration_ms = int((time.perf_counter() - t0) * 1000)
         logger.error("Solar return calculation error: %s", exc)
@@ -291,14 +390,15 @@ async def get_mundane(request: Request, body: MundaneRequest):
         national_chart_note = None
         if body.country:
             chart = NATIONAL_CHARTS[body.country]
-            national_planets = compute_national_planets(body.country)
+            national_planets = await run_compute(compute_national_planets, body.country)
             national_chart_note = {"es": chart["chart_note_es"], "en": chart["chart_note_en"]}
 
-        result = build_mundane_forecast(
-            start_date_str=body.start_date,
-            end_date_str=body.end_date,
-            natal_planets=natal_planets or None,
-            national_planets=national_planets,
+        result = await run_compute(
+            build_mundane_forecast,
+            body.start_date,
+            body.end_date,
+            natal_planets or None,
+            national_planets,
         )
         if national_planets is not None:
             result["national_planets"] = national_planets
@@ -306,6 +406,8 @@ async def get_mundane(request: Request, body: MundaneRequest):
         duration_ms = int((time.perf_counter() - t0) * 1000)
         _track("mundane.compute.success", duration_ms=duration_ms, mode=mode)
         return result
+    except HTTPException:
+        raise
     except Exception as exc:
         duration_ms = int((time.perf_counter() - t0) * 1000)
         logger.error("Mundane calculation error: %s", exc)
@@ -316,7 +418,7 @@ async def get_mundane(request: Request, body: MundaneRequest):
 
 @app.get("/api/calendar", response_model=CalendarResponse)
 @limiter.limit("10/minute")
-def get_calendar(request: Request, year: int, month: int):
+async def get_calendar(request: Request, year: int, month: int):
     """
     Calendario astrológico diario: mes solicitado + los 2 meses siguientes.
     Resumen día a día (Luna, Sol, eventos) con astronomía computada en vivo.
@@ -327,10 +429,12 @@ def get_calendar(request: Request, year: int, month: int):
         raise HTTPException(status_code=422, detail="Mes inválido (1-12)")
     t0 = time.perf_counter()
     try:
-        months = compute_daily_calendar(year, month, months=3)
+        months = await run_compute(compute_daily_calendar, year, month, 3)
         duration_ms = int((time.perf_counter() - t0) * 1000)
         _track("calendar.compute.duration_ms", duration_ms=duration_ms, year=year, month=month)
         return {"months": months}
+    except HTTPException:
+        raise
     except Exception as exc:
         duration_ms = int((time.perf_counter() - t0) * 1000)
         logger.error("Calendar calculation error: %s", exc)

@@ -14,5 +14,5 @@ export async function GET(req: NextRequest) {
   }
 
   const qs = `year=${encodeURIComponent(year)}&month=${encodeURIComponent(month)}`;
-  return proxyToBackend(`/api/calendar?${qs}`, { method: "GET" });
+  return proxyToBackend(`/api/calendar?${qs}`, { method: "GET", req });
 }

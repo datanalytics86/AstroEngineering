@@ -5,10 +5,12 @@
  * - parseo defensivo JSON
  * - 503 backend_waking en cold start / red
  * - sin filtrar stack traces al cliente
+ * - A2-1: X-Astro-Proxy-Key + X-Astro-Client-IP
  */
 
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { logProxyUpstreamError } from "@/lib/observability";
+import { backendUrl } from "@/lib/site";
 
 /** Timeout de fetch al backend (debe ser < maxDuration=60 de cada route). */
 export const UPSTREAM_TIMEOUT_MS = 55_000;
@@ -19,11 +21,7 @@ const WAKING_BODY = {
 } as const;
 
 export function backendBase(): string {
-  const raw =
-    process.env.BACKEND_URL ??
-    process.env.NEXT_PUBLIC_API_URL ??
-    "http://localhost:8000";
-  return raw.replace(/\/$/, "");
+  return backendUrl();
 }
 
 function parseUpstreamJson(text: string, fallback: unknown): unknown {
@@ -34,18 +32,41 @@ function parseUpstreamJson(text: string, fallback: unknown): unknown {
   }
 }
 
+function clientIp(req?: NextRequest): string {
+  if (!req) return "";
+  const forwarded = req.headers.get("x-forwarded-for") || "";
+  const first = forwarded.split(",")[0]?.trim();
+  return first || req.headers.get("x-real-ip") || "";
+}
+
+export function proxyHeaders(
+  req?: NextRequest,
+  extra?: Record<string, string>,
+): Record<string, string> {
+  const headers: Record<string, string> = { ...(extra || {}) };
+  const key =
+    process.env.BACKEND_PROXY_KEY?.trim() ||
+    process.env.BACKEND_INTERNAL_SECRET?.trim() ||
+    "";
+  if (key) headers["X-Astro-Proxy-Key"] = key;
+  const ip = clientIp(req);
+  if (ip) headers["X-Astro-Client-IP"] = ip;
+  return headers;
+}
+
 export async function proxyToBackend(
   path: string,
   init: {
     method: "GET" | "POST";
     body?: string;
     headers?: Record<string, string>;
+    req?: NextRequest;
   },
 ): Promise<NextResponse> {
   try {
     const upstream = await fetch(`${backendBase()}${path}`, {
       method: init.method,
-      headers: init.headers,
+      headers: proxyHeaders(init.req, init.headers),
       body: init.body,
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       cache: "no-store",
@@ -58,7 +79,12 @@ export async function proxyToBackend(
       logProxyUpstreamError(path, upstream.status);
     }
 
-    return NextResponse.json(data, { status: upstream.status });
+    const res = NextResponse.json(data, { status: upstream.status });
+    const cacheControl = upstream.headers.get("cache-control");
+    if (cacheControl) res.headers.set("Cache-Control", cacheControl);
+    const retryAfter = upstream.headers.get("retry-after");
+    if (retryAfter) res.headers.set("Retry-After", retryAfter);
+    return res;
   } catch (err) {
     const detail = err instanceof Error ? err.name : "unknown";
     logProxyUpstreamError(path, 503, detail);
@@ -68,4 +94,8 @@ export async function proxyToBackend(
 
 export function invalidJsonResponse(): NextResponse {
   return NextResponse.json({ detail: "Solicitud inválida" }, { status: 400 });
+}
+
+export function tooLargeResponse(): NextResponse {
+  return NextResponse.json({ detail: "Payload too large" }, { status: 413 });
 }

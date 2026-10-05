@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { BirthData } from "@/lib/types";
+import type { BirthData, PlaceHit } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 
 interface Props {
@@ -415,11 +415,13 @@ export default function BirthDataForm({
   const [ianaZone, setIanaZone]     = useState<string | null>(null);
   const [tzLabel, setTzLabel]       = useState<string | null>(null);
   const [timeUnknown, setTimeUnknown] = useState(false);
-  const [geoResults, setGeoResults] = useState<GeoResult[]>([]);
+  const [geoResults, setGeoResults] = useState<PlaceHit[]>([]);
   const [geoLoading, setGeoLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [placesError, setPlacesError] = useState<string | null>(null);
   const [demoToast, setDemoToast]   = useState(false);
   const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbort = useRef<AbortController | null>(null);
   const dropdownRef   = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -463,24 +465,37 @@ export default function BirthDataForm({
   function handleCityChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setForm((prev) => ({ ...prev, city_search: value }));
+    setPlacesError(null);
     if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (searchAbort.current) searchAbort.current.abort();
     if (value.length < 2) { setGeoResults([]); setShowDropdown(false); return; }
 
     searchTimeout.current = setTimeout(async () => {
       setGeoLoading(true);
+      const ac = new AbortController();
+      searchAbort.current = ac;
       try {
-        // limit=8 para que ciudades pequeñas no queden fuera si hay homónimas más grandes
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value)}&format=json&limit=8&addressdetails=1`;
-        const res = await fetch(url, { headers: { "Accept-Language": "es,en" } });
-        const data: GeoResult[] = await res.json();
-        setGeoResults(data);
-        setShowDropdown(data.length > 0);
-      } catch {
+        const lang = typeof document !== "undefined" && document.documentElement.lang === "en" ? "en" : "es";
+        const url = `/api/places?q=${encodeURIComponent(value)}&lang=${lang}&limit=8`;
+        const res = await fetch(url, { signal: ac.signal });
+        if (res.status === 429) {
+          setPlacesError(t("form.rate_limited"));
+          setGeoResults([]);
+          setShowDropdown(false);
+          return;
+        }
+        const data = await res.json();
+        const hits: PlaceHit[] = Array.isArray(data) ? data : [];
+        setGeoResults(hits);
+        setShowDropdown(hits.length > 0);
+        if (hits.length === 0) setPlacesError(t("form.places_empty"));
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
         setGeoResults([]);
       } finally {
         setGeoLoading(false);
       }
-    }, 400);
+    }, 250);
   }
 
   /** Formatea el resultado de Nominatim usando el objeto address estructurado.
@@ -519,21 +534,13 @@ export default function BirthDataForm({
     return deduped.length > 0 ? deduped.join(" · ") : displayName;
   }
 
-  function selectCity(result: GeoResult) {
-    const lat = parseFloat(result.lat).toFixed(4);
-    const lon = parseFloat(result.lon).toFixed(4);
-    const countryCode = result.address?.country_code ?? "";
+  function selectCity(result: PlaceHit) {
+    const lat = result.lat.toFixed(4);
+    const lon = result.lon.toFixed(4);
     const birthDate = form.birth_date || "1990-01-01";
+    const zone = result.tz || COUNTRY_TZ[result.country_code] || null;
 
-    // Buscar zona primero por estado/provincia (más preciso para países multi-zona),
-    // luego por país como fallback.
-    const stateOrProvince =
-      (result.address as Record<string, string | undefined>)?.state ??
-      (result.address as Record<string, string | undefined>)?.province ??
-      "";
-    const zone = STATE_TZ[stateOrProvince] ?? COUNTRY_TZ[countryCode] ?? null;
-
-    let newOffset = String(Math.max(-12, Math.min(12, Math.round(parseFloat(result.lon) / 15))));
+    let newOffset = String(Math.max(-12, Math.min(12, Math.round(result.lon / 15))));
     let newLabel: string | null = null;
 
     if (zone) {
@@ -544,16 +551,17 @@ export default function BirthDataForm({
         const hrs = Math.floor(Math.abs(offset));
         const mins = Math.round((Math.abs(offset) - hrs) * 60);
         const label = mins > 0 ? `UTC${sign}${hrs}:${String(mins).padStart(2,"0")}` : `UTC${sign}${hrs}`;
-        newLabel = `${zone.split("/").pop()?.replace("_"," ")} · ${label}`;
+        newLabel = `${zone} · ${label}`;
       }
       setIanaZone(zone);
     } else {
       setIanaZone(null);
     }
 
+    const cityLabel = [result.name, result.admin1, result.country_name].filter(Boolean).join(" · ");
     setForm((prev) => ({
       ...prev,
-      city_search:     formatCityLabel(result.display_name, result.address),
+      city_search:     cityLabel,
       latitude:        lat,
       longitude:       lon,
       timezone_offset: newOffset,
@@ -636,6 +644,7 @@ export default function BirthDataForm({
       latitude:        parseFloat(form.latitude),
       longitude:       parseFloat(form.longitude),
       timezone_offset: parseFloat(form.timezone_offset),
+      tz_name:         ianaZone || undefined,
       city:            form.city_search.trim() || undefined,
     });
   }
@@ -733,12 +742,13 @@ export default function BirthDataForm({
                 className="w-full text-left px-4 py-2.5 hover:bg-elev transition-colors border-b border-border last:border-0"
               >
                 <span className="text-sm text-ink-2 font-mono block truncate">
-                  {formatCityLabel(r.display_name, r.address)}
+                  {[r.name, r.admin1, r.country_name].filter(Boolean).join(" · ")}
                 </span>
               </button>
             ))}
           </div>
         )}
+        {placesError && <p className="mt-1 text-xs text-ink-3">{placesError}</p>}
         <p className="mt-1 text-xs text-ink-3">
           {t("form.city_hint")}
         </p>
@@ -778,7 +788,7 @@ export default function BirthDataForm({
             <span className="font-mono text-ink-2 text-xs">{tzLabel}</span>
             <button
               type="button"
-              onClick={() => setTzLabel(null)}
+              onClick={() => { setTzLabel(null); setIanaZone(null); }}
               className="ml-auto text-xs text-ink-3 hover:text-ink"
             >
               ajustar

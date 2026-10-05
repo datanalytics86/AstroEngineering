@@ -482,20 +482,23 @@ def calculate_transit_timeline(
     current_transits.sort(key=lambda x: x["score"], reverse=True)
     exact_aspects_calendar.sort(key=lambda x: x["date"])
 
-    timeline = build_monthly_timeline(current_transits, start_date, end_date)
+    timeline, raw_intensity = build_monthly_timeline(current_transits, start_date, end_date)
     retro_periods = compute_retrograde_periods(start_date.year)
+    key_events = find_key_events(natal_planets, start_date_str, end_date_str)
 
     return {
         "current_transits": current_transits,
         "timeline": timeline,
         "exact_aspects_calendar": exact_aspects_calendar,
         "retro_periods": retro_periods,
+        "raw_intensity": raw_intensity,
+        "key_events": key_events,
     }
 
 
 def build_monthly_timeline(
     transits: list[dict], start_date: datetime, end_date: datetime
-) -> list[dict]:
+) -> tuple[list[dict], list[float]]:
     """
     Agrupa tránsitos activos por mes con intensidad ponderada por fase y narrativa.
 
@@ -523,6 +526,7 @@ def build_monthly_timeline(
                 months[month_key].append(t)
 
     timeline = []
+    raw_intensity: list[float] = []
     for month_key, month_transits in sorted(months.items()):
         sky_y, sky_m = map(int, month_key.split("-"))
         if not month_transits:
@@ -535,6 +539,7 @@ def build_monthly_timeline(
                 "life_areas_affected": [],
                 "sky": compute_sky_snapshot(sky_y, sky_m),
             })
+            raw_intensity.append(0.0)
             continue
 
         # Clasificar por fase
@@ -562,7 +567,8 @@ def build_monthly_timeline(
             orb_factor = max(0.4, 1.2 - t["orb"] * 0.15)
             weighted_total += t["score"] * phase_mult * orb_factor
 
-        intensity = min(10.0, round(weighted_total / max(len(month_transits), 1), 2))
+        raw = round(weighted_total / max(len(month_transits), 1), 4)
+        intensity = min(10.0, round(raw, 2))
 
         # Tema dominante: ponderamos por THEME_WEIGHT (outer > Marte) + fase + score.
         # Sasportas, Forrest y Arroyo coinciden: los temas de un período los marcan
@@ -640,5 +646,75 @@ def build_monthly_timeline(
             "life_areas_affected": life_areas,
             "sky": compute_sky_snapshot(sky_y, sky_m),
         })
+        raw_intensity.append(raw)
 
-    return timeline
+    return timeline, raw_intensity
+
+
+def _min_hard_orb(lon_a: float, lon_b: float) -> float:
+    """Menor distancia a 0°/90°/180° (aspectos duros)."""
+    sep = abs((lon_a - lon_b + 180) % 360 - 180)
+    return min(sep, abs(sep - 90), abs(sep - 180))
+
+
+def find_key_events(
+    natal_planets: list[dict],
+    start_date_str: str,
+    end_date_str: str,
+    orb_limit: float = 3.0,
+) -> list[dict]:
+    """Eclipses y lunaciones que tocan un cuerpo natal (orbe ≤ 3°)."""
+    from .mundane import find_eclipses
+
+    events: list[dict] = []
+    for ecl in find_eclipses(start_date_str, end_date_str):
+        longs = ecl.get("longitudes") or {}
+        sensitive = longs.get("Sol") if ecl.get("eclipse_type") == "solar" else longs.get("Luna")
+        if sensitive is None:
+            continue
+        kind = "eclipse_solar" if ecl.get("eclipse_type") == "solar" else "eclipse_lunar"
+        best: tuple[str, float] | None = None
+        for np in natal_planets:
+            orb = _min_hard_orb(float(sensitive), float(np["longitude"]))
+            if orb <= orb_limit and (best is None or orb < best[1]):
+                best = (str(np["name"]), round(orb, 3))
+        if best:
+            events.append({
+                "date": ecl["exact_date"],
+                "kind": kind,
+                "natal": best[0],
+                "orb": best[1],
+            })
+
+    start = datetime.fromisoformat(start_date_str)
+    end = datetime.fromisoformat(end_date_str)
+    current = start
+    prev_elong: float | None = None
+    while current <= end:
+        jd = to_julian_day(current.year, current.month, current.day, 12.0)
+        sun = calc_planet_position(jd, PLANET_IDS["Sol"])
+        moon = calc_planet_position(jd, PLANET_IDS["Luna"])
+        if sun is not None and moon is not None:
+            elong = (moon["longitude"] - sun["longitude"]) % 360
+            if prev_elong is not None:
+                crossed_new = prev_elong > 300 and elong < 60
+                crossed_full = prev_elong < 180 <= elong
+                if crossed_new or crossed_full:
+                    sensitive = moon["longitude"]
+                    best = None
+                    for np in natal_planets:
+                        orb = _min_hard_orb(sensitive, float(np["longitude"]))
+                        if orb <= orb_limit and (best is None or orb < best[1]):
+                            best = (str(np["name"]), round(orb, 3))
+                    if best:
+                        events.append({
+                            "date": current.strftime("%Y-%m-%d"),
+                            "kind": "lunation",
+                            "natal": best[0],
+                            "orb": best[1],
+                        })
+            prev_elong = elong
+        current += timedelta(days=1)
+
+    events.sort(key=lambda e: e["date"])
+    return events

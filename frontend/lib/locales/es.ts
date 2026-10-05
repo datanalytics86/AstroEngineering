@@ -20,6 +20,10 @@ export const es = {
   // ── Footer ──
   "footer.tagline": "Tus datos no se guardan en el servidor. La precisión está detrás; la lectura, adelante.",
   "footer.privacy": "Privacidad",
+  "footer.terms": "Términos",
+  "footer.refunds": "Reembolsos",
+  "footer.contact": "Contacto",
+  "footer.source": "Código fuente",
 
   // ── Portada / Landing ──
   "landing.trust_line": "Gratis · 30 segundos",
@@ -239,14 +243,66 @@ export const es = {
   "privacy.kicker": "Datos",
   "privacy.title": "Privacidad",
   "privacy.p1":
-    "Fecha, hora y lugar de nacimiento se usan solo para calcular tu carta en el momento. El servidor no guarda una cuenta ni un historial de tus datos.",
+    "Responsable: {{LEGAL_NAME}}, RUT {{RUT}}, {{ADDRESS}}. Contacto de privacidad: {{SUPPORT_EMAIL}}. Estos campos son placeholders (decisión D11) y no se publican como datos reales hasta que el dueño los complete.",
   "privacy.p2":
-    "La carta, los temas y el desbloqueo Pro quedan en el almacenamiento local de tu navegador. Si borras los datos del sitio, se van.",
+    "Finalidad: calcular tu carta natal y entregarte lecturas (web y, si compras, PDF). Base: ejecución de un contrato o tu solicitud previa (carta gratis) y, si hay email de waitlist o compra, el contrato de compraventa. Orientación y entretenimiento; no consejo médico, psicológico, financiero ni legal.",
   "privacy.p3":
-    "Si pagas Pro, Stripe procesa el cobro ($2.99, un solo pago). Ellos reciben el email y los datos de pago; nosotros no vemos tu tarjeta.",
+    "Datos tratados: fecha, hora y lugar de nacimiento, zona IANA, nombre o apodo que indiques, idioma, y si compras: email y datos de pago en manos del proveedor de cobro. No vemos tu tarjeta.",
   "privacy.p4":
-    "Medimos clics anónimos (carta creada, PDF, intención de pago) para mejorar el producto. Sin nombre, sin fecha de nacimiento en esos conteos.",
+    "Encargados previstos (cuando el modo de cobro esté activo): Vercel (hosting frontend), Render (cálculo), Neon (base de datos), Resend (email), el proveedor de cobro (Lemon Squeezy u otro confirmado), PostHog (analítica sin cookies) y Sentry (errores). GeoNames (CC BY 4.0) se usa para autocompletar ciudades.",
+  "privacy.p5":
+    "Transferencias internacionales: los encargados pueden estar fuera de Chile. Se usarán cláusulas contractuales tipo o la base que corresponda cuando D11 esté completo.",
+  "privacy.p6":
+    "Retención: el nacimiento cifrado se borra a pedido; tokens mágicos 7 días; órdenes pendientes 48 h. Quien no compra ni da opt-in no deja ficha en servidor. En el navegador, la carta vive en localStorage hasta que la borres.",
+  "privacy.p7":
+    "Derechos (Ley 21.719 y demás aplicables): acceso, rectificación, supresión, oposición y portabilidad. Escríbenos a {{SUPPORT_EMAIL}} con el asunto «datos personales». Responderemos por el mismo canal.",
+  "privacy.p8":
+    "El enlace de compartir (ruta /nueva?share=) codifica en el propio URL nombre, fecha, hora y coordenadas. Quien tenga el enlace puede ver esos datos. No lo publiques.",
+  "privacy.p9":
+    "El cálculo corre en Render. El frontend en Vercel no guarda la carta en una cuenta hasta que exista autenticación (Oleada 2).",
+  "privacy.p10":
+    "Swiss Ephemeris se usa bajo AGPL-3.0. El código fuente está enlazado en el pie («Código fuente»). Atribución GeoNames y fuentes OFL: ver NOTICE en el repositorio.",
+  "privacy.p11":
+    "No usamos el cobro en producción hasta confirmación escrita del proveedor (D1). Mientras tanto no se tratan datos de pago.",
+  "privacy.p12":
+    "Este texto es un borrador con placeholders. El dueño debe revisarlo (idealmente con un abogado) antes de tratarlo como política publicada.",
   "privacy.back": "Ver mis 6 áreas →",
+  "legal.placeholder_note": "Borrador. Identidad legal: {{LEGAL_NAME}} · {{RUT}} · {{ADDRESS}} · {{SUPPORT_EMAIL}}. No se inventa nada (D11).",
+  "legal.disclaimer":
+    "Esto es orientación y entretenimiento. No reemplaza consejo médico, psicológico, financiero ni legal.",
+  "terms.kicker": "Uso",
+  "terms.title": "Términos de uso",
+  "terms.p1":
+    "El servicio lo ofrece {{LEGAL_NAME}} (RUT {{RUT}}, {{ADDRESS}}). Al calcular una carta aceptas estos términos en borrador.",
+  "terms.p2":
+    "AstroEngine genera lecturas a partir de efemérides y un motor de texto. No es una consulta humana, no predice hechos y no es consejo profesional.",
+  "terms.p3":
+    "La carta gratis se calcula en el momento y queda en tu navegador. El producto de pago (cuando D1 lo permita) es un informe digital de 12 meses (web + PDF).",
+  "terms.p4":
+    "Puedes solicitar acceso, rectificación o borrado de datos en {{SUPPORT_EMAIL}}. El código se publica bajo GNU Affero GPL v3.",
+  "terms.p5":
+    "El sitio puede estar en modo lista de espera. No hay obligación de mantener un precio hasta que el catálogo esté vivo en servidor.",
+  "terms.p6":
+    "Borrador pendiente de revisión del dueño. Ley aplicable: Chile. Tribunales de {{ADDRESS}} cuando D11 esté completo.",
+  "refunds.kicker": "Garantía",
+  "refunds.title": "Reembolsos",
+  "refunds.p1":
+    "Cuando el cobro esté activo, la garantía prevista es de 14 días desde el pago. Cómo pedirla: un email a {{SUPPORT_EMAIL}} con el identificador de la orden o el correo usado en el checkout.",
+  "refunds.p2":
+    "Plazo de respuesta previsto: 5 días hábiles. El reembolso lo ejecuta el proveedor de cobro a la misma vía de pago.",
+  "refunds.p3":
+    "Hoy el checkout está apagado (D1 pendiente). Esta página describe la política futura; no hay cobros que reembolsar.",
+  "refunds.p4":
+    "Responsable: {{LEGAL_NAME}}, {{RUT}}, {{ADDRESS}}.",
+  "contact.kicker": "Soporte",
+  "contact.title": "Contacto",
+  "contact.p1": "Email de soporte: {{SUPPORT_EMAIL}}.",
+  "contact.p2": "Responsable: {{LEGAL_NAME}}, RUT {{RUT}}, {{ADDRESS}}.",
+  "contact.p3":
+    "Para ejercer derechos de datos personales usa el asunto «datos personales». Para reembolsos, «reembolso» más el id de orden.",
+  "form.tz_resolved": "Zona resuelta",
+  "form.places_empty": "Sin resultados. Prueba con otra grafía o el modo manual.",
+  "form.rate_limited": "Demasiadas búsquedas. Espera un momento.",
   "chart.pro.section.summary": "Quién eres",
   "chart.pro.section.year": "El pulso de tu año",
   "chart.pro.tier1.title": "Lo que más pesa en tu mapa",

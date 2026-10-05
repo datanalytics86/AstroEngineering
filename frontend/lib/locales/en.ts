@@ -20,6 +20,10 @@ export const en = {
   // ── Footer ──
   "footer.tagline": "Your data is not stored on the server. Precision stays underneath; the reading comes first.",
   "footer.privacy": "Privacy",
+  "footer.terms": "Terms",
+  "footer.refunds": "Refunds",
+  "footer.contact": "Contact",
+  "footer.source": "Source code",
 
   // ── Portada / Landing ──
   "landing.trust_line": "Free · 30 seconds",
@@ -239,14 +243,66 @@ export const en = {
   "privacy.kicker": "Data",
   "privacy.title": "Privacy",
   "privacy.p1":
-    "Birth date, time, and place are used only to calculate your chart in the moment. The server does not keep an account or a history of your data.",
+    "Controller: {{LEGAL_NAME}}, tax id {{RUT}}, {{ADDRESS}}. Privacy contact: {{SUPPORT_EMAIL}}. These are D11 placeholders and are not published as real identity until the owner fills them in.",
   "privacy.p2":
-    "The chart, topics, and Pro unlock live in your browser’s local storage. Clear the site data and they go away.",
+    "Purpose: compute your natal chart and deliver readings (web and, if you buy, PDF). Legal basis: performing a contract or your pre-contract request (free chart) and, if there is a waitlist email or a purchase, the sale contract. Orientation and entertainment; not medical, psychological, financial or legal advice.",
   "privacy.p3":
-    "If you buy Pro, Stripe processes the $2.99 one-time payment. They receive the email and card details; we never see your card.",
+    "Data processed: birth date, time and place, IANA zone, the name or nickname you type, language, and if you buy: email and payment data held by the payment provider. We never see your card.",
   "privacy.p4":
-    "We count anonymous clicks (chart created, PDF, pay intent) to improve the product. No name, no birth date in those counts.",
+    "Processors planned (when charging is on): Vercel (frontend hosting), Render (compute), Neon (database), Resend (email), the payment provider (Lemon Squeezy or another confirmed one), PostHog (cookieless analytics) and Sentry (errors). GeoNames (CC BY 4.0) powers city autocomplete.",
+  "privacy.p5":
+    "International transfers: processors may be outside Chile. Standard contractual clauses or the applicable basis will be named when D11 is complete.",
+  "privacy.p6":
+    "Retention: encrypted birth data is deleted on request; magic tokens 7 days; pending orders 48 h. Anyone who neither buys nor opts in leaves no server record. In the browser the chart lives in localStorage until you clear it.",
+  "privacy.p7":
+    "Rights (Chilean Law 21.719 and others that apply): access, rectification, erasure, objection and portability. Email {{SUPPORT_EMAIL}} with the subject “personal data”. We will reply on the same channel.",
+  "privacy.p8":
+    "The share link (/nueva?share=) encodes name, date, time and coordinates in the URL itself. Anyone with the link can see those data. Do not post it publicly.",
+  "privacy.p9":
+    "Compute runs on Render. The Vercel frontend does not store the chart in an account until authentication exists (Wave 2).",
+  "privacy.p10":
+    "Swiss Ephemeris is used under AGPL-3.0. Source is linked in the footer (“Source code”). GeoNames and OFL font attribution: NOTICE in the repository.",
+  "privacy.p11":
+    "We do not charge in production until the provider confirms in writing (D1). Until then no payment data is processed.",
+  "privacy.p12":
+    "This text is a draft with placeholders. The owner must review it (ideally with counsel) before treating it as a published policy.",
   "privacy.back": "See my 6 areas →",
+  "legal.placeholder_note": "Draft. Legal identity: {{LEGAL_NAME}} · {{RUT}} · {{ADDRESS}} · {{SUPPORT_EMAIL}}. Nothing is invented (D11).",
+  "legal.disclaimer":
+    "This is orientation and entertainment. It does not replace medical, psychological, financial or legal advice.",
+  "terms.kicker": "Use",
+  "terms.title": "Terms of use",
+  "terms.p1":
+    "The service is offered by {{LEGAL_NAME}} (tax id {{RUT}}, {{ADDRESS}}). By computing a chart you accept these draft terms.",
+  "terms.p2":
+    "AstroEngine generates readings from ephemerides and a text engine. It is not a human consultation, it does not predict events, and it is not professional advice.",
+  "terms.p3":
+    "The free chart is computed in the moment and stays in your browser. The paid product (when D1 allows it) is a 12-month digital report (web + PDF).",
+  "terms.p4":
+    "You may request access, rectification or deletion at {{SUPPORT_EMAIL}}. The code is published under GNU Affero GPL v3.",
+  "terms.p5":
+    "The site may run in waitlist mode. There is no duty to keep a price until the catalog is live on the server.",
+  "terms.p6":
+    "Draft pending owner review. Governing law: Chile. Courts of {{ADDRESS}} once D11 is complete.",
+  "refunds.kicker": "Guarantee",
+  "refunds.title": "Refunds",
+  "refunds.p1":
+    "When charging is on, the planned guarantee is 14 days from payment. How to ask: email {{SUPPORT_EMAIL}} with the order id or the email used at checkout.",
+  "refunds.p2":
+    "Planned response time: 5 business days. The payment provider issues the refund to the same payment method.",
+  "refunds.p3":
+    "Checkout is off today (D1 pending). This page describes the future policy; there are no charges to refund.",
+  "refunds.p4":
+    "Controller: {{LEGAL_NAME}}, {{RUT}}, {{ADDRESS}}.",
+  "contact.kicker": "Support",
+  "contact.title": "Contact",
+  "contact.p1": "Support email: {{SUPPORT_EMAIL}}.",
+  "contact.p2": "Controller: {{LEGAL_NAME}}, tax id {{RUT}}, {{ADDRESS}}.",
+  "contact.p3":
+    "To exercise personal-data rights use the subject “personal data”. For refunds, “refund” plus the order id.",
+  "form.tz_resolved": "Resolved zone",
+  "form.places_empty": "No results. Try another spelling or manual mode.",
+  "form.rate_limited": "Too many searches. Please wait a moment.",
   "chart.pro.section.summary": "Who you are",
   "chart.pro.section.year": "The pulse of your year",
   "chart.pro.tier1.title": "What weighs most on your map",

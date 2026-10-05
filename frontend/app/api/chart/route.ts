@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server";
-import { invalidJsonResponse, proxyToBackend } from "@/lib/backend-proxy";
+import { invalidJsonResponse, proxyToBackend, tooLargeResponse } from "@/lib/backend-proxy";
 
-// Cubre el cold start del backend (Render free tier, ~50s).
-// maxDuration debe ser literal (Next.js no resuelve identificadores importados).
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const cl = req.headers.get("content-length");
+  if (cl && Number(cl) > 64 * 1024) return tooLargeResponse();
   let body: unknown;
   try {
     body = await req.json();
@@ -17,5 +17,6 @@ export async function POST(req: NextRequest) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    req,
   });
 }

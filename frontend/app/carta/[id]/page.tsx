@@ -31,6 +31,7 @@ import ActionButton from "@/components/ActionButton";
 import { useT } from "@/lib/i18n";
 import { trackLearning } from "@/lib/learning";
 import { shareChartUrl } from "@/lib/share";
+import Disclaimer from "@/components/Disclaimer";
 
 export default function CartaPage() {
   const router = useRouter();
@@ -290,6 +291,7 @@ export default function CartaPage() {
           <p className="kicker mt-3">
             {t("chart.trust_strip")}
           </p>
+          <Disclaimer className="mt-3" />
         </div>
 
         <div className="flex flex-wrap gap-2">

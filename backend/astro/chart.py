@@ -2,14 +2,39 @@
 Cálculo de carta natal con Swiss Ephemeris (pyswisseph).
 """
 
+import logging
 import os
 import swisseph as swe
 from .houses import calc_houses, get_planet_house, longitude_to_sign, degrees_to_dms
 from .aspects import find_aspects
+from .timezone import resolve_birth_instant
+
+logger = logging.getLogger(__name__)
 
 # Configurar path de efemérides (usa Moshier si no existen los .se1)
 EPHE_PATH = os.environ.get("EPHE_PATH", "/usr/share/swisseph/ephe")
 swe.set_ephe_path(EPHE_PATH)
+
+_EPHE_MODE: str | None = None
+
+
+def detect_ephe_mode() -> str:
+    """Registra si el runtime usa SWIEPH (.se1) o Moshier."""
+    global _EPHE_MODE
+    if _EPHE_MODE:
+        return _EPHE_MODE
+    jd = swe.julday(2000, 1, 1, 12.0)
+    try:
+        swe.calc_ut(jd, swe.SUN, swe.FLG_SWIEPH)
+        try:
+            swe.calc_ut(jd, swe.CHIRON, swe.FLG_SWIEPH)
+            _EPHE_MODE = "SWIEPH"
+        except Exception:
+            _EPHE_MODE = "SWIEPH_NO_CHIRON"
+    except Exception:
+        _EPHE_MODE = "Moshier"
+    logger.info("ephe.mode=%s path=%s", _EPHE_MODE, EPHE_PATH)
+    return _EPHE_MODE
 
 PLANET_IDS = {
     "Sol":        swe.SUN,
@@ -72,22 +97,19 @@ def calculate_natal_chart(birth_data: dict) -> dict:
     Returns:
         dict con planets, houses, ascendant, midheaven, aspects
     """
-    # Parsear fecha y hora
-    from datetime import datetime as _dt, timedelta as _td
-    year, month, day = map(int, birth_data["birth_date"].split("-"))
-    hh, mm = map(int, birth_data["birth_time"].split(":"))
-    hour_local = hh + mm / 60.0
-
-    # Convertir a UT
-    hour_ut = local_to_ut(hour_local, birth_data["timezone_offset"])
-
-    # Ajustar día si la hora UT cruza medianoche (usa datetime para rollover correcto)
-    if hour_ut < 0 or hour_ut >= 24:
-        base = _dt(year, month, day)
-        delta_hours = hour_ut
-        adjusted = base + _td(hours=delta_hours)
-        year, month, day = adjusted.year, adjusted.month, adjusted.day
-        hour_ut = adjusted.hour + adjusted.minute / 60.0 + adjusted.second / 3600.0
+    instant = resolve_birth_instant(
+        birth_data["birth_date"],
+        birth_data["birth_time"],
+        float(birth_data["timezone_offset"]),
+        birth_data.get("tz_name"),
+    )
+    year = instant["ut_year"]
+    month = instant["ut_month"]
+    day = instant["ut_day"]
+    hour_ut = instant["hour_ut"]
+    utc_offset_used = instant["offset_hours"]
+    tz_name = instant["tz_name"]
+    tz_warning = instant["tz_warning"]
 
     jd = to_julian_day(year, month, day, hour_ut)
 
@@ -97,10 +119,11 @@ def calculate_natal_chart(birth_data: dict) -> dict:
 
     # Calcular posiciones planetarias
     planets = []
+    omitted: list[str] = []
     for planet_name, planet_id in PLANET_IDS.items():
         pos = calc_planet_position(jd, planet_id)
         if pos is None:
-            # Planeta no calculable sin archivo de efemérides (ej: Quirón sin seas_18.se1)
+            omitted.append(planet_name)
             continue
         sign_info = longitude_to_sign(pos["longitude"])
         house_num = get_planet_house(pos["longitude"], house_cusps)
@@ -121,13 +144,21 @@ def calculate_natal_chart(birth_data: dict) -> dict:
     # Detectar aspectos entre planetas natales
     aspects = find_aspects(planets)
 
+    chart_warning = None
+    if omitted:
+        chart_warning = "omitted:" + ",".join(omitted)
+
     return {
         "name": birth_data["name"],
         "birth_date": birth_data["birth_date"],
         "birth_time": birth_data["birth_time"],
         "latitude": birth_data["latitude"],
         "longitude": birth_data["longitude"],
-        "timezone_offset": birth_data["timezone_offset"],
+        "timezone_offset": utc_offset_used,
+        "tz_name": tz_name,
+        "utc_offset_used": utc_offset_used,
+        "tz_warning": tz_warning,
+        "chart_warning": chart_warning,
         "planets": planets,
         "houses": house_data["houses"],
         "ascendant": house_data["ascendant"],

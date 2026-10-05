@@ -3,6 +3,8 @@
  * No llama API. Textos en voz humana + TIER1 de ejemplo.
  */
 
+import { siteUrl } from "./site";
+
 export interface ProSampleTier1 {
   left: string;
   aspect: string;
@@ -50,7 +52,7 @@ export interface ProSampleContent {
   footer: string;
 }
 
-const SAMPLE_CTA = "https://astro-engineering.vercel.app/nueva?from=pro_sample_pdf";
+const SAMPLE_CTA = `${siteUrl()}/nueva?from=pro_sample_pdf`;
 
 export function getProSampleContent(lang: "es" | "en" = "es"): ProSampleContent {
   if (lang === "en") {

@@ -7,7 +7,20 @@ export interface BirthData {
   latitude: number;
   longitude: number;
   timezone_offset: number;  // UTC offset en horas, ej: -4
+  tz_name?: string;         // IANA, p.ej. America/Santiago
   city?: string;            // etiqueta humana del lugar (para PDF / portada)
+}
+
+export interface PlaceHit {
+  id: string;
+  name: string;
+  admin1: string;
+  country_code: string;
+  country_name: string;
+  lat: number;
+  lon: number;
+  tz: string;
+  population: number;
 }
 
 export interface TransitRequest {
@@ -74,6 +87,10 @@ export interface ChartResponse {
   latitude: number;
   longitude: number;
   timezone_offset: number;
+  tz_name?: string | null;
+  utc_offset_used?: number | null;
+  tz_warning?: string | null;
+  chart_warning?: string | null;
   planets: PlanetPosition[];
   houses: HouseCusp[];
   ascendant: AnglePoint;
@@ -248,11 +265,20 @@ export interface RetroPeriod {
   days: number;
 }
 
+export interface KeyEvent {
+  date: string;
+  kind: "eclipse_solar" | "eclipse_lunar" | "lunation";
+  natal: string;
+  orb: number;
+}
+
 export interface TransitResponse {
   current_transits: TransitEvent[];
   timeline: MonthlyForecast[];
   exact_aspects_calendar: ExactAspectEvent[];
   retro_periods?: RetroPeriod[];
+  raw_intensity?: number[];
+  key_events?: KeyEvent[];
 }
 
 // ── Interpretation Engine Types ────────────────────────────────────────────────

@@ -1,0 +1,21 @@
+AstroEngine
+Copyright (C) 2026 the AstroEngine contributors
+
+This program is free software under the GNU Affero General Public License
+version 3. See LICENSE.
+
+Third-party notices
+-------------------
+
+Swiss Ephemeris (Astrodienst / Alois Treindl)
+  Used via pyswisseph. Licensed under AGPL. https://www.astro.com/swisseph/
+
+GeoNames gazetteer (cities5000 extract in backend/data/places.tsv.gz)
+  Creative Commons Attribution 4.0 International
+  https://creativecommons.org/licenses/by/4.0/
+  https://www.geonames.org/
+
+Fonts
+  IBM Plex Sans, IBM Plex Mono — SIL Open Font License 1.1 (IBM)
+  Libre Baskerville — SIL Open Font License 1.1
+  Fraunces — SIL Open Font License 1.1 (self-hosted via next/font)

@@ -1,19 +1,27 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
-from typing import Optional
+from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
+from typing import Annotated, Literal, Optional
 from datetime import date
 
 from .national import NATIONAL_CHART_IDS
+
+NameStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+ShortStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
+TzNameStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=64)]
 
 
 # ── Input Models ──────────────────────────────────────────────────────────────
 
 class BirthData(BaseModel):
-    name: str = Field(..., min_length=1, max_length=100, strip_whitespace=True)
+    name: NameStr
     birth_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$", description="YYYY-MM-DD")
     birth_time: str = Field(..., pattern=r"^\d{2}:\d{2}$", description="HH:MM (hora local)")
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
     timezone_offset: float = Field(..., ge=-14, le=14, description="UTC offset en horas, ej: -4 para Chile")
+    tz_name: Optional[TzNameStr] = Field(
+        default=None,
+        description="IANA tz (America/Santiago). Si se omite, timezone_offset es el ajuste manual.",
+    )
 
     @field_validator("birth_date")
     @classmethod
@@ -33,12 +41,12 @@ class NatalPlanetIn(BaseModel):
     etc.); pydantic v2 ignora por defecto los campos extra no declarados aquí
     (solo se usan `name`/`longitude` en el resto del backend), así que esos
     objetos siguen pasando sin cambios en el consumidor."""
-    name: str = Field(min_length=1, max_length=50)
+    name: ShortStr
     longitude: float = Field(ge=0, lt=360)
 
 
 class TransitRequest(BaseModel):
-    natal_planets: list[NatalPlanetIn]
+    natal_planets: list[NatalPlanetIn] = Field(..., min_length=1, max_length=20)
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     latitude: float = Field(..., ge=-90, le=90)
@@ -61,7 +69,7 @@ class TransitRequest(BaseModel):
 class MundaneRequest(BaseModel):
     start_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
     end_date: str = Field(..., pattern=r"^\d{4}-\d{2}-\d{2}$")
-    natal_planets: list[NatalPlanetIn] = []
+    natal_planets: list[NatalPlanetIn] = Field(default_factory=list, max_length=20)
     # Modo "impacto por país": id de una carta nacional (ver astro/national.py).
     # Mutuamente excluyente con natal_planets (ver validate_date_range abajo).
     country: Optional[str] = None
@@ -136,6 +144,10 @@ class ChartResponse(BaseModel):
     latitude: float
     longitude: float
     timezone_offset: float
+    tz_name: Optional[str] = None
+    utc_offset_used: Optional[float] = None
+    tz_warning: Optional[str] = None
+    chart_warning: Optional[str] = None
     planets: list[PlanetPosition]
     houses: list[HouseCusp]
     ascendant: AnglePoint
@@ -201,11 +213,32 @@ class RetroPeriod(BaseModel):
     days: int
 
 
+class KeyEvent(BaseModel):
+    date: str
+    kind: Literal["eclipse_solar", "eclipse_lunar", "lunation"]
+    natal: str
+    orb: float
+
+
 class TransitResponse(BaseModel):
     current_transits: list[TransitEvent]
     timeline: list[MonthlyForecast]
     exact_aspects_calendar: list[ExactAspectEvent]
     retro_periods: list[RetroPeriod] = []
+    raw_intensity: list[float] = []
+    key_events: list[KeyEvent] = []
+
+
+class PlaceHit(BaseModel):
+    id: str
+    name: str
+    admin1: str
+    country_code: str
+    country_name: str
+    lat: float
+    lon: float
+    tz: str
+    population: int
 
 
 # ── Solar Return ───────────────────────────────────────────────────────────────

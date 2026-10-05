@@ -1,6 +1,5 @@
 import type { BirthData } from "./types";
-
-const SITE = "https://astro-engineering.vercel.app";
+import { siteUrl } from "./site";
 
 function toBase64Url(value: string): string {
   const bytes = new TextEncoder().encode(value);
@@ -57,6 +56,6 @@ export function decodeSharePayload(raw: string): BirthData | null {
 }
 
 export function shareChartUrl(data: BirthData): string {
-  const origin = typeof window !== "undefined" ? window.location.origin : SITE;
+  const origin = typeof window !== "undefined" ? window.location.origin : siteUrl();
   return `${origin}/nueva?share=${encodeURIComponent(encodeSharePayload(data))}`;
 }

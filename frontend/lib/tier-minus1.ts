@@ -19,10 +19,11 @@ import type {
   TopicId,
 } from "./types";
 import { scoreAllTopics } from "./topic-summary";
+import { siteUrl } from "./site";
 
 type Lang = "es" | "en";
 
-const SITE_ORIGIN = "https://astro-engineering.vercel.app";
+const SITE_ORIGIN = siteUrl();
 
 export function proCtaUrl(chartId?: string): string {
   if (chartId) return `${SITE_ORIGIN}/carta/${encodeURIComponent(chartId)}#pro-unlock-panel`;

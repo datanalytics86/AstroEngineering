@@ -21,6 +21,7 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 | `ENV` | `production` | En `render.yaml` |
 | `EPHE_PATH` | `/usr/share/swisseph/ephe` | En `render.yaml` |
 | `FRONTEND_URL` | `https://astro-engineering.vercel.app` | **Manual** (sync: false). Sin trailing slash. |
+| `BACKEND_PROXY_KEY` | secreto compartido con Vercel | **Manual** (sync: false). Obligatorio en `ENV=production`. Sin él (o si no coincide con Vercel) el API responde 403 a todo excepto `GET /health`. |
 
 ### Render — opcionales
 
@@ -35,7 +36,9 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 
 | Variable | Valor | Notas |
 |----------|-------|-------|
-| `NEXT_PUBLIC_API_URL` | `https://astroengine-backend.onrender.com` | **Sin trailing slash. No localhost en prod.** Root dir: `frontend`. Debe ser el host que sirve `/api/*` (no el stub corto). Si falta en el dashboard, `frontend/vercel.json` + `next.config.mjs` usan este valor. El build **falla** si apunta a localhost o a `astroengine.onrender.com`. |
+| `NEXT_PUBLIC_API_URL` | `https://astroengine-backend.onrender.com` | **Sin trailing slash. No localhost en prod.** Root dir: `frontend`. Debe ser el host que sirve `/api/*` (no el stub corto). Si falta, `next.config.mjs` usa este valor. El build **falla** si `VERCEL_ENV=production` y apunta a localhost o a `astroengine.onrender.com`. |
+| `BACKEND_PROXY_KEY` | el mismo secreto que en Render | Server-only. Lo manda el proxy Next como `X-Astro-Proxy-Key`. |
+| `NEXT_PUBLIC_SITE_URL` | `https://astro-engineering.vercel.app` | Canónico hasta D3. Allowlist de checkout y `lib/site.ts`. |
 
 ### Vercel — opcionales
 
@@ -47,7 +50,7 @@ Guía corta y **actual**. Los documentos `GAP_ANALYSIS_DEPLOY.md` y `AUDIT_DEPLO
 | `STRIPE_SECRET_KEY` | `sk_live_…` o `sk_test_…` | Activa Checkout real de Pro ($2.99). Sin ella, el CTA sigue en modo investigación (“¿pagarías?”). |
 | `STRIPE_WEBHOOK_SECRET` | `whsec_…` | Opcional. Endpoint: `https://astro-engineering.vercel.app/api/checkout/webhook` (evento `checkout.session.completed`) |
 | `STRIPE_PRICE_ID` | `price_…` | Opcional. Si falta, se crea un price de $2.99 USD en la sesión |
-| `NEXT_PUBLIC_SITE_URL` | `https://astro-engineering.vercel.app` | Fallback de origin; en Vercel se usa el `Origin` de la request |
+| `SITE_URL` | (opcional) | Alias server-side de `NEXT_PUBLIC_SITE_URL` |
 
 > **Hueco humano:** este repo no puede leer los dashboards de Vercel/Render. Verificar en UI que los valores de prod coinciden con la tabla. No inventar secrets.
 
@@ -77,11 +80,12 @@ Cold start: keepalive cada 10 min + ping `/api/health` al abrir el sitio (una ve
 
 ## Checklist pre-deploy
 
-1. [ ] `main` o branch de release con CI verde (pytest + verify_corpus + check:i18n + build)
+1. [ ] `release/v1-comercial` con CI verde (pytest + verify_corpus + pip-audit + lint + typecheck + vitest + i18n + interp + npm audit high + build + e2e + gitleaks)
 2. [ ] Render: `FRONTEND_URL` exacto del FE de prod
-3. [ ] Vercel: `NEXT_PUBLIC_API_URL` del BE de prod (sin `/` final)
-4. [ ] (Opcional) Sentry DSN BE + FE configurados
-5. [ ] No hay secrets en el código ni en commits
+3. [ ] Render + Vercel: **el mismo** `BACKEND_PROXY_KEY` **antes** de promover el deploy (si falta, 403 en `/api/*`)
+4. [ ] Vercel: `NEXT_PUBLIC_API_URL` del BE de prod (sin `/` final) y `NEXT_PUBLIC_SITE_URL`
+5. [ ] (Opcional) Sentry DSN BE + FE configurados
+6. [ ] No hay secrets en el código ni en commits
 
 ## Checklist post-deploy
 
@@ -101,10 +105,8 @@ curl -s -X POST "https://astro-engineering.vercel.app/api/chart" \
 
 curl -s "https://astro-engineering.vercel.app/api/calendar?year=2026&month=8"
 
-# Smoke API directa (backend real)
-curl -s -X POST "https://astroengine-backend.onrender.com/api/chart" \
-  -H "Content-Type: application/json" \
-  -d '{"name":"Smoke","birth_date":"1990-05-15","birth_time":"14:30","latitude":-33.4489,"longitude":-70.6693,"timezone_offset":-4}'
+# API directa: GET /health (sin proxy key). POST /api/* en production = 403 sin X-Astro-Proxy-Key.
+curl -s https://astroengine-backend.onrender.com/health
 ```
 
 ### UI manual
@@ -128,7 +130,7 @@ curl -s -X POST "https://astroengine-backend.onrender.com/api/chart" \
 
 | Ruta | Límite |
 |------|--------|
-| `GET /health` | 10/min |
+| `GET /health` | sin límite (AD-10) |
 | `POST /api/chart` | 20/min |
 | `POST /api/transits` | 5/min |
 | `POST /api/solar-return` | 10/min |

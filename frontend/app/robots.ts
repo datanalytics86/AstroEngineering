@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { siteUrl } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -7,6 +8,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/geopolitica", "/calendario", "/api/"],
     },
-    sitemap: "https://astro-engineering.vercel.app/sitemap.xml",
+    sitemap: `${siteUrl()}/sitemap.xml`,
   };
 }

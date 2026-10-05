@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { requestOriginFrom } from "@/lib/site";
 
 export const PRO_AMOUNT_CENTS = 299;
 export const PRO_CURRENCY = "usd";
@@ -14,22 +15,9 @@ export function getStripe(): Stripe | null {
   return new Stripe(key);
 }
 
-/** Origin of the page that started checkout (preview-safe). */
+/** Origin of the page that started checkout. Allowlist SITE_URL (H-07). */
 export function requestOrigin(req: Request): string {
-  const origin = req.headers.get("origin")?.replace(/\/$/, "") ?? "";
-  if (
-    origin === "https://astro-engineering.vercel.app" ||
-    /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
-  ) {
-    return origin;
-  }
-  const proto = req.headers.get("x-forwarded-proto") || "https";
-  const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
-  if (host) return `${proto}://${host}`.replace(/\/$/, "");
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://astro-engineering.vercel.app"
-  );
+  return requestOriginFrom(req);
 }
 
 export function sanitizeChartId(raw: unknown): string | null {
