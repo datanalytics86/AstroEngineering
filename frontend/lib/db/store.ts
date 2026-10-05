@@ -32,8 +32,27 @@ export interface OrderRow {
   email: string | null;
   locale: string;
   ph_id: string | null;
+  ref: string | null;
+  gift_recipient_email: string | null;
+  gift_deliver_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface GiftRow {
+  id: string;
+  code_hash: string;
+  code_enc: string;
+  code_prefix: string;
+  sku: string;
+  purchaser_customer_id: string;
+  recipient_email: string;
+  deliver_at: string;
+  delivered_at: string | null;
+  redeemed_at: string | null;
+  redeemed_by_customer_id: string | null;
+  order_id: string;
+  locale: string;
 }
 
 export interface EntitlementRow {
@@ -64,18 +83,30 @@ export interface EmailOptinRow {
   confirm_hash: string | null;
 }
 
+type OrderInsert = Omit<
+  OrderRow,
+  "created_at" | "updated_at" | "ref" | "gift_recipient_email" | "gift_deliver_at"
+> & {
+  created_at?: string;
+  ref?: string | null;
+  gift_recipient_email?: string | null;
+  gift_deliver_at?: string | null;
+};
+
 export interface Store {
   getCustomerByEmail(email: string): Promise<Customer | null>;
+  getCustomerById(id: string): Promise<Customer | null>;
   upsertCustomer(email: string, locale: string): Promise<Customer>;
   insertChart(row: Omit<ChartRow, "created_at"> & { created_at?: string }): Promise<ChartRow>;
   getChart(id: string): Promise<ChartRow | null>;
   getChartByFingerprint(fp: string): Promise<ChartRow | null>;
-  insertOrder(row: Omit<OrderRow, "created_at" | "updated_at"> & { created_at?: string }): Promise<OrderRow>;
+  insertOrder(row: OrderInsert): Promise<OrderRow>;
   getOrder(id: string): Promise<OrderRow | null>;
   updateOrder(id: string, patch: Partial<OrderRow>): Promise<OrderRow | null>;
   insertWebhookEvent(provider: string, eventId: string): Promise<boolean>;
   insertEntitlement(row: Omit<EntitlementRow, "id"> & { id?: string }): Promise<EntitlementRow>;
   listEntitlements(customerId: string): Promise<EntitlementRow[]>;
+  listActiveEntitlements(at?: string): Promise<EntitlementRow[]>;
   revokeByOrder(orderId: string, at: string): Promise<number>;
   putMagicToken(row: MagicTokenRow): Promise<void>;
   getMagicToken(hash: string): Promise<MagicTokenRow | null>;
@@ -83,6 +114,11 @@ export interface Store {
   putOptin(row: EmailOptinRow): Promise<void>;
   confirmOptin(hash: string, at: string): Promise<boolean>;
   getOptin(email: string): Promise<EmailOptinRow | null>;
+  insertGift(row: GiftRow): Promise<GiftRow>;
+  getGiftByCodeHash(hash: string): Promise<GiftRow | null>;
+  getGiftByOrderId(orderId: string): Promise<GiftRow | null>;
+  listDueGifts(at: string): Promise<GiftRow[]>;
+  updateGift(id: string, patch: Partial<GiftRow>): Promise<GiftRow | null>;
 }
 
 let _store: Store | null = null;

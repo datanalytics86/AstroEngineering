@@ -9,7 +9,13 @@ export const mockProvider: BillingProvider = {
   },
   async createCheckout(i) {
     const origin = siteUrl();
-    const url = `${origin}/api/billing/mock/pay?orderId=${encodeURIComponent(i.orderId)}&next=${encodeURIComponent(i.successUrl)}`;
+    const params = new URLSearchParams({
+      orderId: i.orderId,
+      next: i.successUrl,
+    });
+    if (i.ref) params.set("ref", i.ref);
+    if (i.coupon) params.set("coupon", i.coupon);
+    const url = `${origin}/api/billing/mock/pay?${params.toString()}`;
     return { url };
   },
   async verifyAndParseWebhook(req) {

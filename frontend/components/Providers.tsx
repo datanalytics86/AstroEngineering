@@ -7,6 +7,14 @@ import BackendWarmup from "@/components/BackendWarmup";
 
 export default function Providers({ children }: { children: ReactNode }) {
   useEffect(() => {
+    try {
+      const ref = new URLSearchParams(window.location.search).get("ref");
+      if (ref && /^[a-zA-Z0-9_-]{2,32}$/.test(ref)) {
+        sessionStorage.setItem("ae_ref", ref);
+      }
+    } catch {
+      /* ignore */
+    }
     initClientSentry();
 
     const onError = (event: ErrorEvent) => {

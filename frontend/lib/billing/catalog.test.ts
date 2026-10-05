@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { CATALOG, isSkuActive, priceOf } from "./catalog";
 
 describe("catalog", () => {
-  it("year_map is enabled; plus is off; gift is P1 off", () => {
+  it("year_map is enabled; plus is off; gift is on in Oleada 3", () => {
     expect(CATALOG.year_map.enabled).toBe(true);
     expect(CATALOG.plus_monthly.enabled).toBe(false);
-    expect(CATALOG.year_map_gift.enabled).toBe(false);
+    expect(CATALOG.plus_yearly.enabled).toBe(false);
+    expect(CATALOG.year_map_gift.enabled).toBe(true);
   });
 
   it("year_map_next is active in November and January, not in June", () => {

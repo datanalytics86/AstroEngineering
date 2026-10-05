@@ -192,9 +192,9 @@ A8 revisa todo PR de seguridad. A6 no toca `es.ts` en Oleada 1 salvo claves que 
 
 Mock + waitlist. D1/D3/D6/D8-pay/D11 siguen 🛑. No Lemon Squeezy activo. Store memoria.
 
-### Oleada 3
+### Oleada 3 — **HECHA** 2026-10-05
 
-Opcional. No se toca hasta que el dueño diga “Ejecuta los puntos 1 y 2 de la Oleada 3”.
+Dueño: «sigue con oleada 3». Puntos 1, 2, 5 (SEO sin desarchivar productos), 6, 8. Punto 3 Plus 🛑 go/no-go. Punto 7 Mercado Pago 🛑 D1. Punto 4 sinastría diferida (sin motor en el repo).
 
 ### Oleada 4
 

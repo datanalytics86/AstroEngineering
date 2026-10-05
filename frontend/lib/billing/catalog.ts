@@ -42,7 +42,7 @@ export const CATALOG: Record<Sku, Product> = {
     kind: "one_time",
     window: "rolling12",
     prices: { USD: 999, CLP: 8990 },
-    enabled: false,
+    enabled: true,
   },
   extra_map: {
     sku: "extra_map",

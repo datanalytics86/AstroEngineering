@@ -81,7 +81,19 @@ export default function ProOffer({
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sku: "year_map", birth, locale: lang, email }),
+        body: JSON.stringify({
+          sku: "year_map",
+          birth,
+          locale: lang,
+          email,
+          ref: (() => {
+            try {
+              return sessionStorage.getItem("ae_ref") || undefined;
+            } catch {
+              return undefined;
+            }
+          })(),
+        }),
       });
       const data = (await res.json()) as { url?: string; detail?: string; mode?: string };
       if (res.status === 409) {
@@ -166,6 +178,9 @@ export default function ProOffer({
           >
             {busy ? t("pay.checkout.redirecting") : t("pro.offer.cta", { price: price || "" })}
           </ActionButton>
+          <a href="/regalo" className="text-sm text-accent underline self-center min-h-[44px] flex items-center">
+            {t("pro.offer.gift")}
+          </a>
         </div>
       )}
       {msg && (

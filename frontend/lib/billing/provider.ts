@@ -23,6 +23,8 @@ export interface BillingProvider {
     locale: "es" | "en";
     successUrl: string;
     cancelUrl: string;
+    coupon?: string;
+    ref?: string;
   }): Promise<{ url: string }>;
   verifyAndParseWebhook(req: Request): Promise<BillingEvent | null>;
 }

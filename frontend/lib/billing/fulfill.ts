@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { hashToken, randomToken } from "@/lib/db/crypto";
 import { getStore } from "@/lib/db/store";
+import { createGiftFromOrder, deliverGift } from "@/lib/gifts";
+import { emailCopy, sendEmail } from "@/lib/email/send";
 import type { BillingEvent } from "./provider";
 import type { EntitlementRow, OrderRow } from "@/lib/db/store";
 
@@ -31,6 +33,29 @@ export async function fulfillPaid(
     provider_order_id: event.providerOrderId,
     email,
   });
+  if (order.sku === "year_map_gift") {
+    const recipient = (order.gift_recipient_email || "").trim().toLowerCase();
+    if (!recipient) throw new Error("gift_recipient_missing");
+    const deliverAt = order.gift_deliver_at || now;
+    const { gift, code } = await createGiftFromOrder({
+      orderId: order.id,
+      purchaserCustomerId: customer.id,
+      recipientEmail: recipient,
+      deliverAt,
+      locale: order.locale || "es",
+    });
+    if (new Date(deliverAt).getTime() <= Date.now()) {
+      await deliverGift(gift, code);
+    }
+    const copy = emailCopy(order.locale || "es");
+    await sendEmail({
+      to: email,
+      subject: copy.giftBuyerSubject,
+      text: copy.giftBuyerText(deliverAt.slice(0, 10)),
+    });
+    return { order: updated ?? order };
+  }
+
   const chart = order.chart_id ? await store.getChart(order.chart_id) : null;
   await store.insertEntitlement({
     customer_id: customer.id,
@@ -50,7 +75,14 @@ export async function fulfillPaid(
     used_at: null,
   });
   const base = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  return { order: updated ?? order, magicUrl: `${base}/api/auth/verify?token=${encodeURIComponent(token)}` };
+  const magicUrl = `${base}/api/auth/verify?token=${encodeURIComponent(token)}`;
+  const copy = emailCopy(order.locale || "es");
+  await sendEmail({
+    to: email,
+    subject: copy.purchaseSubject,
+    text: copy.purchaseText(magicUrl),
+  });
+  return { order: updated ?? order, magicUrl };
 }
 
 export async function fulfillRevoke(event: BillingEvent, provider = "mock"): Promise<void> {

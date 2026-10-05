@@ -29,10 +29,22 @@ const I18nContext = createContext<I18nContextValue>({
   t: (key) => String(key),
 });
 
+function langFromDocument(): Lang | null {
+  if (typeof document === "undefined") return null;
+  const html = document.documentElement.getAttribute("lang");
+  if (html === "en" || html === "es") return html;
+  return null;
+}
+
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("es");
+  const [lang, setLangState] = useState<Lang>(() => langFromDocument() ?? "es");
 
   useEffect(() => {
+    const fromHtml = langFromDocument();
+    if (fromHtml) {
+      setLangState(fromHtml);
+      return;
+    }
     try {
       const stored = localStorage.getItem(STORAGE_KEY) as Lang | null;
       if (stored === "es" || stored === "en") {
@@ -47,6 +59,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     setLangState(l);
     try {
       localStorage.setItem(STORAGE_KEY, l);
+      document.cookie = `ae_lang=${l}; path=/; max-age=${60 * 24 * 60 * 60}; samesite=lax`;
     } catch {
       // ignore
     }

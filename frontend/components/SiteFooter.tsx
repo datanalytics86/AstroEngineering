@@ -9,6 +9,12 @@ export default function SiteFooter() {
     <footer className="border-t border-border mt-16 px-6 py-6 text-center text-xs text-ink-3 space-y-2">
       <p>{t("footer.tagline")}</p>
       <p className="flex flex-wrap justify-center gap-x-3 gap-y-1">
+        <a href="/guia" className="underline decoration-[var(--line)] hover:text-accent">
+          {t("footer.guides")}
+        </a>
+        <a href="/regalo" className="underline decoration-[var(--line)] hover:text-accent">
+          {t("footer.gift")}
+        </a>
         <a href="/privacidad" className="underline decoration-[var(--line)] hover:text-accent">
           {t("footer.privacy")}
         </a>

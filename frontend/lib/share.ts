@@ -59,3 +59,29 @@ export function shareChartUrl(data: BirthData): string {
   const origin = typeof window !== "undefined" ? window.location.origin : siteUrl();
   return `${origin}/nueva?share=${encodeURIComponent(encodeSharePayload(data))}`;
 }
+
+export function shareOrigin(): string {
+  return typeof window !== "undefined" ? window.location.origin : siteUrl();
+}
+
+export function areasShareUrl(ref?: string | null): string {
+  const u = new URL("/s/areas", shareOrigin());
+  if (ref) u.searchParams.set("ref", ref);
+  return u.toString();
+}
+
+export function wordsShareUrl(words: [string, string, string], ref?: string | null): string {
+  const u = new URL("/s/words", shareOrigin());
+  u.searchParams.set("w1", words[0]);
+  u.searchParams.set("w2", words[1]);
+  u.searchParams.set("w3", words[2]);
+  if (ref) u.searchParams.set("ref", ref);
+  return u.toString();
+}
+
+export function sanitizeShareWord(raw: string | null | undefined): string {
+  return (raw || "")
+    .replace(/[^a-zA-Z0-9À-ÿ \-]/g, "")
+    .trim()
+    .slice(0, 24);
+}

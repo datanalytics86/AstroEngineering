@@ -25,7 +25,7 @@ export const stripeProvider: BillingProvider = {
       customer_email: i.email,
       locale: i.locale === "en" ? "en" : "es",
       client_reference_id: i.orderId,
-      metadata: { orderId: i.orderId, sku: i.sku },
+      metadata: { orderId: i.orderId, sku: i.sku, ref: i.ref || "", coupon: i.coupon || "" },
       line_items: [
         {
           quantity: 1,

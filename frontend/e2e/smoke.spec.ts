@@ -29,3 +29,19 @@ test("source code link is in the footer", async ({ page }) => {
   const link = page.getByRole("link", { name: /c[oó]digo fuente|source code/i });
   await expect(link).toHaveAttribute("href", /github.com\/datanalytics86\/AstroEngineering/);
 });
+
+test("/en sets html lang and hreflang", async ({ page }) => {
+  const res = await page.goto("/en");
+  expect(res?.ok()).toBeTruthy();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  const hrefEn = page.locator('link[rel="alternate"][hreflang="en"]');
+  await expect(hrefEn.first()).toHaveCount(1);
+});
+
+test("SEO guide and share card pages render", async ({ page }) => {
+  for (const path of ["/guia", "/guia/mercurio-retrogrado-2027", "/s/areas", "/regalo"]) {
+    const res = await page.goto(path);
+    expect(res?.ok(), path).toBeTruthy();
+    await expect(page.locator("h1")).toBeVisible();
+  }
+});

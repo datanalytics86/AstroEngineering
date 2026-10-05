@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n";
+import ShareCards from "@/components/ShareCards";
 
 export default function GraciasPage() {
   const { t } = useT();
@@ -33,12 +34,22 @@ export default function GraciasPage() {
       {state === "wait" && <p className="text-ink-2">{t("pro.gracias.wait")}</p>}
       {state === "timeout" && <p className="text-ink-2">{t("pro.gracias.timeout")}</p>}
       {state === "ready" && (
-        <p className="text-ink">
-          {t("pro.gracias.ready")}{" "}
-          <a className="text-accent underline" href="/mis-mapas">
-            {t("nav.maps")}
+        <div className="space-y-4">
+          <p className="text-ink">
+            {t("pro.gracias.ready")}{" "}
+            <a className="text-accent underline" href="/mis-mapas">
+              {t("nav.maps")}
+            </a>
+          </p>
+          <p className="text-sm text-ink-2">{t("pro.gracias.share")}</p>
+          <ShareCards />
+          <a className="text-accent underline text-sm" href="/regalo">
+            {t("pro.gracias.gift")}
           </a>
-        </p>
+          <a className="block text-sm text-ink-3 underline" href="/api/pro/year-map.pdf">
+            PDF
+          </a>
+        </div>
       )}
     </div>
   );

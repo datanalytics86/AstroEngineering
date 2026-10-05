@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { REF_COOKIE, refCookieOptions, sanitizeRef } from "@/lib/billing/referral";
+import { isApiOrInternalPath, stripLocalePrefix } from "@/lib/locale-path";
 
 const WINDOW_MS = 60_000;
 const HOUR_MS = 60 * 60_000;
@@ -10,6 +12,7 @@ const PER_MINUTE: Record<string, number> = {
   "/api/billing/checkout": 10,
   "/api/solar-return": 10,
   "/api/mundane": 5,
+  "/api/gifts/redeem": 10,
 };
 
 const PER_HOUR: Record<string, number> = {
@@ -66,10 +69,27 @@ function buildCsp(nonce: string): string {
   ].join("; ");
 }
 
+function applyCookiesAndHeaders(request: NextRequest, response: NextResponse, locale: "es" | "en") {
+  const nonce = request.headers.get("x-nonce") || "";
+  if (nonce) {
+    const csp = buildCsp(nonce);
+    response.headers.set("Content-Security-Policy", csp);
+  }
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  if (process.env.VERCEL_ENV === "production") {
+    response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  }
+  response.cookies.set("ae_lang", locale, { path: "/", maxAge: 60 * 24 * 60 * 60, sameSite: "lax" });
+  const ref = sanitizeRef(request.nextUrl.searchParams.get("ref"));
+  if (ref) response.cookies.set(REF_COOKIE, ref, refCookieOptions());
+  return response;
+}
+
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
   const now = Date.now();
   const ip = clientIp(request);
+  const rawPath = request.nextUrl.pathname;
+  const { locale, pathname } = stripLocalePrefix(rawPath);
 
   const perMin = matchLimit(pathname, PER_MINUTE);
   if (perMin !== undefined) {
@@ -99,16 +119,20 @@ export function middleware(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
-  const csp = buildCsp(nonce);
-  requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.set("x-locale", locale);
+  requestHeaders.set("x-pathname", pathname);
+  requestHeaders.set("Content-Security-Policy", buildCsp(nonce));
+
+  const shouldRewrite = locale === "en" && rawPath !== pathname && !isApiOrInternalPath(pathname);
+  if (shouldRewrite) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    const response = NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+    return applyCookiesAndHeaders(request, response, locale);
+  }
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
-  response.headers.set("Content-Security-Policy", csp);
-  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  if (process.env.VERCEL_ENV === "production") {
-    response.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
-  }
-  return response;
+  return applyCookiesAndHeaders(request, response, locale);
 }
 
 export const config = {

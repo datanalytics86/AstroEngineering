@@ -40,7 +40,7 @@ const CATALOG: Record<Sku, Product> = {
   },
   year_map_gift: {
     sku: "year_map_gift", kind: "one_time", window: "rolling12",
-    prices: { USD: 999, CLP: 8990 }, enabled: false, // P1
+    prices: { USD: 999, CLP: 8990 }, enabled: true, // Oleada 3
   },
   extra_map: {
     sku: "extra_map", kind: "one_time", window: "rolling12",
@@ -110,6 +110,9 @@ Success/cancel: solo orígenes de `SITE_URL` (H-07). Previews: solo si `VERCEL_E
 | `GET /api/pro/entitlements` | sesión | `[{sku, chart_id, window_start, window_end}]` |
 | `POST /api/pro/year-map` | sesión + derecho | `YearMapContent v2` o **403**. Nunca en el cliente sin este JSON. |
 | `GET /api/pro/year-map.ics?chart_id=` | sesión + derecho | iCal de `keyDates`. |
+| `GET /api/pro/year-map.pdf?chart_id=` | sesión + derecho | PDF del JSON v2 autorizado (Oleada 3). |
+| `POST /api/gifts/redeem` | público, rate-limit | `{code, email, locale, birth}` → entitlement `year_map` + cookie sesión. |
+| `GET /api/cron/jobs` | `Authorization: Bearer CRON_SECRET` | Entrega regalos vencidos; el día 1 UTC manda recordatorio mensual. |
 | `GET /api/places?q=&lang=&limit=` | público, caché 1 d | Proxy al backend. |
 
 `PRO_MODE=live|waitlist|dev`:

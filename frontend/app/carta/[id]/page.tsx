@@ -29,6 +29,7 @@ import ActionButton from "@/components/ActionButton";
 import { useT } from "@/lib/i18n";
 import { trackLearning } from "@/lib/learning";
 import { shareChartUrl } from "@/lib/share";
+import ShareCards from "@/components/ShareCards";
 import Disclaimer from "@/components/Disclaimer";
 import { classifyClimate } from "@/lib/pro/climate";
 import { rollingWindow } from "@/lib/pro/window";
@@ -398,6 +399,7 @@ export default function CartaPage() {
             {shareCopied ? t("chart.share.copied") : t("chart.share.copy")}
           </button>
         )}
+        <ShareCards />
       </div>
 
       {checkoutBanner && (

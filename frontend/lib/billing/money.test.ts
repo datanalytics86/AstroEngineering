@@ -15,6 +15,7 @@ const birth = {
   latitude: -33.4489,
   longitude: -70.6693,
   tz_name: "America/Santiago",
+  timezone_offset: -4,
 };
 
 describe("money invariants (mock)", () => {
@@ -164,6 +165,65 @@ describe("money invariants (mock)", () => {
     const fp = fingerprintBirth(birth);
     expect(fp).toHaveLength(64);
     expect(fp.includes("1990")).toBe(false);
+  });
+
+  it("gift purchase does not grant the buyer an entitlement; redeem grants the recipient", async () => {
+    const store = memoryStore();
+    setStore(store);
+    await store.insertOrder({
+      id: "ord_gift",
+      provider: "mock",
+      provider_order_id: null,
+      customer_id: null,
+      sku: "year_map_gift",
+      amount_minor: 999,
+      currency: "USD",
+      status: "pending",
+      window_start: "2026-10",
+      window_end: "2027-09",
+      chart_id: null,
+      email: "buyer@example.com",
+      locale: "es",
+      ph_id: null,
+      gift_recipient_email: "recv@example.com",
+      gift_deliver_at: new Date().toISOString(),
+    });
+    await fulfillPaid({
+      eventId: "evt_gift",
+      type: "paid",
+      orderId: "ord_gift",
+      providerOrderId: "mg",
+      email: "buyer@example.com",
+      amountMinor: 999,
+      currency: "USD",
+    });
+    const buyer = await store.getCustomerByEmail("buyer@example.com");
+    expect(buyer).toBeTruthy();
+    expect(await store.listEntitlements(buyer!.id)).toHaveLength(0);
+    const gift = await store.getGiftByOrderId("ord_gift");
+    expect(gift).toBeTruthy();
+    expect(gift?.delivered_at).toBeTruthy();
+    const { decryptJson } = await import("@/lib/db/crypto");
+    const { redeemGift } = await import("@/lib/gifts");
+    const code = decryptJson<{ code: string }>(gift!.code_enc).code;
+    const redeemed = await redeemGift({
+      code,
+      email: "recv@example.com",
+      locale: "es",
+      birth,
+    });
+    expect(await hasActiveEntitlement(redeemed.customerId)).toBe(true);
+    expect(await hasActiveEntitlement(buyer!.id)).toBe(false);
+    await expect(
+      redeemGift({ code, email: "recv@example.com", locale: "es", birth }),
+    ).rejects.toThrow("gift_used");
+  });
+
+  it("stores referral on the order and maps a mock coupon", async () => {
+    const { sanitizeRef, mockCouponForRef } = await import("./referral");
+    expect(sanitizeRef("ok_code-1")).toBe("ok_code-1");
+    expect(sanitizeRef("bad code")).toBeNull();
+    expect(mockCouponForRef("ana")).toBe("REF_ANA");
   });
 
   it("production waitlist blocks mock checkout", () => {

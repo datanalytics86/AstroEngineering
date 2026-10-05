@@ -16,8 +16,8 @@ Las celdas **PENDIENTE 🛑** bloquean cobro real (D1), lanzamiento (D2) o copy 
 | D6 | Base de datos | **Neon Postgres + Drizzle** | Recomendación §0 | **ACEPTADO** — Oleada 2 (A4-1) |
 | D7 | Email transaccional | **Resend** | Recomendación §0 | **ACEPTADO** — Oleada 2 (A4-8) |
 | D8 | Infraestructura | **Vercel Pro (US$20/mes) + Render Starter (US$7/mes)** | Recomendación §0 | **ACEPTADO en SPEC**; el **pago de las cuentas** es 🛑 humano. Código de `render.yaml` (`plan: starter`) se prepara en Oleada 1; no se apaga keepalive hasta que el plan esté activo |
-| D9 | Módulos archivados | `/geopolitica` y `/calendario` **siguen archivados** en v1 | Recomendación §0 | **ACEPTADO** |
-| D10 | Suscripción Plus | **Apagada** (feature flag) | Recomendación §0 | **ACEPTADO** |
+| D9 | Módulos archivados | `/geopolitica` y `/calendario` **siguen archivados** en v1. Oleada 3 reconvierte el calendario en páginas SEO `/guia/*` sin reabrir el producto. | Recomendación §0 | **ACEPTADO** |
+| D10 | Suscripción Plus | **Apagada** (feature flag). Go/no-go §4.3 no cumplido (no hay 30 días de ventas reales). | Recomendación §0 | **ACEPTADO** |
 | D11 | Identidad legal | Placeholders `{{LEGAL_NAME}}`, `{{RUT}}`, `{{ADDRESS}}`, `{{SUPPORT_EMAIL}}`. **No se inventa nada.** | Dueño | **PENDIENTE 🛑** para publicar legales |
 
 ## Decisiones de diseño que A0 cierra ahora (reversibles, cubiertas por el SPEC)
