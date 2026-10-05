@@ -1,0 +1,219 @@
+# PLAN — Oleada 0 consolidada
+
+Fecha: 2026-10-05  
+Orquestador: A0  
+Rama: `release/v1-comercial` (desde `origin/claude/nifty-planck-13n6j3` @ `c75f905`; `git merge origin/main` → Already up to date)  
+SPEC-002: Accepted por el dueño. Stack de §1 autorizado.
+
+**Esta oleada es solo lectura + estos docs. Cero cambios de producto.** 🛑 Gate 0 abajo. No se empieza Oleada 1 hasta que el dueño apruebe.
+
+---
+
+## 1. Línea base Anexo B — salida real
+
+Máquina: Windows, Python 3.12.10, Node v22.23.2, npm 10.9.8. Sin Docker, sin WSL, sin MSVC, sin `gh`.
+
+### 1.1 Backend — pytest / verify_corpus **NO CORRIERON**
+
+`pyswisseph==2.10.3.2` no tiene rueda para CPython 3.12 Windows y falló al compilar:
+
+```
+Building wheel for pyswisseph (pyproject.toml): finished with status 'error'
+error: Microsoft Visual C++ 14.0 or greater is required.
+ERROR: Failed building wheel for pyswisseph
+==== PYTEST ====
+python.exe: No module named pytest
+==== VERIFY_CORPUS ====
+ModuleNotFoundError: No module named 'swisseph'
+```
+
+Conteo estático de `def test_` en `backend/tests/`: **88** (14+15+12+9+8+7+6+5+5+5+2). Coincide con “pytest 88/88” del SPEC. `HISTORICAL_EVENTS` = 52 ids, 2 con 2 firmas = **54** (A3). CI Ubuntu 3.11 sigue siendo la fuente de verdad; se reejecuta en Oleada 1 (A1-5).
+
+### 1.2 pip-audit — **15 avisos** (H-02 CONFIRMADO)
+
+Comando: `python -m pip_audit -r backend\requirements.txt --progress-spinner off`
+
+```
+Name      Version ID              Fix Versions
+--------- ------- --------------- ------------
+fastapi   0.109.0 PYSEC-2024-38   0.109.1
+starlette 0.35.1  PYSEC-2026-1943 0.40.0
+starlette 0.35.1  PYSEC-2026-1941 0.47.2
+starlette 0.35.1  PYSEC-2026-161  1.0.1
+starlette 0.35.1  PYSEC-2026-161  1.0.1
+starlette 0.35.1  PYSEC-2026-2281 1.1.0
+starlette 0.35.1  PYSEC-2026-2280 1.1.0
+starlette 0.35.1  PYSEC-2026-249  1.3.1
+starlette 0.35.1  PYSEC-2026-248  1.3.0
+starlette 0.35.1  PYSEC-2026-249  1.3.1
+starlette 0.35.1  PYSEC-2026-248  1.3.0
+starlette 0.35.1  PYSEC-2026-1943 0.40.0
+starlette 0.35.1  PYSEC-2026-1941 0.47.2
+starlette 0.35.1  PYSEC-2026-2281 1.1.0
+starlette 0.35.1  PYSEC-2026-2280 1.1.0
+Found 15 known vulnerabilities in 2 packages
+```
+
+Starlette no está pineado: es transitivo de `fastapi==0.109.0` (`backend/requirements.txt:1`).
+
+### 1.3 Frontend — i18n / interp / build OK; audit 4 vulns
+
+`npm.cmd ci` (también reportó 12 vulns *con* dev):
+
+```
+npm warn deprecated next@14.2.3: This version has a security vulnerability.
+OK: paridad i18n verificada (479 claves en ambos idiomas).
+PASS advanced interpretation { house9_words: 101, asc_words: 128, tone9: 'constructive', empty_tone: 'constructive' }
+```
+
+`next build` (Next.js 14.2.3) — **OK**, First Load JS `/carta/[id]` **170 kB** (presupuesto S8: ≤ 200 kB):
+
+```
+Route (app)                              Size     First Load JS
+┌ ○ /                                    1.52 kB         104 kB
+├ ƒ /carta/[id]                          59.9 kB         170 kB
+├ ○ /nueva                               10.8 kB         113 kB
+├ ƒ /transitos/[id]                      36.1 kB         138 kB
++ First Load JS shared by all            87.4 kB
+```
+
+Warning de build: `Can't resolve 'fs'` en `components/pdf/register-lab-fonts.ts` (no falló el build).
+
+`npm audit --omit=dev` (exit 1, esperado):
+
+```
+nanoid  <=3.3.17     high
+next    0.9.9 - 16.3.0-preview.10   critical   (incluye GHSA-p293-qw3h-jr36 RCE Windows y GHSA-2xp9-vwfh-vxw4 RCE Image Optimization AVIF)
+postcss <=8.5.22     high
+qs      2.2.5 - 6.15.3  moderate
+4 vulnerabilities (1 moderate, 2 high, 1 critical)
+fix available via npm audit fix --force → next@14.2.35  ← insuficiente para los RCE ≥15.5.24
+```
+
+### 1.4 Producción en vivo (2026-10-05, esta sesión)
+
+```
+GET https://astro-engineering.vercel.app/api/checkout/status
+{"enabled":false}
+
+GET https://astro-engineering.vercel.app/api/health
+status=200 elapsed_ms=22550 body={"status":"ok","service":"astroengine-backend"}
+```
+
+LICENSE: **no existe**.
+
+### 1.5 Mediciones de carga / DoS / Playwright del Anexo B
+
+**No reejecutadas** (sin Docker, sin pyswisseph local, sin Playwright instalado). El código de H-03/H-04/H-06/H-21 está confirmado; los números 35,3 s / 8,0 s / 98 % “apretado” quedan como evidencia del SPEC 2026-10-05, no de esta máquina. Se rehacen en Oleada 1 (A1-2, A2-2) y Oleada 2 (A6-1).
+
+---
+
+## 2. Matriz H-01 … H-33
+
+Leyenda: **C** confirmado en código (y, si dice “medido”, también en esta sesión). **C\*** mecanismo confirmado, estadística del SPEC no reejecutada. **Ninguno refutado.**
+
+| ID | Sev | Título | Veredicto | Evidencia archivo:línea | Agente |
+|----|-----|--------|-----------|-------------------------|--------|
+| H-01 | Crítica | Next 14.2.3 vulnerable; d3 muerto | **C** (audit medido) | `frontend/package.json:17,19,25`; 0 imports de `d3`; `npm audit --omit=dev` 1 critical | A1 |
+| H-02 | Crítica | FastAPI/Starlette 15 avisos | **C** (audit medido) | `backend/requirements.txt:1`; pip-audit 15 | A1 |
+| H-03 | Crítica | `natal_planets` sin tope | **C** | `backend/astro/models.py:41,64` | A2, A3 |
+| H-04 | Crítica | Cómputo bloquea el event loop | **C** (código) | `backend/main.py:175-189,201-217,233-249,275-277` | A1, A3 |
+| H-05 | Alta | Rate limit por IP del proxy | **C** | `backend/main.py:96`; `frontend/lib/backend-proxy.ts:37-51` no reenvía IP | A2 |
+| H-06 | Alta | `/health` 10/min | **C** | `backend/main.py:162-163`; `render.yaml:14` | A1, A2 |
+| H-07 | Alta | `*.vercel.app` en checkout | **C** | `frontend/lib/stripe-server.ts:19-24`; `session/route.ts` usa ese origin | A2, A4 |
+| H-08 | Media | CSP `unsafe-eval` + Google Fonts | **C** | `frontend/next.config.mjs:28-40`; `app/layout.tsx:13-25` | A2 |
+| H-09 | Media | `next start` + localhost revienta | **C** | `frontend/next.config.mjs:14-23` | A1 |
+| H-10 | Media | Origen hardcodeado ×6 | **C** | `tier-minus1.ts:25`; `pro-sample.ts:53`; `share.ts:3`; `stripe-server.ts:21,31`; `robots.ts:10`; `sitemap.ts:4` | A1, A7 |
+| H-11 | Media | Infra free no sirve para cobrar | **C** (código + 22,5 s medidos) | `render.yaml:13` `plan: free`; keepalive; health 22550 ms | A1 |
+| H-12 | Crítica | Pro gratis + “Pago confirmado” | **C** (prod `enabled:false`) | `carta/[id]/page.tsx:166-168`; `TopicSummarySection.tsx:312-319,415-417,566-571`; `es.ts:198-199,221` | A4, A5, A8 |
+| H-13 | Crítica | Stripe no sirve desde Chile; Paddle prohíbe horóscopos | **C** (código + políticas web) | checkout solo Stripe; Paddle AUP ítem 14; LS hay que preguntar | A4 |
+| H-14 | Crítica | Compra en localStorage; webhook no-op | **C** | `storage.ts:220-279`; `webhook/route.ts:21-31` | A4, A8 |
+| H-15 | Alta | Dueño sin datos de negocio | **C** | `learning.ts:41-94`; waitlist en localStorage | A7 |
+| H-16 | Alta | Sin términos/reembolsos/contacto; privacidad 4 párrafos | **C** | no hay `app/(legal)/`; `privacidad/page.tsx:12-18` `text-slate-900` | A2, A6 |
+| H-17 | Alta | AGPL sin LICENSE | **C** | no hay `LICENSE`; `requirements.txt:3` pyswisseph | A2 |
+| H-18 | Alta | Nominatim autocomplete | **C** | `BirthDataForm.tsx:463-484` debounce 400 ms | A2, A5 |
+| H-19 | Alta | TZ incorrecta fuera de lista corta | **C** | `BirthDataForm.tsx:94-121,123-126,534-536`; Corea → `round(127/15)=8` | A3 |
+| H-20 | Alta | Quirón omitido en silencio | **C** | `chart.py:101-104`; `Dockerfile:12-13`; `.gitignore:18`; glosario `:122` | A3 |
+| H-21 | Crítica | Mapa no distingue meses | **C\*** | `year-map.ts:246-247`; `personal-intensity.ts:71`; `transits.py:565` | A6 |
+| H-22 | Crítica | Se vende el año calendario | **C** | `carta/[id]/page.tsx:146,155,195,234,263` `getFullYear()` | A5 |
+| H-23 | Alta | Teaser Marzo/Julio fijo | **C** | `es.ts:193-194`; `TopicSummarySection.tsx:433-455` | A5 |
+| H-24 | Alta | Copy genérico repetido | **C** | `year-map.ts:554,573-625,756-757`; `pro-human.ts:311-312` | A6 |
+| H-25 | Alta | Concordancia de género | **C** | `pro-human.ts:126` + `tier-minus1.ts:179`; `year-map.ts:699` + `:193` | A6 |
+| H-26 | Alta | 5 años de tránsitos gratis | **C** | `transitos/[id]/page.tsx:434`; no lee `isProUnlocked` | A5 |
+| H-27 | Alta | Precio $2.99 hardcodeado | **C** | `stripe-server.ts:3`; 8 claves en `es.ts`/`en.ts`; `i18n.tsx:21,53-56` | A4, A6 |
+| H-28 | Media | Contraste dark | **C** | 51 `text-slate-900`/`bg-white` en 19 archivos; H1 privacidad `:12` | A5 |
+| H-29 | Media | `strip_whitespace` ignorado | **C** | `models.py:11` | A2 |
+| H-30 | Media | CI incompleto | **C** | `ci.yml`: pytest+corpus+i18n+interp+build. Sin lint, vitest, e2e, audit, secrets | A8 |
+| H-31 | Baja | Share expone nacimiento | **C** | `share.ts:22-32` Base64 de name\|date\|time\|lat\|lon | A2, A7 |
+| H-32 | Baja | SEO limitado | **C** | `layout.tsx:17` `lang="es"`; no `/pro`; no JSON-LD; sitemap 4 URLs | A7 |
+| H-33 | Baja | `CLAUDE.md` desactualizado | **C** | header 2026-07-10; Pro/Stripe/mapa no documentados | A0 |
+
+---
+
+## 3. Estado S1–S10 (hoy)
+
+| # | Criterio | Hoy |
+|---|----------|-----|
+| S1 | 0 vulns high/critical | **ROJO** — npm 1c+2h; pip 15 avisos |
+| S2 | Cero Pro sin pago | **ROJO** — H-12/H-14 |
+| S3 | `/health` p95 < 200 ms bajo carga | **ROJO** — H-04; prod 22,5 s cold |
+| S4 | `/api/transits` p95 < 4 s Starter | **NO MEDIDO** en Starter (plan free) |
+| S5 | Compra → Pro < 10 s, restaurable | **ROJO** — no hay entitlements |
+| S6 | Mapa distingue meses | **ROJO** — H-21 |
+| S7 | Embudo medido | **ROJO** — H-15 |
+| S8 | Legales publicados | **ROJO** — H-16 |
+| S9 | CI completo | **ROJO** — H-30. i18n 479 y build sí pasan |
+| S10 | Precisión ±0,05°; Quirón; corpus 54 | **PARCIAL** — corpus no reejecutado aquí; Quirón ausente (H-20) |
+
+---
+
+## 4. Plan por oleadas (sin ejecutar)
+
+### Oleada 1 — listo para producción (P0 técnico)
+
+PRs chicos hacia `release/v1-comercial`, ramas `v1/a<N>-<tema>`. Gates §8 en cada PR. **No billing real.**
+
+| PR sugerido | Agente | Cierra | Notas |
+|-------------|--------|--------|-------|
+| `v1/a1-next16` | A1-1 | H-01 | Next 16.3 + React 19; quitar d3; ESLint 9; engines/.nvmrc |
+| `v1/a1-backend-pins` | A1-2 | H-02, H-04 | pins + threadpool + semáforo + gzip + tzdata |
+| `v1/a1-ephe` | A1-3 | H-20 (imagen) | `.se1` + SHA-256 Anexo C |
+| `v1/a1-site-ci` | A1-4/5/6 | H-09, H-10, H-11, H-30 | `lib/site.ts`; guard solo `VERCEL_ENV=production`; CI completo; `render.yaml` starter **documentado** (activar cuando D8 esté pagado) |
+| `v1/a2-proxy-limits` | A2-1/2/3 | H-03, H-05, H-06, H-29 | proxy firmado; natal_planets 1..20; `/health` sin límite; body 64 KB |
+| `v1/a2-csp` | A2-4 | H-08 | nonce THEME_BOOT; next/font local |
+| `v1/a2-license-legal` | A2-6/7 | H-16, H-17, H-31 (declarar) | LICENSE AGPL; páginas legales con **placeholders D11**; 🛑 dueño revisa copy |
+| `v1/a2-allowlist` | A2-5 | H-07 | aunque checkout esté apagado |
+| `v1/a3-places-tz` | A3-1/2 | H-18, H-19 | `/api/places` + `tz_name` |
+| `v1/a3-events-cache` | A3-3/4/5 | base de H-21 | `raw_intensity`, `key_events`, LRU, golden 0,05° |
+
+A8 revisa todo PR de seguridad. A6 no toca `es.ts` en Oleada 1 salvo claves que A2 pida para legales (vía `docs/v1/i18n-requests.md`).
+
+### Oleada 2 — Pro que se vende (después de Gate 0 + Oleada 1)
+
+Prioridad del dueño: `PRO_MODE` sin desbloqueo gratis, compras en servidor, clima relativo (H-21), 12 meses móviles (H-22), concordancia (H-25), paywall con datos reales (H-23). Invariantes de dinero §8 obligatorios; A8 red team.
+
+A4 (mock + stripe apagado; lemonsqueezy **solo** con D1 escrito) → A5 paywall/año móvil/gating transitos/contraste → A6 clima/copy → A7 PostHog.
+
+### Oleada 3
+
+Opcional. No se toca hasta que el dueño diga “Ejecuta los puntos 1 y 2 de la Oleada 3”.
+
+### Oleada 4
+
+Regresión, carga, staging, docs, PR `release/v1-comercial` → `main` **sin merge**.
+
+---
+
+## 5. 🛑 Gate 0 — lo que necesito de ti
+
+Aprueba este plan (Mensaje 2) y responde lo que falte. Mientras tanto **me detengo**.
+
+1. **D1 — envía el mensaje a Lemon Squeezy** (texto en `DECISIONS.md`). Cuando tengas el sí/no escrito, pégalo aquí. Hasta entonces Oleada 2 usa `mock` + `waitlist`.
+2. **D2 AGPL** — ya lo aceptaste. Confirma que el repo se queda **público** con LICENSE AGPL-3.0 y el enlace “Código fuente”.
+3. **D3 dominio** — “todavía no” queda registrado. ¿Quieres un hostname concreto (`.cl` / `.app`) antes del 15-nov, o seguimos con `astro-engineering.vercel.app` hasta lanzar?
+4. **D11** — cuando puedas: `{{LEGAL_NAME}}`, `{{RUT}}`, `{{ADDRESS}}`, `{{SUPPORT_EMAIL}}`. Sin esto las páginas legales salen con placeholders (Oleada 1) y **no se publican como definitivas**.
+5. **D8 plata** — Vercel Pro US$20/mes + Render Starter US$7/mes. ¿Las cuentas se pagan en Oleada 1 o después? El código se prepara igual; keepalive no se borra hasta que Starter esté vivo.
+6. **D4–D10** — tomé los valores recomendados (US$9,99 / CLP 8.990, PostHog, Neon, Resend, geo/calendario archivados, Plus apagado). Di si alguno cambia.
+7. **Pregunta de producto (no bloquea Oleada 1):** ¿el CTA de waitlist recoge email en servidor ya en Oleada 2, o solo “avísame” local hasta tener Resend?
+
+Cuando apruebes: *“Apruebo el plan de la Oleada 0 [cambios]. Ejecuta la Oleada 1 completa (A1, A2 y A3)…”*
