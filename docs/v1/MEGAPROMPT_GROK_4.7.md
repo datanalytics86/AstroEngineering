@@ -17,7 +17,7 @@
 ### Resumen de la auditoría
 
 1. **Hoy el Pro se regala.** Producción responde `{"enabled":false}` en `/api/checkout/status` (verificado en vivo el 2026-10-05). Así, "Probar Pro 30 días" desbloquea gratis, y la UI dice **"Pago confirmado"** aunque nadie pagó.
-2. **Stripe no se puede activar desde Chile** sin una entidad extranjera: Chile no está en la lista oficial de países de Stripe. Si no tienes una entidad en otro país, el checkout actual no se podrá encender.
+2. **Stripe no se puede activar desde Chile** sin una entidad extranjera: Chile no está en la lista oficial de países de Stripe. Si no tienes una entidad en otro país, el checkout actual no se podrá encender. Ojo con las alternativas: **Paddle prohíbe los horóscopos** en su política de uso, y Lemon Squeezy no los prohíbe por escrito pero hereda las restricciones de Stripe. Hay que confirmar con el proveedor antes de integrarlo.
 3. **El mapa del año no distingue meses.** En 30 cartas aleatorias, el 98 % de los meses sale "apretado". El producto promete justo lo contrario: qué meses aprietan y cuáles te dejan respirar.
 4. **Se vende el año calendario.** Si alguien compra hoy (octubre), 9 de los 12 meses ya pasaron.
 5. **El teaser del paywall es el mismo para todos.** "Marzo se aprieta / Julio se afloja" está fijo en el código y suele contradecir el año real del usuario.
@@ -67,7 +67,7 @@ Lee esta tabla y úsala. Si una celda dice **PENDIENTE**, aplica la recomendaci�
 
 | ID | Decisión | Valor | Recomendación y motivo |
 |----|----------|-------|------------------------|
-| D1 | Cómo cobrar (entidad legal + proveedor) | PENDIENTE | Si el dueño es persona o empresa en Chile **sin** entidad extranjera: **Merchant of Record (Paddle o Lemon Squeezy)**. Ambos declaran pagos a cuentas en Chile (confírmalo en sus páginas de países soportados antes de elegir) y se hacen cargo de IVA/VAT, recibos y reembolsos. Stripe solo sirve con una entidad en un país soportado (p. ej. LLC en EE.UU.). Mercado Pago (CLP, medios locales) puede venir después (P1) y obliga a emitir boletas en el SII. 🛑 bloquea el cobro real (Oleada 2). |
+| D1 | Cómo cobrar (entidad legal + proveedor) | PENDIENTE | Si el dueño es persona o empresa en Chile **sin** entidad extranjera, la recomendación es **Lemon Squeezy** (Merchant of Record: paga a cuentas en Chile y se hace cargo de IVA/VAT, recibos y reembolsos), **solo después de que confirme por escrito** que acepta "reportes astrológicos personalizados generados por software (web + PDF)". Su lista de prohibidos no menciona la astrología, pero excluye "servicios de cualquier tipo" y todo lo que restrinjan sus procesadores (Stripe). **Paddle queda descartado**: su política de uso prohíbe "digital services associated with pseudo-science, including … horoscopes, fortune-telling". Respaldo o complemento local: **Mercado Pago** (CLP, medios chilenos; obliga a emitir boletas en el SII). Stripe solo sirve con una entidad en un país soportado (p. ej. LLC en EE.UU.). Cualquier otro MoR (Polar, Creem, Dodo…) exige revisar antes su política de uso. 🛑 bloquea el cobro real (Oleada 2). |
 | D2 | Licencia de Swiss Ephemeris | PENDIENTE | (a) **AGPL**: el repo ya es público. Agregar LICENSE AGPL-3.0 (al menos en `backend/`) y un enlace visible "Código fuente" (costo 0, lanzamiento inmediato). (b) **Licencia profesional** de Astrodienst (700 CHF, ilimitada) si se quiere cerrar el código. 🛑 bloquea el lanzamiento comercial. |
 | D3 | Dominio propio | PENDIENTE | Comprar antes del lanzamiento (p. ej. `.cl` o `.app`). Hace falta para el email transaccional (SPF/DKIM), la confianza y la verificación del proveedor de pagos. |
 | D4 | Precios de lanzamiento | Mapa del Año US$9,99 / CLP 8.990 · Regalo igual · Mapa extra (order bump) US$5,99 · Plus US$4,99/mes o US$29,99/año (apagado) | Ver §4. Se define en un catálogo único: cambiar un precio no toca el código. |
@@ -201,8 +201,8 @@ Formato de cada hallazgo: **ID · severidad · título**, seguido de evidencia, 
   - Cualquier "prueba" debe ser explícita, del lado del servidor y rotulada como prueba.
 
 **H-13 · Crítica · Stripe no está disponible para empresas chilenas**
-- **Evidencia:** en América Latina, stripe.com/global solo lista Brasil y México. El checkout actual solo se activaría con una entidad extranjera.
-- **Corrección:** abstracción de cobro con adaptadores (§5) y proveedor según D1. Mantener el adaptador de Stripe portando el código actual.
+- **Evidencia:** en América Latina, stripe.com/global solo lista Brasil y México. El checkout actual solo se activaría con una entidad extranjera. Además, no cualquier proveedor acepta astrología: Paddle la prohíbe en su política de uso (ítem 14: horóscopos y adivinación); Lemon Squeezy prohíbe "servicios de cualquier tipo" y lo restringido por Stripe (que prohíbe "psychic services and fortune tellers" en Japón, México, Tailandia y EAU).
+- **Corrección:** abstracción de cobro con adaptadores (§5) y proveedor según D1, con aceptación del producto confirmada por escrito por el proveedor antes de integrarlo. Mantener el adaptador de Stripe portando el código actual.
 
 **H-14 · Crítica · Lo comprado vive solo en localStorage, y el webhook no hace nada**
 - **Evidencia:** `lib/storage.ts:220-279` guarda el desbloqueo en el navegador; `app/api/checkout/webhook/route.ts` solo hace `console.info`. Consecuencias:
@@ -220,6 +220,7 @@ Formato de cada hallazgo: **ID · severidad · título**, seguido de evidencia, 
   - No hay Términos, Reembolsos, Contacto/soporte ni identidad del vendedor. Los MoR y las pasarelas los exigen para aprobar la cuenta.
   - `/privacidad` son 4 párrafos, cita "$2.99/Stripe", y su H1 es casi invisible en tema oscuro (medido: color `rgb(15,23,42)` sobre fondo oscuro).
   - La **Ley 21.719** (Chile) rige desde el **2026-12-01** (hay una posible postergación en evaluación; verifícalo).
+  - Si encuentras fuentes viejas sobre la falta penal por "pronósticos o adivinaciones" con fines de lucro (art. 496 N°32 del Código Penal), ignóralas: la Ley 19.918 la derogó en 2003. Igual, el copy debe presentar el producto como orientación y autoconocimiento, no como predicción.
   - Falta un aviso de "orientación y entretenimiento; no reemplaza consejo médico, psicológico, financiero ni legal", relevante para los temas Salud y Dinero.
 - **Corrección:** A2-7 (§7).
 
@@ -455,7 +456,7 @@ interface Product {
 
 // Adaptador de cobro: frontend/lib/billing/provider.ts
 interface BillingProvider {
-  id: "stripe" | "paddle" | "lemonsqueezy" | "mercadopago";
+  id: "stripe" | "lemonsqueezy" | "mercadopago" | "mock";
   enabled(): boolean;
   createCheckout(i: { orderId: string; sku: Sku; currency: "USD" | "CLP"; email?: string;
     locale: "es" | "en"; successUrl: string; cancelUrl: string }): Promise<{ url: string }>;
@@ -625,7 +626,7 @@ Prioridad si te quedas sin tiempo o contexto (en este orden): H-01/H-02 → H-03
 **A4 · Pagos y entitlements**
 
 - **A4-1 · Base de datos:** Neon + Drizzle (esquema §5.1, migraciones, `lib/db`); helpers de cifrado (AES-256-GCM) y de huella (HMAC); variables `DATABASE_URL`, `DATA_ENC_KEY`, `CHART_PEPPER` y `SESSION_SECRET`.
-- **A4-2 · Cobro:** catálogo único (§5.2) más la interfaz `BillingProvider`, con adaptadores `stripe` (portado desde `lib/stripe-server.ts`), el elegido en D1 (`paddle` o `lemonsqueezy`) y `mock` (tests y E2E). El mapeo SKU → id de precio del proveedor va en env (`PROVIDER_PRICE_IDS` en JSON).
+- **A4-2 · Cobro:** catálogo único (§5.2) más la interfaz `BillingProvider`, con adaptadores `stripe` (portado desde `lib/stripe-server.ts`), el elegido en D1 (`lemonsqueezy` y/o `mercadopago`) y `mock` (tests y E2E). Antes de escribir el adaptador real, A4 redacta para el dueño el mensaje de consulta al proveedor ("¿aceptan reportes astrológicos personalizados generados por software, entregados como web + PDF?") y no lo activa sin la respuesta afirmativa por escrito. El mapeo SKU → id de precio del proveedor va en env (`PROVIDER_PRICE_IDS` en JSON).
 - **A4-3 · Checkout:** orden `pending` con los datos cifrados, cookie `ae_pending_order`, URLs de la allowlist, moneda por país y email opcional (el proveedor lo pide).
 - **A4-4 · Webhook:**
   - Firma verificada, `webhook_events` para idempotencia y fulfillment transaccional.
@@ -768,7 +769,7 @@ npx playwright test                                      # desktop 1440×900 + m
 2. **Cuentas:**
    - Vercel Pro y Render Starter.
    - Neon y Resend (con el dominio: registros SPF, DKIM y DMARC).
-   - El proveedor de cobro elegido (verificación de identidad; pide las páginas legales publicadas y un email de soporte).
+   - El proveedor de cobro elegido. Antes de abrir la cuenta, confirmar por escrito que acepta el producto (Paddle lo prohíbe; Lemon Squeezy y Mercado Pago hay que preguntarlos). La verificación de identidad pide las páginas legales publicadas y un email de soporte.
    - PostHog y Sentry.
 3. **Dominio:** conectarlo en Vercel y actualizar `SITE_URL` (Vercel) y `FRONTEND_URL` (Render).
 4. **Variables de entorno:**
@@ -799,7 +800,11 @@ npx playwright test                                      # desktop 1440×900 + m
 ## §12. PRIMEROS PASOS (empieza ya)
 
 ```bash
-git checkout main && git pull && git checkout -b release/v1-comercial
+git fetch origin
+# Este SPEC vive en el branch claude/nifty-planck-13n6j3 (= main + este documento).
+# Si ya se fusionó a main, parte de origin/main en vez de ese branch.
+git checkout -b release/v1-comercial origin/claude/nifty-planck-13n6j3
+git merge origin/main   # por si main avanzó después
 # Línea base (Anexo B): backend
 python -m venv .venv && . .venv/bin/activate && pip install -r backend/requirements.txt pytest pip-audit
 pytest backend/tests -q && (cd backend && python scripts/verify_corpus.py) && pip-audit -r backend/requirements.txt
@@ -820,7 +825,9 @@ Luego lanza la **Oleada 0** (todos los agentes en paralelo, solo lectura) y entr
 - Vercel Hobby (uso no comercial): https://vercel.com/docs/plans/hobby
 - Render, frecuencia del health check (5 s): https://community.render.com/t/how-often-does-health-checks-happen/26175 · Precios de Render 2026: https://makerkit.dev/pricing-calculator/render
 - Lemon Squeezy, comisiones y países: https://docs.lemonsqueezy.com/help/getting-started/fees · https://docs.lemonsqueezy.com/help/getting-started/supported-countries
-- Paddle, países soportados: https://www.paddle.com/help/start/intro-to-paddle/which-countries-are-supported-by-paddle
+- Lemon Squeezy, productos prohibidos: https://docs.lemonsqueezy.com/help/getting-started/prohibited-products · Stripe, negocios restringidos: https://stripe.com/legal/restricted-businesses
+- Paddle, política de uso (prohíbe horóscopos, ítem 14): https://www.paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle
+- Ley 19.918 (deroga el art. 496 N°32 del Código Penal): https://chile.justia.com/nacionales/leyes/ley-n-19-918/gdoc/
 - Mercado Pago Chile, comisiones (referencial): https://www.mercadolibre.cl/ayuda/33399
 - Ley 21.719 (vigencia 2026-12-01): https://www.yourdevs.cl/blog/ley-21719-proteccion-datos-chile · https://araya.cl/ley-de-proteccion-de-datos-se-postergara-su-entrada-en-vigencia/
 - Benchmarks:
